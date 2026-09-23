@@ -3,22 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MeetAgent — Simple AI Meeting Notes & MoM</title>
+  <title>MeetAgent — AI Meeting Notes & Minutes</title>
   <link rel="stylesheet" href="/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
   <!-- Toast alert -->
   <div id="toast" class="toast hidden"></div>
 
-  <!-- Header -->
+  <!-- Header (Claude Warm Minimalist Style) -->
   <header class="app-header">
     <div class="header-inner">
       <div class="logo">
         <div class="logo-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
             <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
             <line x1="12" x2="12" y1="19" y2="22"/>
@@ -39,10 +39,10 @@
   <!-- Main Container -->
   <main class="main-container">
     
-    <!-- 1. Meeting Control Card -->
+    <!-- 1. Meeting Card -->
     <section class="card meeting-card">
       
-      <!-- Top Options Row -->
+      <!-- Options Row -->
       <div class="options-row">
         <div class="option-field">
           <label for="audioSource">Audio Source</label>
@@ -55,10 +55,10 @@
         </div>
 
         <div class="option-field">
-          <label for="aiModel">AI Model</label>
+          <label for="aiModel">AI Model for MoM</label>
           <div class="select-wrap">
             <select id="aiModel">
-              <option value="groq">Groq (Llama 3.3 — Instant)</option>
+              <option value="groq">Groq (Llama 3.3 — Instant ~1s)</option>
               <option value="gemini">Gemini (3.6 Flash — Deep)</option>
             </select>
           </div>
@@ -71,7 +71,7 @@
         <!-- Idle State -->
         <div id="idleState" class="state-view">
           <button id="startBtn" class="btn btn-primary-lg">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <circle cx="12" cy="12" r="10"/>
               <circle cx="12" cy="12" r="3" fill="currentColor"/>
             </svg>
@@ -80,26 +80,39 @@
           
           <div class="file-upload-hint">
             <span>or</span>
-            <label for="audioFileInput" class="upload-link">upload audio recording (.mp3, .wav, .webm)</label>
+            <label for="audioFileInput" class="upload-link">upload recorded audio (.mp3, .wav, .webm)</label>
             <input type="file" id="audioFileInput" accept="audio/*,.mp3,.wav,.webm,.m4a" style="display: none;">
           </div>
         </div>
 
-        <!-- Recording State -->
+        <!-- Recording State (Shows Live Transcript as you speak) -->
         <div id="recordingState" class="state-view hidden">
           <div class="recording-header">
             <div class="rec-badge">
               <span class="rec-pulse"></span>
-              <span>LISTENING LIVE</span>
+              <span>LIVE RECORDING</span>
             </div>
             <div class="rec-timer" id="meetingTimer">00:00</div>
           </div>
 
-          <!-- Clean Waveform Visualizer -->
-          <canvas id="waveformCanvas" width="560" height="48"></canvas>
+          <!-- Waveform Visualizer -->
+          <canvas id="waveformCanvas" width="600" height="42"></canvas>
+
+          <!-- LIVE TRANSCRIPT STREAM WINDOW -->
+          <div class="live-stream-box">
+            <div class="live-stream-header">
+              <span class="live-stream-title">
+                <span class="live-stream-dot"></span> Live Transcript Stream
+              </span>
+              <span class="live-stream-badge">Listening...</span>
+            </div>
+            <div id="liveStreamText" class="live-stream-content">
+              Listening... Start speaking into your mic or playing meeting audio, and your words will appear here live in real-time.
+            </div>
+          </div>
 
           <button id="stopBtn" class="btn btn-danger-lg">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <rect width="14" height="14" x="5" y="5" rx="2" fill="currentColor"/>
             </svg>
             Stop Meeting & Generate MoM
@@ -109,16 +122,16 @@
         <!-- Loading State -->
         <div id="loadingState" class="state-view hidden">
           <div class="spinner"></div>
-          <p id="loadingText" class="loading-msg">Transcribing meeting audio with Groq Whisper...</p>
+          <p id="loadingText" class="loading-msg">Processing audio and generating Minutes of Meeting...</p>
         </div>
 
       </div>
     </section>
 
-    <!-- 2. Results Section (Appears after meeting or file upload) -->
+    <!-- 2. Results Section -->
     <section id="resultsSection" class="results-section hidden">
       
-      <!-- Clean Tab Bar -->
+      <!-- Tab Header -->
       <div class="results-tabs">
         <div class="tab-buttons">
           <button id="tabMoMBtn" class="tab-btn active">
@@ -151,34 +164,28 @@
       <!-- Tab View 1: Minutes of Meeting (MoM) -->
       <div id="momPane" class="tab-pane active">
         
-        <!-- Summary Box -->
-        <div class="mom-block block-summary">
-          <div class="block-header">
-            <span class="block-tag tag-cyan">Summary</span>
-          </div>
-          <div class="block-content" id="summaryContent">
+        <!-- Summary Block -->
+        <div class="mom-card summary-card">
+          <div class="card-tag tag-terracotta">Executive Summary</div>
+          <div class="card-body" id="summaryContent">
             Meeting summary will appear here.
           </div>
         </div>
 
-        <!-- Decisions Box -->
-        <div class="mom-block block-decisions">
-          <div class="block-header">
-            <span class="block-tag tag-green">Decisions Made</span>
-          </div>
-          <div class="block-content">
+        <!-- Decisions Block -->
+        <div class="mom-card decisions-card">
+          <div class="card-tag tag-green">Decisions Made</div>
+          <div class="card-body">
             <ul id="decisionsList" class="clean-list">
               <li>No decisions recorded.</li>
             </ul>
           </div>
         </div>
 
-        <!-- Action Items Box -->
-        <div class="mom-block block-actions">
-          <div class="block-header">
-            <span class="block-tag tag-amber">Action Items & Deliverables</span>
-          </div>
-          <div class="block-content">
+        <!-- Action Items Block -->
+        <div class="mom-card actions-card">
+          <div class="card-tag tag-amber">Action Items & Deliverables</div>
+          <div class="card-body">
             <div id="actionsList" class="action-tasks-container">
               <div class="empty-task">No action items recorded.</div>
             </div>
@@ -200,9 +207,9 @@
         <textarea id="transcriptText" rows="12" placeholder="Full meeting transcript appears here..."></textarea>
 
         <div class="transcript-footer">
-          <span class="hint-text">💡 You can edit this transcript and re-generate the MoM above.</span>
+          <span class="hint-text">💡 You can edit this transcript and re-generate the MoM.</span>
           <button id="rerunMoMBtn" class="btn btn-sm btn-secondary">
-            🔄 Re-run MoM with Current AI Model
+            🔄 Re-generate MoM from edited text
           </button>
         </div>
       </div>

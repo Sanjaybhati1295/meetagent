@@ -1,4 +1,4 @@
-// MeetAgent — Clean & Simple Client Controller
+// MeetAgent — Clean Client Controller with Live Streaming Transcript
 (() => {
   'use strict'
 
@@ -12,7 +12,12 @@
   let analyserNode = null
   let animationId = null
   let currentMoMRaw = ''
-  let activeTab = 'mom' // 'mom' | 'transcript'
+  let activeTab = 'mom'
+
+  // Live Speech Recognition State
+  let recognition = null
+  let liveFinalText = ''
+  let tabSliceInterval = null
 
   // DOM Elements
   const audioSource = document.getElementById('audioSource')
@@ -29,6 +34,7 @@
   const audioFileInput = document.getElementById('audioFileInput')
   const meetingTimer = document.getElementById('meetingTimer')
   const waveformCanvas = document.getElementById('waveformCanvas')
+  const liveStreamText = document.getElementById('liveStreamText')
 
   const resultsSection = document.getElementById('resultsSection')
   const tabMoMBtn = document.getElementById('tabMoMBtn')
@@ -83,7 +89,6 @@
     })
   }
 
-  // Tab Switcher
   function switchTab(tab) {
     activeTab = tab
     if (tab === 'mom') {
@@ -99,10 +104,15 @@
     }
   }
 
-  // Meeting Start / Stop
+  // ==========================================================================
+  // Meeting Audio Capture + LIVE TRANSCRIPT STREAM
+  // ==========================================================================
   async function startMeeting() {
     try {
       audioChunks = []
+      liveFinalText = ''
+      liveStreamText.textContent = 'Listening... Start speaking into your mic or playing meeting audio, and your words will appear here live in real-time.'
+
       const source = audioSource.value
 
       if (source === 'mic') {
@@ -124,8 +134,10 @@
         mediaStream = new MediaStream(audioTracks)
       }
 
+      // Visualizer
       setupWaveform(mediaStream)
 
+      // Master MediaRecorder for Full Whisper STT
       const supportedMimes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4']
       const mime = supportedMimes.find((m) => MediaRecorder.isTypeSupported(m)) || ''
       mediaRecorder = new MediaRecorder(mediaStream, mime ? { mimeType: mime } : undefined)
@@ -133,8 +145,10 @@
       mediaRecorder.ondataavailable = (e) => {
         if (e.data && e.data.size > 0) audioChunks.push(e.data)
       }
-
       mediaRecorder.start(1000)
+
+      // START LIVE TRANSCRIPTION STREAM
+      startLiveTranscriptStream(source)
 
       setState('recording')
       startTimer()
@@ -144,13 +158,119 @@
     }
   }
 
+  // Live Speech Recognition / Stream
+  function startLiveTranscriptStream(source) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+
+    // If microphone and browser supports Web Speech API, use real-time streaming
+    if (SpeechRecognition && source === 'mic') {
+      try {
+        recognition = new SpeechRecognition()
+        recognition.continuous = true
+        recognition.interimResults = true
+        recognition.lang = 'en-US'
+
+        recognition.onresult = (event) => {
+          let interim = ''
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+              liveFinalText += event.results[i][0].transcript + ' '
+            } else {
+              interim += event.results[i][0].transcript
+            }
+          }
+
+          const combined = (liveFinalText + interim).trim()
+          if (combined) {
+            liveStreamText.textContent = combined
+            liveStreamText.scrollTop = liveStreamText.scrollHeight
+          }
+        }
+
+        recognition.onerror = (e) => {
+          console.warn('Speech recognition notice:', e.error)
+        }
+
+        recognition.start()
+      } catch (e) {
+        console.warn('Speech recognition setup error:', e)
+      }
+    } else {
+      // Periodic slice streamer (for tab audio / fallback)
+      startPeriodicSliceStream()
+    }
+  }
+
+  // Periodic Slices for Tab Audio streaming
+  function startPeriodicSliceStream() {
+    let accumulatedSliceChunks = []
+    let sliceRecorder = null
+
+    function recordNextSlice() {
+      if (!mediaStream || mediaStream.getAudioTracks().length === 0) return
+
+      try {
+        accumulatedSliceChunks = []
+        sliceRecorder = new MediaRecorder(mediaStream, { mimeType: 'audio/webm' })
+        sliceRecorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) accumulatedSliceChunks.push(e.data)
+        }
+        sliceRecorder.onstop = async () => {
+          if (accumulatedSliceChunks.length === 0) return
+          const sliceBlob = new Blob(accumulatedSliceChunks, { type: 'audio/webm' })
+          try {
+            const res = await fetch('/api/transcribe?filename=slice.webm', {
+              method: 'POST',
+              headers: { 'Content-Type': 'audio/webm' },
+              body: sliceBlob,
+            })
+            if (res.ok) {
+              const data = await res.json()
+              const text = (data.text || '').trim()
+              if (text && text !== '.') {
+                liveFinalText += (liveFinalText ? ' ' : '') + text
+                liveStreamText.textContent = liveFinalText
+                liveStreamText.scrollTop = liveStreamText.scrollHeight
+              }
+            }
+          } catch {}
+        }
+        sliceRecorder.start()
+
+        // Stop slice after 6 seconds and send
+        setTimeout(() => {
+          if (sliceRecorder && sliceRecorder.state === 'recording') {
+            sliceRecorder.stop()
+          }
+        }, 5800)
+      } catch {}
+    }
+
+    // Trigger slice every 6.5 seconds
+    recordNextSlice()
+    tabSliceInterval = setInterval(recordNextSlice, 6500)
+  }
+
+  function stopLiveTranscriptStream() {
+    if (recognition) {
+      try { recognition.stop() } catch {}
+      recognition = null
+    }
+    if (tabSliceInterval) {
+      clearInterval(tabSliceInterval)
+      tabSliceInterval = null
+    }
+  }
+
   async function stopMeeting() {
     if (!mediaRecorder || mediaRecorder.state === 'inactive') return
 
     stopTimer()
+    stopLiveTranscriptStream()
     teardownWaveform()
+
     setState('loading')
-    loadingText.textContent = 'Transcribing meeting speech with Groq Whisper...'
+    loadingText.textContent = 'Finalizing audio and generating Minutes of Meeting...'
 
     return new Promise((resolve) => {
       mediaRecorder.onstop = async () => {
@@ -174,9 +294,9 @@
     })
   }
 
-  // Audio Pipeline: STT -> MoM
+  // Audio Pipeline: Whisper STT -> MoM
   async function processAudio(audioBlob) {
-    loadingText.textContent = 'Transcribing audio speech with Groq Whisper...'
+    loadingText.textContent = 'Transcribing meeting speech with Groq Whisper...'
 
     const ext = audioBlob.type.includes('mp4') ? 'mp4' : 'webm'
     const res = await fetch(`/api/transcribe?filename=recording.${ext}`, {
@@ -191,7 +311,11 @@
     }
 
     const data = await res.json()
-    const transcript = (data.text || '').trim()
+    // Prefer high-accuracy Whisper transcript, fallback to live streamed text if empty
+    let transcript = (data.text || '').trim()
+    if (!transcript && liveFinalText.trim()) {
+      transcript = liveFinalText.trim()
+    }
 
     transcriptText.value = transcript
 
@@ -216,7 +340,7 @@
     setState('loading')
     const provider = aiModel.value
     const providerLabel = provider === 'gemini' ? 'Gemini 3.6 Flash' : 'Groq Llama 3.3'
-    loadingText.textContent = `Generating Minutes of Meeting using ${providerLabel}...`
+    loadingText.textContent = `Extracting decisions and action items with ${providerLabel}...`
 
     try {
       const res = await fetch('/api/mom', {
@@ -242,7 +366,7 @@
     }
   }
 
-  // Render MoM in Clean Blocks
+  // Render MoM
   function renderMoM(rawText) {
     const summaryMatch = rawText.match(/===SUMMARY===([\s\S]*?)(?====DECISIONS===|===ACTION ITEMS===|===TRANSCRIPT===|$)/i)
     const decisionsMatch = rawText.match(/===DECISIONS===([\s\S]*?)(?====ACTION ITEMS===|===TRANSCRIPT===|$)/i)
@@ -352,7 +476,7 @@
 
         ctx.clearRect(0, 0, width, height)
 
-        const barCount = 24
+        const barCount = 28
         const barWidth = width / barCount - 3
 
         for (let i = 0; i < barCount; i++) {
@@ -361,7 +485,7 @@
           const x = i * (barWidth + 3)
           const y = height - barHeight - 2
 
-          ctx.fillStyle = '#6366f1'
+          ctx.fillStyle = '#d97757'
           ctx.beginPath()
           ctx.roundRect(x, y, barWidth, barHeight, [2, 2, 0, 0])
           ctx.fill()
