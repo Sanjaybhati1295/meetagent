@@ -1823,6 +1823,17 @@ body {
   cursor: pointer;
 }
 
+.task-owner-pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: var(--brand-primary-light);
+  color: var(--brand-primary);
+  border: 1px solid var(--brand-primary-border);
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
 /* Transcript Pane */
 .transcript-meta-bar {
   display: flex;

@@ -1012,7 +1012,7 @@
     const decisions = extractDecisions(rawMarkdown)
     const actions = extractActions(rawMarkdown)
 
-    summaryEl.innerHTML = `<p>${escapeHtml(summary)}</p>`
+    summaryEl.innerHTML = `<p>${escapeHtml(summary || 'Meeting overview completed.')}</p>`
 
     if (decisions.length > 0) {
       decisionsEl.innerHTML = decisions.map((d) => `<li>${escapeHtml(d)}</li>`).join('')
@@ -1021,43 +1021,100 @@
     }
 
     if (actions.length > 0) {
-      actionsEl.innerHTML = actions.map((a) => `
-        <div class="action-task-item">
-          <input type="checkbox">
-          <span>${escapeHtml(a)}</span>
-        </div>`).join('')
+      actionsEl.innerHTML = actions.map((a) => {
+        const match = a.match(/^\[?([A-Za-z0-9\s._-]+)\]?:\s*(.+)$/)
+        if (match) {
+          const owner = match[1].trim()
+          const task = match[2].trim()
+          return `
+            <div class="action-task-item">
+              <input type="checkbox">
+              <span class="task-owner-pill">${escapeHtml(owner)}</span>
+              <span>${escapeHtml(task)}</span>
+            </div>`
+        }
+        return `
+          <div class="action-task-item">
+            <input type="checkbox">
+            <span>${escapeHtml(a)}</span>
+          </div>`
+      }).join('')
     } else {
       actionsEl.innerHTML = '<div class="empty-task">No action items recorded.</div>'
     }
   }
 
+  function cleanParagraph(text) {
+    if (!text) return ''
+    return text
+      .replace(/^[#*=\-\s]+/gm, '')
+      .replace(/[#*=\-\s]+$/gm, '')
+      .trim()
+  }
+
+  function extractListLines(chunk) {
+    if (!chunk) return []
+    return chunk
+      .split('\n')
+      .map((l) => l.replace(/^[*\s\-•\d.]+|\[[ xX]\]/g, '').trim())
+      .filter((l) => l.length > 2 && !/^none(\s*recorded|\s*explicitly)?\.?$/i.test(l))
+  }
+
   function extractExecutiveSummary(md) {
-    const match = md.match(/###?\s*Executive Summary([\s\S]*?)(?=###?\s*Key Decisions|###?\s*Action Items|$)/i)
-    if (match && match[1].trim()) {
-      return match[1].replace(/^[*\s-]+/gm, '').trim()
+    if (!md) return ''
+    // 1. Tag format: ===SUMMARY=== ... ===DECISIONS===
+    const tagMatch = md.match(/===\s*SUMMARY\s*===([\s\S]*?)(?====\s*DECISIONS|===\s*ACTION|===\s*TRANSCRIPT|$)/i)
+    if (tagMatch && tagMatch[1].trim()) {
+      return cleanParagraph(tagMatch[1])
     }
-    return md.slice(0, 300)
+
+    // 2. Markdown Header format: ### Executive Summary ... ### Key Decisions
+    const headerMatch = md.match(/(?:###?|\*\*)\s*(?:Executive\s+)?Summary:?\s*\**([\s\S]*?)(?=(?:###?|\*\*)\s*(?:Key\s+)?Decisions|(?:###?|\*\*)\s*Action\s+Items|$)/i)
+    if (headerMatch && headerMatch[1].trim()) {
+      return cleanParagraph(headerMatch[1])
+    }
+
+    // 3. Fallback: Take everything before the first decisions or action items heading
+    const beforeSectionMatch = md.match(/^([\s\S]*?)(?=(?:###?|\*\*|===)\s*(?:Key\s+)?Decisions|(?:###?|\*\*|===)\s*Action\s+Items)/i)
+    if (beforeSectionMatch && beforeSectionMatch[1].trim()) {
+      return cleanParagraph(beforeSectionMatch[1])
+    }
+
+    const firstPara = md.split(/\n\s*\n/)[0] || md.slice(0, 300)
+    return cleanParagraph(firstPara)
   }
 
   function extractDecisions(md) {
-    const match = md.match(/###?\s*Key Decisions([\s\S]*?)(?=###?\s*Action Items|###?\s*Executive Summary|$)/i)
-    if (match && match[1].trim()) {
-      return match[1]
-        .split('\n')
-        .map((l) => l.replace(/^[*\s-]+/, '').trim())
-        .filter((l) => l.length > 2)
+    if (!md) return []
+    // 1. Tag format: ===DECISIONS=== ... ===ACTION ITEMS===
+    const tagMatch = md.match(/===\s*DECISIONS\s*===([\s\S]*?)(?====\s*ACTION|===\s*TRANSCRIPT|===\s*SUMMARY|$)/i)
+    if (tagMatch && tagMatch[1].trim()) {
+      return extractListLines(tagMatch[1])
     }
+
+    // 2. Markdown Header format: ### Key Decisions ...
+    const headerMatch = md.match(/(?:###?|\*\*)\s*(?:Key\s+)?Decisions:?\s*\**([\s\S]*?)(?=(?:###?|\*\*)\s*Action\s+Items|(?:###?|\*\*)\s*(?:Executive\s+)?Summary|$)/i)
+    if (headerMatch && headerMatch[1].trim()) {
+      return extractListLines(headerMatch[1])
+    }
+
     return []
   }
 
   function extractActions(md) {
-    const match = md.match(/###?\s*Action Items([\s\S]*?)(?=###?\s*Key Decisions|###?\s*Executive Summary|$)/i)
-    if (match && match[1].trim()) {
-      return match[1]
-        .split('\n')
-        .map((l) => l.replace(/^[*\s-]+/, '').trim())
-        .filter((l) => l.length > 2)
+    if (!md) return []
+    // 1. Tag format: ===ACTION ITEMS=== ...
+    const tagMatch = md.match(/===\s*ACTION\s*ITEMS?\s*===([\s\S]*?)(?====\s*TRANSCRIPT|===\s*SUMMARY|===\s*DECISIONS|$)/i)
+    if (tagMatch && tagMatch[1].trim()) {
+      return extractListLines(tagMatch[1])
     }
+
+    // 2. Markdown Header format: ### Action Items ...
+    const headerMatch = md.match(/(?:###?|\*\*)\s*Action\s*Items?:?\s*\**([\s\S]*?)(?=(?:###?|\*\*)\s*(?:Key\s+)?Decisions|(?:###?|\*\*)\s*(?:Executive\s+)?Summary|$)/i)
+    if (headerMatch && headerMatch[1].trim()) {
+      return extractListLines(headerMatch[1])
+    }
+
     return []
   }
 

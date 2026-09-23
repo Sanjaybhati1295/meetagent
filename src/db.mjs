@@ -8,9 +8,9 @@ import { createClient } from '@supabase/supabase-js'
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const DATA_DIR = join(__dirname, '..', 'data')
 
-export const SUPABASE_URL = process.env.SUPABASE_URL
-export const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY
-export const IS_SUPABASE_CONFIGURED = Boolean(SUPABASE_URL && SUPABASE_KEY)
+const SUPABASE_URL = process.env.SUPABASE_URL
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY
+const IS_SUPABASE_CONFIGURED = Boolean(SUPABASE_URL && SUPABASE_KEY)
 
 let supabase = null
 let localDb = null
@@ -241,9 +241,9 @@ export async function saveMeeting(userId, meeting) {
     word_count: meeting.wordCount || 0,
     transcript: meeting.transcript || '',
     mom_raw: meeting.momRaw || '',
-    summary: typeof meeting.summary === 'string' ? meeting.summary : JSON.stringify(meeting.summary || ''),
-    decisions: typeof meeting.decisions === 'object' ? JSON.stringify(meeting.decisions) : String(meeting.decisions || ''),
-    actions: typeof meeting.actions === 'object' ? JSON.stringify(meeting.actions) : String(meeting.actions || ''),
+    summary: meeting.summary || '',
+    decisions: meeting.decisions || '',
+    actions: meeting.actions || '',
     ai_model: meeting.aiModel || 'groq',
     created_at: now
   }
