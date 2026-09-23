@@ -295,7 +295,7 @@
   }
 
   function renderViewState(isAuthenticated) {
-    if (isAuthenticated) {
+    if (isAuthenticated && state.user) {
       // Show Authenticated Workspace
       el.landingView.classList.add('hidden')
       el.appWorkspace.classList.remove('hidden')
@@ -306,9 +306,9 @@
       el.workspaceNav.classList.remove('hidden')
       el.userNav.classList.remove('hidden')
 
-      const name = state.user.name || state.user.email.split('@')[0]
+      const name = state.user.name || (state.user.email ? state.user.email.split('@')[0] : 'User')
       el.userName.textContent = name
-      el.userAvatar.textContent = name[0].toUpperCase()
+      el.userAvatar.textContent = (name[0] || 'U').toUpperCase()
 
       switchWorkspaceTab('studio')
     } else {
@@ -366,7 +366,7 @@
       })
       const data = await res.json()
 
-      if (!res.ok) {
+      if (!res.ok || !data.user) {
         throw new Error(data.error || 'Login failed')
       }
 
@@ -376,7 +376,7 @@
 
       renderViewState(true)
       closeAuthModal()
-      showToast(`Welcome back, ${data.user.name}!`)
+      showToast(`Welcome back, ${data.user.name || 'User'}!`)
       await loadUserMeetings()
     } catch (err) {
       el.loginError.textContent = err.message
@@ -400,7 +400,7 @@
       })
       const data = await res.json()
 
-      if (!res.ok) {
+      if (!res.ok || !data.user) {
         throw new Error(data.error || 'Registration failed')
       }
 
@@ -410,7 +410,7 @@
 
       renderViewState(true)
       closeAuthModal()
-      showToast(`Account created! Welcome to MeetAgent, ${data.user.name}.`)
+      showToast(`Account created! Welcome to MeetAgent, ${data.user.name || 'User'}.`)
       await loadUserMeetings()
     } catch (err) {
       el.regError.textContent = err.message
