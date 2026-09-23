@@ -3,22 +3,88 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MeetAgent — AI Meeting Notes & Minutes</title>
+  <title>MeetAgent — AI Meeting Intelligence & Minutes</title>
   <link rel="stylesheet" href="/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <!-- Toast alert -->
+  <!-- Toast Notification -->
   <div id="toast" class="toast hidden"></div>
 
-  <!-- Header (Claude Warm Minimalist Style) -->
+  <!-- Auth Modal (Sign In / Register) -->
+  <div id="authModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="auth-tabs">
+          <button id="authTabLogin" class="auth-tab-btn active">Sign In</button>
+          <button id="authTabRegister" class="auth-tab-btn">Create Account</button>
+        </div>
+        <button id="closeAuthModalBtn" class="btn-close" title="Close">✕</button>
+      </div>
+
+      <!-- Sign In Form -->
+      <form id="loginForm" class="auth-form">
+        <div class="form-group">
+          <label for="loginEmail">Email Address</label>
+          <input type="email" id="loginEmail" placeholder="you@company.com" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+        <div id="loginError" class="auth-error hidden"></div>
+        <button type="submit" class="btn btn-primary-full">Sign In</button>
+      </form>
+
+      <!-- Register Form -->
+      <form id="registerForm" class="auth-form hidden">
+        <div class="form-group">
+          <label for="regName">Full Name</label>
+          <input type="text" id="regName" placeholder="Your Name" required autocomplete="name">
+        </div>
+        <div class="form-group">
+          <label for="regEmail">Work Email</label>
+          <input type="email" id="regEmail" placeholder="you@company.com" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="regPassword">Password (Min. 6 chars)</label>
+          <input type="password" id="regPassword" placeholder="••••••••" required minlength="6" autocomplete="new-password">
+        </div>
+        <div id="regError" class="auth-error hidden"></div>
+        <button type="submit" class="btn btn-primary-full">Create Account</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Past Meetings History Drawer -->
+  <div id="historyDrawer" class="drawer-overlay hidden">
+    <div class="drawer-panel">
+      <div class="drawer-header">
+        <div class="drawer-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <h3>My Meeting History</h3>
+        </div>
+        <button id="closeHistoryBtn" class="btn-close">✕</button>
+      </div>
+      
+      <div id="historyList" class="drawer-content">
+        <div class="drawer-empty">Loading meetings...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header -->
   <header class="app-header">
     <div class="header-inner">
       <div class="logo">
-        <div class="logo-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <div class="logo-mark">
+          <!-- Stylized Modern Audio-Check Logo -->
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
             <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
             <line x1="12" x2="12" y1="19" y2="22"/>
@@ -26,12 +92,35 @@
         </div>
         <div>
           <span class="logo-title">MeetAgent</span>
-          <span class="logo-subtitle">Live Meeting Notes & Minutes</span>
+          <span class="logo-subtitle">Intelligent Meeting Copilot</span>
         </div>
       </div>
-      <div class="header-status">
-        <span class="status-dot"></span>
-        <span id="engineStatusText">AI Ready</span>
+
+      <!-- User Nav / Auth Controls -->
+      <div class="header-right">
+        <!-- Logged Out State -->
+        <div id="guestNav" class="nav-auth-box">
+          <button id="openAuthBtn" class="btn btn-sm btn-brand">Sign In / Sign Up</button>
+        </div>
+
+        <!-- Logged In State -->
+        <div id="userNav" class="nav-auth-box hidden">
+          <button id="myMeetingsBtn" class="btn btn-sm btn-secondary" title="View past calls">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <span>My Calls</span>
+            <span id="userMeetingCount" class="count-badge">0</span>
+          </button>
+          
+          <div class="user-pill">
+            <span id="userAvatar" class="avatar-circle">U</span>
+            <span id="userName" class="user-display-name">User</span>
+          </div>
+
+          <button id="logoutBtn" class="btn btn-sm btn-ghost" title="Sign Out">Sign Out</button>
+        </div>
       </div>
     </div>
   </header>
@@ -45,7 +134,7 @@
       <!-- Options Row -->
       <div class="options-row">
         <div class="option-field">
-          <label for="audioSource">Audio Source</label>
+          <label for="audioSource">Audio Input</label>
           <div class="select-wrap">
             <select id="audioSource">
               <option value="mic">🎙️ Microphone (Your Voice)</option>
@@ -55,7 +144,7 @@
         </div>
 
         <div class="option-field">
-          <label for="aiModel">AI Model for MoM</label>
+          <label for="aiModel">MoM Intelligence Engine</label>
           <div class="select-wrap">
             <select id="aiModel">
               <option value="groq">Groq (Llama 3.3 — Instant ~1s)</option>
@@ -80,17 +169,17 @@
           
           <div class="file-upload-hint">
             <span>or</span>
-            <label for="audioFileInput" class="upload-link">upload recorded audio (.mp3, .wav, .webm)</label>
+            <label for="audioFileInput" class="upload-link">upload audio recording (.mp3, .wav, .webm)</label>
             <input type="file" id="audioFileInput" accept="audio/*,.mp3,.wav,.webm,.m4a" style="display: none;">
           </div>
         </div>
 
-        <!-- Recording State (Shows Live Transcript as you speak) -->
+        <!-- Recording State (Shows Live Transcript in real-time) -->
         <div id="recordingState" class="state-view hidden">
           <div class="recording-header">
             <div class="rec-badge">
               <span class="rec-pulse"></span>
-              <span>LIVE RECORDING</span>
+              <span>LIVE MEETING IN PROGRESS</span>
             </div>
             <div class="rec-timer" id="meetingTimer">00:00</div>
           </div>
@@ -98,16 +187,16 @@
           <!-- Waveform Visualizer -->
           <canvas id="waveformCanvas" width="600" height="42"></canvas>
 
-          <!-- LIVE TRANSCRIPT STREAM WINDOW -->
+          <!-- Live Transcript Stream Window -->
           <div class="live-stream-box">
             <div class="live-stream-header">
               <span class="live-stream-title">
-                <span class="live-stream-dot"></span> Live Transcript Stream
+                <span class="live-stream-dot"></span> Live Speech Stream
               </span>
               <span class="live-stream-badge">Listening...</span>
             </div>
             <div id="liveStreamText" class="live-stream-content">
-              Listening... Start speaking into your mic or playing meeting audio, and your words will appear here live in real-time.
+              Listening... Start speaking, and your words will appear here live in real-time.
             </div>
           </div>
 
@@ -164,17 +253,17 @@
       <!-- Tab View 1: Minutes of Meeting (MoM) -->
       <div id="momPane" class="tab-pane active">
         
-        <!-- Summary Block -->
+        <!-- Summary Block (Indigo Brand Accent) -->
         <div class="mom-card summary-card">
-          <div class="card-tag tag-terracotta">Executive Summary</div>
+          <div class="card-tag tag-indigo">Executive Summary</div>
           <div class="card-body" id="summaryContent">
             Meeting summary will appear here.
           </div>
         </div>
 
-        <!-- Decisions Block -->
+        <!-- Decisions Block (Emerald Accent) -->
         <div class="mom-card decisions-card">
-          <div class="card-tag tag-green">Decisions Made</div>
+          <div class="card-tag tag-emerald">Decisions Made</div>
           <div class="card-body">
             <ul id="decisionsList" class="clean-list">
               <li>No decisions recorded.</li>
@@ -182,7 +271,7 @@
           </div>
         </div>
 
-        <!-- Action Items Block -->
+        <!-- Action Items Block (Amber Accent) -->
         <div class="mom-card actions-card">
           <div class="card-tag tag-amber">Action Items & Deliverables</div>
           <div class="card-body">
@@ -207,7 +296,7 @@
         <textarea id="transcriptText" rows="12" placeholder="Full meeting transcript appears here..."></textarea>
 
         <div class="transcript-footer">
-          <span class="hint-text">💡 You can edit this transcript and re-generate the MoM.</span>
+          <span class="hint-text">💡 You can edit this transcript and re-generate the MoM above.</span>
           <button id="rerunMoMBtn" class="btn btn-sm btn-secondary">
             🔄 Re-generate MoM from edited text
           </button>

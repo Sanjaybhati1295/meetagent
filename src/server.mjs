@@ -9,6 +9,16 @@ import {
   generateMoMWithGroq,
   generateMoMWithGemini
 } from './services.mjs'
+import {
+  registerUser,
+  loginUser,
+  getUserByToken,
+  invalidateSession,
+  saveMeeting,
+  getUserMeetings,
+  getMeetingById,
+  deleteMeeting
+} from './db.mjs'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const PUBLIC_DIR = join(__dirname, '..', 'public')
@@ -32,8 +42,8 @@ function sendJson(res, statusCode, data) {
   res.writeHead(statusCode, {
     'Content-Type': 'application/json; charset=utf-8',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   })
   res.end(JSON.stringify(data))
 }
@@ -50,6 +60,17 @@ async function collectRequestBody(req) {
   return Buffer.concat(chunks)
 }
 
+function extractToken(req) {
+  const authHeader = req.headers['authorization'] || ''
+  if (authHeader.startsWith('Bearer ')) {
+    return authHeader.slice(7).trim()
+  }
+  // Check cookie fallback
+  const cookies = req.headers['cookie'] || ''
+  const match = cookies.match(/meetagent_token=([^;]+)/)
+  return match ? match[1] : null
+}
+
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`)
   const pathname = url.pathname
@@ -58,12 +79,16 @@ const server = createServer(async (req, res) => {
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     })
     res.end()
     return
   }
+
+  // --- Auth & Meeting Middleware Helper ---
+  const token = extractToken(req)
+  const user = token ? getUserByToken(token) : null
 
   // --- API Endpoints ---
   if (pathname === '/api/config' && req.method === 'GET') {
@@ -73,6 +98,73 @@ const server = createServer(async (req, res) => {
     })
   }
 
+  // --- Authentication Routes ---
+  if (pathname === '/api/auth/register' && req.method === 'POST') {
+    try {
+      const rawBody = await collectRequestBody(req)
+      const { name, email, password } = JSON.parse(rawBody.toString('utf-8') || '{}')
+      const result = registerUser(name, email, password)
+      return sendJson(res, 201, result)
+    } catch (err) {
+      return sendError(res, 400, err.message)
+    }
+  }
+
+  if (pathname === '/api/auth/login' && req.method === 'POST') {
+    try {
+      const rawBody = await collectRequestBody(req)
+      const { email, password } = JSON.parse(rawBody.toString('utf-8') || '{}')
+      const result = loginUser(email, password)
+      return sendJson(res, 200, result)
+    } catch (err) {
+      return sendError(res, 401, err.message)
+    }
+  }
+
+  if (pathname === '/api/auth/logout' && req.method === 'POST') {
+    if (token) invalidateSession(token)
+    return sendJson(res, 200, { success: true })
+  }
+
+  if (pathname === '/api/auth/me' && req.method === 'GET') {
+    return sendJson(res, 200, { user })
+  }
+
+  // --- Meetings Database Routes ---
+  if (pathname === '/api/meetings' && req.method === 'GET') {
+    if (!user) return sendError(res, 401, 'Please sign in to access your meeting history')
+    const meetings = getUserMeetings(user.id)
+    return sendJson(res, 200, { meetings })
+  }
+
+  if (pathname === '/api/meetings' && req.method === 'POST') {
+    if (!user) return sendError(res, 401, 'Please sign in to save meetings')
+    try {
+      const rawBody = await collectRequestBody(req)
+      const meetingData = JSON.parse(rawBody.toString('utf-8') || '{}')
+      const saved = saveMeeting(user.id, meetingData)
+      return sendJson(res, 201, { meeting: saved })
+    } catch (err) {
+      return sendError(res, 400, err.message)
+    }
+  }
+
+  if (pathname.startsWith('/api/meetings/') && req.method === 'GET') {
+    if (!user) return sendError(res, 401, 'Unauthorized')
+    const meetingId = pathname.replace('/api/meetings/', '')
+    const meeting = getMeetingById(meetingId, user.id)
+    if (!meeting) return sendError(res, 404, 'Meeting not found')
+    return sendJson(res, 200, { meeting })
+  }
+
+  if (pathname.startsWith('/api/meetings/') && req.method === 'DELETE') {
+    if (!user) return sendError(res, 401, 'Unauthorized')
+    const meetingId = pathname.replace('/api/meetings/', '')
+    deleteMeeting(meetingId, user.id)
+    return sendJson(res, 200, { success: true })
+  }
+
+  // --- AI Transcription Route ---
   if (pathname === '/api/transcribe' && req.method === 'POST') {
     try {
       const contentType = req.headers['content-type'] || 'audio/webm'
@@ -102,6 +194,7 @@ const server = createServer(async (req, res) => {
     }
   }
 
+  // --- AI MoM Generation Route ---
   if (pathname === '/api/mom' && req.method === 'POST') {
     try {
       const rawBody = await collectRequestBody(req)
@@ -170,7 +263,8 @@ const server = createServer(async (req, res) => {
 })
 
 server.listen(PORT, () => {
-  console.log(`\n🚀 MeetAgent UI running at: http://localhost:${PORT}`)
+  console.log(`\n🚀 MeetAgent running at: http://localhost:${PORT}`)
+  console.log(`   Database Engine    : SQLite (data/meetagent.db)`)
   console.log(`   Audio STT Provider : Groq Whisper (large-v3-turbo)`)
-  console.log(`   MoM LLM Providers  : Groq (Llama 3.3 / GPT-OSS) & Gemini (3.6-flash)\n`)
+  console.log(`   MoM LLM Providers  : Groq & Gemini\n`)
 })
