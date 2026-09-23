@@ -1,4 +1,5 @@
-// MeetAgent — Professional Enterprise Client Controller with Auth & SQLite Database
+// MeetAgent — Professional Enterprise SaaS Controller
+// High-Reliability Architecture with Supabase Database Persistence & Speech Intelligence
 (() => {
   'use strict'
 
@@ -6,6 +7,7 @@
   const state = {
     user: null,
     token: localStorage.getItem('meetagent_token') || null,
+    activeWorkspaceTab: 'studio', // 'studio' | 'vault'
     mediaStream: null,
     mediaRecorder: null,
     audioChunks: [],
@@ -16,24 +18,42 @@
     animationId: null,
     currentMoMRaw: '',
     currentTranscript: '',
-    activeTab: 'mom',
+    activeStudioResultTab: 'mom',
     recognition: null,
     liveFinalText: '',
-    tabSliceInterval: null,
     meetings: [],
+    selectedPastMeeting: null,
   }
 
   // DOM Elements Cache
   const el = {
-    // Header & Auth
-    openAuthBtn: document.getElementById('openAuthBtn'),
+    // Global Header & Nav
+    brandLogo: document.getElementById('brandLogo'),
+    marketingNav: document.getElementById('marketingNav'),
+    workspaceNav: document.getElementById('workspaceNav'),
+    navStudioBtn: document.getElementById('navStudioBtn'),
+    navVaultBtn: document.getElementById('navVaultBtn'),
+    vaultCountBadge: document.getElementById('vaultCountBadge'),
+
     guestNav: document.getElementById('guestNav'),
+    openLoginBtn: document.getElementById('openLoginBtn'),
+    openRegisterBtn: document.getElementById('openRegisterBtn'),
     userNav: document.getElementById('userNav'),
     userName: document.getElementById('userName'),
     userAvatar: document.getElementById('userAvatar'),
-    userMeetingCount: document.getElementById('userMeetingCount'),
-    myMeetingsBtn: document.getElementById('myMeetingsBtn'),
     logoutBtn: document.getElementById('logoutBtn'),
+
+    // Views
+    landingView: document.getElementById('landingView'),
+    appWorkspace: document.getElementById('appWorkspace'),
+    studioView: document.getElementById('studioView'),
+    vaultView: document.getElementById('vaultView'),
+
+    // Landing CTAs
+    heroGetStartedBtn: document.getElementById('heroGetStartedBtn'),
+    mockupLaunchBtn: document.getElementById('mockupLaunchBtn'),
+    pricingRegisterBtn: document.getElementById('pricingRegisterBtn'),
+    bottomCtaBtn: document.getElementById('bottomCtaBtn'),
 
     // Auth Modal
     authModal: document.getElementById('authModal'),
@@ -49,16 +69,14 @@
     regPassword: document.getElementById('regPassword'),
     loginError: document.getElementById('loginError'),
     regError: document.getElementById('regError'),
+    switchToRegister: document.getElementById('switchToRegister'),
+    switchToLogin: document.getElementById('switchToLogin'),
 
-    // History Drawer
-    historyDrawer: document.getElementById('historyDrawer'),
-    closeHistoryBtn: document.getElementById('closeHistoryBtn'),
-    historyList: document.getElementById('historyList'),
-
-    // Meeting Controls
+    // Meeting Studio Controls
+    meetingTitleInput: document.getElementById('meetingTitleInput'),
+    engineStatusText: document.getElementById('engineStatusText'),
     audioSource: document.getElementById('audioSource'),
     aiModel: document.getElementById('aiModel'),
-    engineStatusText: document.getElementById('engineStatusText'),
 
     idleState: document.getElementById('idleState'),
     recordingState: document.getElementById('recordingState'),
@@ -72,7 +90,7 @@
     waveformCanvas: document.getElementById('waveformCanvas'),
     liveStreamText: document.getElementById('liveStreamText'),
 
-    // Results Section
+    // Studio Results
     resultsSection: document.getElementById('resultsSection'),
     tabMoMBtn: document.getElementById('tabMoMBtn'),
     tabTranscriptBtn: document.getElementById('tabTranscriptBtn'),
@@ -90,17 +108,53 @@
 
     copyBtn: document.getElementById('copyBtn'),
     downloadBtn: document.getElementById('downloadBtn'),
+    saveVaultBtn: document.getElementById('saveVaultBtn'),
     rerunMoMBtn: document.getElementById('rerunMoMBtn'),
+
+    // Vault View
+    vaultSearchInput: document.getElementById('vaultSearchInput'),
+    vaultNewMeetingBtn: document.getElementById('vaultNewMeetingBtn'),
+    emptyStartBtn: document.getElementById('emptyStartBtn'),
+    vaultMeetingsGrid: document.getElementById('vaultMeetingsGrid'),
+
+    // Past Meeting Detail Modal
+    meetingDetailModal: document.getElementById('meetingDetailModal'),
+    closeDetailModalBtn: document.getElementById('closeDetailModalBtn'),
+    modalMeetingTitle: document.getElementById('modalMeetingTitle'),
+    modalMeetingMeta: document.getElementById('modalMeetingMeta'),
+    modalCopyBtn: document.getElementById('modalCopyBtn'),
+    modalDownloadBtn: document.getElementById('modalDownloadBtn'),
+    modalTabMoMBtn: document.getElementById('modalTabMoMBtn'),
+    modalTabTranscriptBtn: document.getElementById('modalTabTranscriptBtn'),
+    modalMoMPane: document.getElementById('modalMoMPane'),
+    modalTranscriptPane: document.getElementById('modalTranscriptPane'),
+    modalSummaryContent: document.getElementById('modalSummaryContent'),
+    modalDecisionsList: document.getElementById('modalDecisionsList'),
+    modalActionsList: document.getElementById('modalActionsList'),
+    modalTranscriptMeta: document.getElementById('modalTranscriptMeta'),
+    modalTranscriptText: document.getElementById('modalTranscriptText'),
+
     toast: document.getElementById('toast'),
   }
 
   // ==========================================================================
-  // Initialization
+  // Application Lifecycle & Boot
   // ==========================================================================
   async function init() {
     setupEventListeners()
-    await checkAuthStatus()
+    setDefaultMeetingTitle()
     await checkEngineHealth()
+    await checkAuthStatus()
+  }
+
+  function setDefaultMeetingTitle() {
+    const today = new Date().toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+    })
+    if (el.meetingTitleInput) {
+      el.meetingTitleInput.value = `Strategy & Roadmap Review — ${today}`
+    }
   }
 
   async function checkEngineHealth() {
@@ -111,56 +165,110 @@
         if (config.groqConfigured && config.geminiConfigured) {
           el.engineStatusText.textContent = 'Groq & Gemini AI Ready'
         } else if (config.groqConfigured) {
-          el.engineStatusText.textContent = 'Groq Whisper Ready'
+          el.engineStatusText.textContent = 'Groq Llama 3.3 Ready'
         }
       }
     } catch {}
   }
 
+  // ==========================================================================
+  // Event Listeners Setup
+  // ==========================================================================
   function setupEventListeners() {
-    // Auth Modal
-    el.openAuthBtn.addEventListener('click', openAuthModal)
+    // Brand Logo Click
+    el.brandLogo.addEventListener('click', () => {
+      if (state.user) {
+        switchWorkspaceTab('studio')
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+    })
+
+    // Guest Auth Triggers
+    el.openLoginBtn.addEventListener('click', () => openAuthModal('login'))
+    el.openRegisterBtn.addEventListener('click', () => openAuthModal('register'))
+    if (el.heroGetStartedBtn) el.heroGetStartedBtn.addEventListener('click', () => openAuthModal('register'))
+    if (el.mockupLaunchBtn) el.mockupLaunchBtn.addEventListener('click', () => openAuthModal('register'))
+    if (el.pricingRegisterBtn) el.pricingRegisterBtn.addEventListener('click', () => openAuthModal('register'))
+    if (el.bottomCtaBtn) el.bottomCtaBtn.addEventListener('click', () => openAuthModal('register'))
+
+    // Auth Modal Controls
     el.closeAuthModalBtn.addEventListener('click', closeAuthModal)
     el.authModal.addEventListener('click', (e) => {
       if (e.target === el.authModal) closeAuthModal()
     })
     el.authTabLogin.addEventListener('click', () => switchAuthTab('login'))
     el.authTabRegister.addEventListener('click', () => switchAuthTab('register'))
+    if (el.switchToRegister) {
+      el.switchToRegister.addEventListener('click', (e) => {
+        e.preventDefault()
+        switchAuthTab('register')
+      })
+    }
+    if (el.switchToLogin) {
+      el.switchToLogin.addEventListener('click', (e) => {
+        e.preventDefault()
+        switchAuthTab('login')
+      })
+    }
 
     el.loginForm.addEventListener('submit', handleLogin)
     el.registerForm.addEventListener('submit', handleRegister)
     el.logoutBtn.addEventListener('click', handleLogout)
 
-    // History Drawer
-    el.myMeetingsBtn.addEventListener('click', openHistoryDrawer)
-    el.closeHistoryBtn.addEventListener('click', closeHistoryDrawer)
-    el.historyDrawer.addEventListener('click', (e) => {
-      if (e.target === el.historyDrawer) closeHistoryDrawer()
-    })
+    // Workspace Navigation Tabs
+    el.navStudioBtn.addEventListener('click', () => switchWorkspaceTab('studio'))
+    el.navVaultBtn.addEventListener('click', () => switchWorkspaceTab('vault'))
+    if (el.vaultNewMeetingBtn) {
+      el.vaultNewMeetingBtn.addEventListener('click', () => {
+        switchWorkspaceTab('studio')
+        el.meetingTitleInput.focus()
+      })
+    }
+    if (el.emptyStartBtn) {
+      el.emptyStartBtn.addEventListener('click', () => {
+        switchWorkspaceTab('studio')
+        el.meetingTitleInput.focus()
+      })
+    }
 
-    // Meeting Actions
+    // Vault Search Filter
+    if (el.vaultSearchInput) {
+      el.vaultSearchInput.addEventListener('input', handleVaultSearch)
+    }
+
+    // Meeting Studio Controls
     el.startBtn.addEventListener('click', startMeeting)
     el.stopBtn.addEventListener('click', stopMeeting)
     el.audioFileInput.addEventListener('change', handleFileUpload)
 
-    // Tabs & Tools
-    el.tabMoMBtn.addEventListener('click', () => switchTab('mom'))
-    el.tabTranscriptBtn.addEventListener('click', () => switchTab('transcript'))
-    el.copyBtn.addEventListener('click', copyActiveContent)
-    el.downloadBtn.addEventListener('click', downloadMarkdown)
-
+    // Studio Results Tabs & Actions
+    el.tabMoMBtn.addEventListener('click', () => switchStudioResultTab('mom'))
+    el.tabTranscriptBtn.addEventListener('click', () => switchStudioResultTab('transcript'))
+    el.copyBtn.addEventListener('click', () => copyActiveContent(state.currentMoMRaw, state.currentTranscript, state.activeStudioResultTab))
+    el.downloadBtn.addEventListener('click', () => downloadMarkdown(state.currentMoMRaw, state.currentTranscript, el.meetingTitleInput.value))
     el.rerunMoMBtn.addEventListener('click', () => {
       const text = el.transcriptText.value.trim()
       if (text) generateMoM(text)
     })
+
+    // Detail Modal Controls
+    el.closeDetailModalBtn.addEventListener('click', closeDetailModal)
+    el.meetingDetailModal.addEventListener('click', (e) => {
+      if (e.target === el.meetingDetailModal) closeDetailModal()
+    })
+    el.modalTabMoMBtn.addEventListener('click', () => switchModalTab('mom'))
+    el.modalTabTranscriptBtn.addEventListener('click', () => switchModalTab('transcript'))
+    el.modalCopyBtn.addEventListener('click', copyModalContent)
+    el.modalDownloadBtn.addEventListener('click', downloadModalContent)
   }
 
   // ==========================================================================
-  // User Authentication Logic
+  // Authentication & Session Management
   // ==========================================================================
   async function checkAuthStatus() {
     if (!state.token) {
-      renderAuthState(null)
+      renderViewState(false)
       return
     }
 
@@ -172,37 +280,55 @@
         const data = await res.json()
         if (data.user) {
           state.user = data.user
-          renderAuthState(data.user)
+          renderViewState(true)
           await loadUserMeetings()
           return
         }
       }
     } catch {}
 
-    // Invalid token
+    // Invalid or expired token
     localStorage.removeItem('meetagent_token')
     state.token = null
     state.user = null
-    renderAuthState(null)
+    renderViewState(false)
   }
 
-  function renderAuthState(user) {
-    if (user) {
+  function renderViewState(isAuthenticated) {
+    if (isAuthenticated) {
+      // Show Authenticated Workspace
+      el.landingView.classList.add('hidden')
+      el.appWorkspace.classList.remove('hidden')
+
+      // Switch Navbars
+      el.marketingNav.classList.add('hidden')
       el.guestNav.classList.add('hidden')
+      el.workspaceNav.classList.remove('hidden')
       el.userNav.classList.remove('hidden')
-      el.userName.textContent = user.name || user.email.split('@')[0]
-      el.userAvatar.textContent = (user.name || user.email)[0].toUpperCase()
+
+      const name = state.user.name || state.user.email.split('@')[0]
+      el.userName.textContent = name
+      el.userAvatar.textContent = name[0].toUpperCase()
+
+      switchWorkspaceTab('studio')
     } else {
+      // Show Public Marketing Website
+      el.landingView.classList.remove('hidden')
+      el.appWorkspace.classList.add('hidden')
+
+      // Switch Navbars
+      el.marketingNav.classList.remove('hidden')
       el.guestNav.classList.remove('hidden')
+      el.workspaceNav.classList.add('hidden')
       el.userNav.classList.add('hidden')
     }
   }
 
-  function openAuthModal() {
+  function openAuthModal(defaultTab = 'login') {
     el.loginError.classList.add('hidden')
     el.regError.classList.add('hidden')
     el.authModal.classList.remove('hidden')
-    switchAuthTab('login')
+    switchAuthTab(defaultTab)
   }
 
   function closeAuthModal() {
@@ -248,7 +374,7 @@
       state.user = data.user
       localStorage.setItem('meetagent_token', data.token)
 
-      renderAuthState(data.user)
+      renderViewState(true)
       closeAuthModal()
       showToast(`Welcome back, ${data.user.name}!`)
       await loadUserMeetings()
@@ -282,9 +408,9 @@
       state.user = data.user
       localStorage.setItem('meetagent_token', data.token)
 
-      renderAuthState(data.user)
+      renderViewState(true)
       closeAuthModal()
-      showToast(`Account created successfully! Welcome, ${data.user.name}.`)
+      showToast(`Account created! Welcome to MeetAgent, ${data.user.name}.`)
       await loadUserMeetings()
     } catch (err) {
       el.regError.textContent = err.message
@@ -306,12 +432,32 @@
     state.token = null
     state.user = null
     state.meetings = []
-    renderAuthState(null)
+    renderViewState(false)
     showToast('Signed out successfully.')
   }
 
   // ==========================================================================
-  // Meeting History Database Operations
+  // Workspace Navigation (Studio vs Vault)
+  // ==========================================================================
+  function switchWorkspaceTab(tab) {
+    state.activeWorkspaceTab = tab
+
+    if (tab === 'studio') {
+      el.navStudioBtn.classList.add('active')
+      el.navVaultBtn.classList.remove('active')
+      el.studioView.classList.remove('hidden')
+      el.vaultView.classList.add('hidden')
+    } else {
+      el.navVaultBtn.classList.add('active')
+      el.navStudioBtn.classList.remove('active')
+      el.vaultView.classList.remove('hidden')
+      el.studioView.classList.add('hidden')
+      renderVaultGrid(state.meetings)
+    }
+  }
+
+  // ==========================================================================
+  // Meeting Vault Database Operations
   // ==========================================================================
   async function loadUserMeetings() {
     if (!state.token) return
@@ -323,102 +469,196 @@
       if (res.ok) {
         const data = await res.json()
         state.meetings = data.meetings || []
-        el.userMeetingCount.textContent = state.meetings.length
-        renderHistoryList(state.meetings)
+        el.vaultCountBadge.textContent = state.meetings.length
+        renderVaultGrid(state.meetings)
       }
     } catch (err) {
-      console.warn('Could not load meetings:', err)
+      console.warn('Failed to load meetings:', err)
     }
   }
 
-  function openHistoryDrawer() {
-    el.historyDrawer.classList.remove('hidden')
-    loadUserMeetings()
-  }
-
-  function closeHistoryDrawer() {
-    el.historyDrawer.classList.add('hidden')
-  }
-
-  function renderHistoryList(meetings) {
-    if (!meetings || meetings.length === 0) {
-      el.historyList.innerHTML = `
-        <div class="drawer-empty">
-          <p>No meeting calls saved yet.</p>
-          <p style="font-size:0.75rem; margin-top:4px;">Record a meeting and it will be stored in your account history.</p>
-        </div>`
+  function handleVaultSearch(e) {
+    const query = e.target.value.toLowerCase().trim()
+    if (!query) {
+      renderVaultGrid(state.meetings)
       return
     }
 
-    el.historyList.innerHTML = meetings.map((m) => {
+    const filtered = state.meetings.filter((m) => {
+      const titleMatch = (m.title || '').toLowerCase().includes(query)
+      const summaryMatch = (m.summary || '').toLowerCase().includes(query)
+      const transcriptMatch = (m.transcript || '').toLowerCase().includes(query)
+      return titleMatch || summaryMatch || transcriptMatch
+    })
+
+    renderVaultGrid(filtered)
+  }
+
+  function renderVaultGrid(meetings) {
+    if (!meetings || meetings.length === 0) {
+      el.vaultMeetingsGrid.innerHTML = `
+        <div class="vault-empty">
+          <div class="empty-icon">📁</div>
+          <h3>No meetings recorded yet</h3>
+          <p>Launch your studio to record a call or upload audio. Your transcription and structured MoM will be preserved in Supabase automatically.</p>
+          <button id="emptyStartMeetingBtn" class="btn btn-brand">Launch Meeting Studio</button>
+        </div>`
+
+      const emptyBtn = document.getElementById('emptyStartMeetingBtn')
+      if (emptyBtn) {
+        emptyBtn.addEventListener('click', () => {
+          switchWorkspaceTab('studio')
+          el.meetingTitleInput.focus()
+        })
+      }
+      return
+    }
+
+    el.vaultMeetingsGrid.innerHTML = meetings.map((m) => {
       const date = new Date(m.created_at)
-      const dateStr = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-      const duration = m.duration_sec ? `${Math.round(m.duration_sec)}s` : ''
-      const summaryPreview = m.summary ? m.summary.slice(0, 100) + '...' : 'Meeting completed'
+      const dateStr = date.toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+      const duration = m.duration_sec ? `${Math.round(m.duration_sec)}s duration` : 'Audio session'
+      const summaryPreview = m.summary ? m.summary.slice(0, 150) + '...' : 'Meeting transcript and minutes synthesized successfully.'
 
       return `
-        <div class="meeting-history-item" data-id="${m.id}">
-          <div class="m-item-header">
-            <span class="m-item-title">${escapeHtml(m.title)}</span>
-            <button class="btn-delete-meeting" data-delete-id="${m.id}" title="Delete meeting">✕</button>
+        <div class="vault-card" data-id="${m.id}">
+          <div class="v-card-header">
+            <h4 class="v-card-title">${escapeHtml(m.title)}</h4>
+            <span class="v-badge-model">${(m.ai_model || 'GROQ').toUpperCase()}</span>
           </div>
-          <div class="m-item-meta">
-            <span>${dateStr}</span>
-            ${duration ? `<span>• ${duration}</span>` : ''}
-            <span>• ${m.word_count || 0} words</span>
-            <span>• ${m.ai_model.toUpperCase()}</span>
+          <div class="v-card-meta">
+            <span>📅 ${dateStr}</span>
+            <span>• ⏱️ ${duration}</span>
+            <span>• 📝 ${m.word_count || 0} words</span>
           </div>
-          <div class="m-item-summary">${escapeHtml(summaryPreview)}</div>
+          <p class="v-card-summary">${escapeHtml(summaryPreview)}</p>
+          <div class="v-card-footer">
+            <button class="btn btn-sm btn-secondary btn-open-call" data-open-id="${m.id}">
+              <span>View Executive MoM</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </button>
+            <button class="btn-delete-meeting" data-delete-id="${m.id}" title="Delete meeting from vault">
+              🗑️ Delete
+            </button>
+          </div>
         </div>`
     }).join('')
 
-    // Attach click listeners to load past meeting
-    el.historyList.querySelectorAll('.meeting-history-item').forEach((item) => {
-      item.addEventListener('click', async (e) => {
-        if (e.target.closest('.btn-delete-meeting')) return
-        const id = item.dataset.id
-        await loadPastMeeting(id)
+    // Open past meeting click listeners
+    el.vaultMeetingsGrid.querySelectorAll('.btn-open-call').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation()
+        const id = btn.dataset.openId
+        openPastMeetingDetail(id)
       })
     })
 
-    // Attach delete listeners
-    el.historyList.querySelectorAll('.btn-delete-meeting').forEach((btn) => {
+    // Click whole card to open
+    el.vaultMeetingsGrid.querySelectorAll('.vault-card').forEach((card) => {
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.btn-delete-meeting')) return
+        const id = card.dataset.id
+        openPastMeetingDetail(id)
+      })
+    })
+
+    // Delete listeners
+    el.vaultMeetingsGrid.querySelectorAll('.btn-delete-meeting').forEach((btn) => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation()
         const id = btn.dataset.deleteId
-        if (confirm('Are you sure you want to delete this meeting call?')) {
+        if (confirm('Are you sure you want to permanently delete this meeting from your Supabase vault?')) {
           await deletePastMeeting(id)
         }
       })
     })
   }
 
-  async function loadPastMeeting(id) {
+  async function openPastMeetingDetail(id) {
     try {
       const res = await fetch(`/api/meetings/${id}`, {
         headers: { Authorization: `Bearer ${state.token}` },
       })
-      if (!res.ok) throw new Error('Could not load meeting')
+      if (!res.ok) throw new Error('Could not retrieve meeting')
 
       const data = await res.json()
       const m = data.meeting
+      state.selectedPastMeeting = m
 
-      state.currentTranscript = m.transcript
-      state.currentMoMRaw = m.mom_raw
-      el.transcriptText.value = m.transcript
+      el.modalMeetingTitle.textContent = m.title
+      const date = new Date(m.created_at).toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+      el.modalMeetingMeta.textContent = `${date} • ${m.duration_sec ? Math.round(m.duration_sec) + 's' : ''} • Engine: ${(m.ai_model || 'GROQ').toUpperCase()}`
 
-      el.statWords.textContent = `${m.word_count || 0} words`
-      el.statDuration.textContent = m.duration_sec ? `${m.duration_sec.toFixed(1)}s duration` : 'Past call'
-      el.statSpeed.textContent = `Model: ${m.ai_model.toUpperCase()}`
+      renderParsedMoMToContainer(
+        m.mom_raw,
+        el.modalSummaryContent,
+        el.modalDecisionsList,
+        el.modalActionsList
+      )
 
-      renderMoM(m.mom_raw)
-      el.resultsSection.classList.remove('hidden')
-      switchTab('mom')
-      closeHistoryDrawer()
-      showToast(`Loaded "${m.title}"`)
+      el.modalTranscriptMeta.textContent = `${m.word_count || 0} words • Stored in Supabase Vault`
+      el.modalTranscriptText.value = m.transcript
+
+      switchModalTab('mom')
+      el.meetingDetailModal.classList.remove('hidden')
     } catch (err) {
       alert(err.message)
     }
+  }
+
+  function closeDetailModal() {
+    el.meetingDetailModal.classList.add('hidden')
+    state.selectedPastMeeting = null
+  }
+
+  function switchModalTab(tab) {
+    if (tab === 'mom') {
+      el.modalTabMoMBtn.classList.add('active')
+      el.modalTabTranscriptBtn.classList.remove('active')
+      el.modalMoMPane.classList.remove('hidden')
+      el.modalTranscriptPane.classList.add('hidden')
+    } else {
+      el.modalTabTranscriptBtn.classList.add('active')
+      el.modalTabMoMBtn.classList.remove('active')
+      el.modalTranscriptPane.classList.remove('hidden')
+      el.modalMoMPane.classList.add('hidden')
+    }
+  }
+
+  function copyModalContent() {
+    if (!state.selectedPastMeeting) return
+    const text = state.selectedPastMeeting.mom_raw || state.selectedPastMeeting.transcript
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('Copied to clipboard!')
+    })
+  }
+
+  function downloadModalContent() {
+    if (!state.selectedPastMeeting) return
+    const m = state.selectedPastMeeting
+    const content = `# ${m.title}\n\n## Minutes of Meeting\n\n${m.mom_raw}\n\n---\n\n## Full Transcript\n\n${m.transcript}`
+    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${m.title.replace(/[^a-z0-9_-]/gi, '_')}.md`
+    a.click()
+    URL.revokeObjectURL(url)
+    showToast('Markdown downloaded!')
   }
 
   async function deletePastMeeting(id) {
@@ -428,16 +668,16 @@
         headers: { Authorization: `Bearer ${state.token}` },
       })
       if (res.ok) {
-        showToast('Meeting deleted')
+        showToast('Meeting deleted from Supabase vault.')
         await loadUserMeetings()
       }
     } catch (err) {
-      alert('Failed to delete meeting')
+      alert('Failed to delete meeting.')
     }
   }
 
   async function autoSaveMeetingToDb(meetingData) {
-    if (!state.token) return // Guest user, skips auto-save
+    if (!state.token) return
     try {
       const res = await fetch('/api/meetings', {
         method: 'POST',
@@ -448,446 +688,445 @@
         body: JSON.stringify(meetingData),
       })
       if (res.ok) {
+        showToast('Saved to Supabase Cloud Vault!')
         await loadUserMeetings()
-        showToast('Meeting saved to your account!')
       }
     } catch (err) {
-      console.warn('Could not auto-save meeting:', err)
+      console.warn('Auto-save error:', err)
     }
   }
 
   // ==========================================================================
-  // Meeting Capture & Real-time Live Transcript Stream
+  // Meeting Studio Recording Controller
   // ==========================================================================
   async function startMeeting() {
+    if (!state.user) {
+      openAuthModal('login')
+      showToast('Please sign in to record meetings.')
+      return
+    }
+
     try {
+      const source = el.audioSource.value
       state.audioChunks = []
       state.liveFinalText = ''
       el.liveStreamText.textContent = 'Listening... Start speaking, and your words will appear here live in real-time.'
 
-      const source = el.audioSource.value
-
-      if (source === 'mic') {
-        state.mediaStream = await navigator.mediaDevices.getUserMedia({
-          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-        })
-      } else {
-        const displayStream = await navigator.mediaDevices.getDisplayMedia({
+      if (source === 'display') {
+        state.mediaStream = await navigator.mediaDevices.getDisplayMedia({
           video: true,
-          audio: true,
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: false,
+          },
         })
-        const audioTracks = displayStream.getAudioTracks()
+
+        const audioTracks = state.mediaStream.getAudioTracks()
         if (audioTracks.length === 0) {
-          displayStream.getTracks().forEach((t) => t.stop())
-          showToast('Please check "Share tab audio" in the browser share dialog.')
-          return
+          state.mediaStream.getTracks().forEach((t) => t.stop())
+          throw new Error('No audio detected from shared tab. Please enable "Also share tab audio".')
         }
-        displayStream.getVideoTracks().forEach((t) => t.stop())
-        state.mediaStream = new MediaStream(audioTracks)
+      } else {
+        state.mediaStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+        })
       }
 
-      setupWaveform(state.mediaStream)
+      setupAudioVisualizer(state.mediaStream)
+      startLiveSpeechStream()
 
-      const supportedMimes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4']
-      const mime = supportedMimes.find((m) => MediaRecorder.isTypeSupported(m)) || ''
-      state.mediaRecorder = new MediaRecorder(state.mediaStream, mime ? { mimeType: mime } : undefined)
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : 'audio/webm'
 
+      state.mediaRecorder = new MediaRecorder(state.mediaStream, { mimeType })
       state.mediaRecorder.ondataavailable = (e) => {
-        if (e.data && e.data.size > 0) state.audioChunks.push(e.data)
+        if (e.data && e.data.size > 0) {
+          state.audioChunks.push(e.data)
+        }
       }
       state.mediaRecorder.start(1000)
 
-      startLiveTranscriptStream(source)
-      setState('recording')
       startTimer()
+
+      el.idleState.classList.add('hidden')
+      el.recordingState.classList.remove('hidden')
+      el.resultsSection.classList.add('hidden')
     } catch (err) {
-      alert(`Could not access audio: ${err.message}`)
-      setState('idle')
+      console.error('Audio capture error:', err)
+      alert(err.message || 'Could not access audio device.')
     }
   }
 
-  function startLiveTranscriptStream(source) {
+  function startLiveSpeechStream() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-
-    if (SpeechRecognition && source === 'mic') {
-      try {
-        state.recognition = new SpeechRecognition()
-        state.recognition.continuous = true
-        state.recognition.interimResults = true
-        state.recognition.lang = 'en-US'
-
-        state.recognition.onresult = (event) => {
-          let interim = ''
-          for (let i = event.resultIndex; i < event.results.length; ++i) {
-            if (event.results[i].isFinal) {
-              state.liveFinalText += event.results[i][0].transcript + ' '
-            } else {
-              interim += event.results[i][0].transcript
-            }
-          }
-
-          const combined = (state.liveFinalText + interim).trim()
-          if (combined) {
-            el.liveStreamText.textContent = combined
-            el.liveStreamText.scrollTop = el.liveStreamText.scrollHeight
-          }
-        }
-
-        state.recognition.onerror = () => {}
-        state.recognition.start()
-      } catch (e) {}
-    } else {
-      startPeriodicSliceStream()
-    }
-  }
-
-  function startPeriodicSliceStream() {
-    let accumulatedSlice = []
-    let sliceRec = null
-
-    function recordNextSlice() {
-      if (!state.mediaStream || state.mediaStream.getAudioTracks().length === 0) return
-
-      try {
-        accumulatedSlice = []
-        sliceRec = new MediaRecorder(state.mediaStream, { mimeType: 'audio/webm' })
-        sliceRec.ondataavailable = (e) => {
-          if (e.data && e.data.size > 0) accumulatedSlice.push(e.data)
-        }
-        sliceRec.onstop = async () => {
-          if (accumulatedSlice.length === 0) return
-          const sliceBlob = new Blob(accumulatedSlice, { type: 'audio/webm' })
-          try {
-            const res = await fetch('/api/transcribe?filename=slice.webm', {
-              method: 'POST',
-              headers: { 'Content-Type': 'audio/webm' },
-              body: sliceBlob,
-            })
-            if (res.ok) {
-              const data = await res.json()
-              const text = (data.text || '').trim()
-              if (text && text !== '.') {
-                state.liveFinalText += (state.liveFinalText ? ' ' : '') + text
-                el.liveStreamText.textContent = state.liveFinalText
-                el.liveStreamText.scrollTop = el.liveStreamText.scrollHeight
-              }
-            }
-          } catch {}
-        }
-        sliceRec.start()
-        setTimeout(() => {
-          if (sliceRec && sliceRec.state === 'recording') sliceRec.stop()
-        }, 5800)
-      } catch {}
+    if (!SpeechRecognition) {
+      el.liveStreamText.innerHTML = '<em>Real-time speech streaming active via Whisper STT buffer.</em>'
+      return
     }
 
-    recordNextSlice()
-    state.tabSliceInterval = setInterval(recordNextSlice, 6500)
+    try {
+      state.recognition = new SpeechRecognition()
+      state.recognition.continuous = true
+      state.recognition.interimResults = true
+      state.recognition.lang = 'en-US'
+
+      state.recognition.onresult = (event) => {
+        let interimText = ''
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            state.liveFinalText += event.results[i][0].transcript + ' '
+          } else {
+            interimText += event.results[i][0].transcript
+          }
+        }
+        el.liveStreamText.innerHTML = `
+          <span>${escapeHtml(state.liveFinalText)}</span>
+          <span style="color:var(--brand-primary); font-weight:600;">${escapeHtml(interimText)}</span>
+        `
+        el.liveStreamText.scrollTop = el.liveStreamText.scrollHeight
+      }
+
+      state.recognition.onerror = () => {}
+      state.recognition.onend = () => {
+        if (state.mediaRecorder && state.mediaRecorder.state === 'recording') {
+          try { state.recognition.start() } catch {}
+        }
+      }
+
+      state.recognition.start()
+    } catch {}
   }
 
-  function stopLiveTranscriptStream() {
+  function stopMeeting() {
+    stopTimer()
     if (state.recognition) {
       try { state.recognition.stop() } catch {}
       state.recognition = null
     }
-    if (state.tabSliceInterval) {
-      clearInterval(state.tabSliceInterval)
-      state.tabSliceInterval = null
-    }
-  }
 
-  async function stopMeeting() {
-    if (!state.mediaRecorder || state.mediaRecorder.state === 'inactive') return
-
-    stopTimer()
-    stopLiveTranscriptStream()
-    teardownWaveform()
-
-    setState('loading')
-    el.loadingText.textContent = 'Finalizing audio and generating Minutes of Meeting...'
-
-    return new Promise((resolve) => {
+    if (state.mediaRecorder && state.mediaRecorder.state !== 'inactive') {
       state.mediaRecorder.onstop = async () => {
-        if (state.mediaStream) {
-          state.mediaStream.getTracks().forEach((t) => t.stop())
-          state.mediaStream = null
-        }
-
-        const mime = state.mediaRecorder.mimeType || 'audio/webm'
-        const audioBlob = new Blob(state.audioChunks, { type: mime })
-
-        try {
-          await processAudio(audioBlob)
-        } catch (err) {
-          alert(`Error processing audio: ${err.message}`)
-          setState('idle')
-        }
-        resolve()
+        cleanupStream()
+        const audioBlob = new Blob(state.audioChunks, { type: 'audio/webm' })
+        await processMeetingAudio(audioBlob)
       }
       state.mediaRecorder.stop()
-    })
-  }
+    } else {
+      cleanupStream()
+    }
 
-  // Audio Pipeline: Whisper STT -> MoM -> Auto-save
-  async function processAudio(audioBlob) {
+    el.recordingState.classList.add('hidden')
+    el.loadingState.classList.remove('hidden')
     el.loadingText.textContent = 'Transcribing meeting speech with Groq Whisper...'
-
-    const ext = audioBlob.type.includes('mp4') ? 'mp4' : 'webm'
-    const res = await fetch(`/api/transcribe?filename=recording.${ext}`, {
-      method: 'POST',
-      headers: { 'Content-Type': audioBlob.type },
-      body: audioBlob,
-    })
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}))
-      throw new Error(err.error || `Transcription failed with HTTP ${res.status}`)
-    }
-
-    const data = await res.json()
-    let transcript = (data.text || '').trim()
-    if (!transcript && state.liveFinalText.trim()) {
-      transcript = state.liveFinalText.trim()
-    }
-
-    state.currentTranscript = transcript
-    el.transcriptText.value = transcript
-
-    const words = transcript.split(/\s+/).filter(Boolean).length
-    el.statWords.textContent = `${words} words`
-    el.statDuration.textContent = data.durationSec ? `${data.durationSec.toFixed(1)}s duration` : '0s'
-    el.statSpeed.textContent = `STT speed: ${(data.latencyMs / 1000).toFixed(2)}s`
-
-    el.resultsSection.classList.remove('hidden')
-
-    if (!transcript) {
-      setState('idle')
-      el.summaryContent.textContent = 'No speech detected in this recording.'
-      return
-    }
-
-    await generateMoM(transcript, {
-      durationSec: data.durationSec || 0,
-      wordCount: words,
-      audioSource: el.audioSource.value,
-    })
   }
 
-  // MoM Generation
-  async function generateMoM(transcript, meta = {}) {
-    setState('loading')
-    const provider = el.aiModel.value
-    const providerLabel = provider === 'gemini' ? 'Gemini 3.6 Flash' : 'Groq Llama 3.3'
-    el.loadingText.textContent = `Extracting decisions and action items with ${providerLabel}...`
+  function cleanupStream() {
+    if (state.mediaStream) {
+      state.mediaStream.getTracks().forEach((track) => track.stop())
+      state.mediaStream = null
+    }
+    if (state.audioContext) {
+      state.audioContext.close()
+      state.audioContext = null
+    }
+    if (state.animationId) {
+      cancelAnimationFrame(state.animationId)
+      state.animationId = null
+    }
+  }
 
+  async function processMeetingAudio(audioBlob) {
     try {
-      const res = await fetch('/api/mom', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transcript, provider }),
-      })
+      const startTime = performance.now()
+      const title = el.meetingTitleInput.value.trim() || 'Executive Sync'
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || `MoM failed with HTTP ${res.status}`)
-      }
-
-      const data = await res.json()
-      state.currentMoMRaw = data.mom
-      const parsed = renderMoM(data.mom)
-      switchTab('mom')
-      showToast('Minutes of Meeting generated!')
-
-      // Auto-save meeting if user is authenticated
-      if (state.token) {
-        await autoSaveMeetingToDb({
-          audioSource: meta.audioSource || el.audioSource.value,
-          durationSec: meta.durationSec || 0,
-          wordCount: meta.wordCount || transcript.split(/\s+/).filter(Boolean).length,
-          transcript,
-          momRaw: data.mom,
-          summary: parsed.summary,
-          decisions: parsed.decisions,
-          actions: parsed.actions,
-          aiModel: provider,
+      // Step 1: STT
+      let transcript = ''
+      try {
+        const res = await fetch('/api/transcribe?filename=meeting.webm', {
+          method: 'POST',
+          headers: { 'Content-Type': audioBlob.type || 'audio/webm' },
+          body: audioBlob,
         })
+        if (res.ok) {
+          const data = await res.json()
+          transcript = data.text || ''
+        }
+      } catch (err) {
+        console.warn('Backend STT failed, falling back to live transcript:', err)
       }
+
+      if (!transcript.trim()) {
+        transcript = state.liveFinalText.trim()
+      }
+
+      if (!transcript.trim()) {
+        throw new Error('No speech detected in this meeting recording.')
+      }
+
+      const sttSpeed = ((performance.now() - startTime) / 1000).toFixed(1)
+      state.currentTranscript = transcript
+      el.transcriptText.value = transcript
+
+      const wordCount = transcript.trim().split(/\s+/).length
+      const durationSec = (performance.now() - state.startTime) / 1000
+
+      el.statWords.textContent = `${wordCount} words`
+      el.statDuration.textContent = `${durationSec.toFixed(1)}s duration`
+      el.statSpeed.textContent = `STT speed: ${sttSpeed}s`
+
+      // Step 2: MoM Generation
+      el.loadingText.textContent = 'Synthesizing Minutes of Meeting with AI...'
+      await generateMoM(transcript, durationSec, wordCount, title)
     } catch (err) {
-      alert(`Could not generate MoM: ${err.message}`)
-    } finally {
-      setState('idle')
+      console.error(err)
+      alert(err.message || 'Failed to process meeting.')
+      el.loadingState.classList.add('hidden')
+      el.idleState.classList.remove('hidden')
     }
   }
 
-  // Render MoM
-  function renderMoM(rawText) {
-    const summaryMatch = rawText.match(/===SUMMARY===([\s\S]*?)(?====DECISIONS===|===ACTION ITEMS===|===TRANSCRIPT===|$)/i)
-    const decisionsMatch = rawText.match(/===DECISIONS===([\s\S]*?)(?====ACTION ITEMS===|===TRANSCRIPT===|$)/i)
-    const actionsMatch = rawText.match(/===ACTION ITEMS===([\s\S]*?)(?====TRANSCRIPT===|$)/i)
-
-    const summary = (summaryMatch ? summaryMatch[1] : '').trim()
-    const decisions = (decisionsMatch ? decisionsMatch[1] : '').trim()
-    const actions = (actionsMatch ? actionsMatch[1] : '').trim()
-
-    el.summaryContent.textContent = summary || 'No summary recorded.'
-
-    if (decisions) {
-      const items = decisions.split('\n').map((l) => l.trim().replace(/^[-*•]\s*/, '')).filter(Boolean)
-      el.decisionsList.innerHTML = items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')
-    } else {
-      el.decisionsList.innerHTML = '<li>None recorded.</li>'
-    }
-
-    if (actions) {
-      const items = actions.split('\n').map((l) => l.trim().replace(/^[-*•]\s*/, '')).filter(Boolean)
-      el.actionsList.innerHTML = items.map((item, idx) => {
-        const ownerMatch = item.match(/^\[?([^:\]]+)\]?:\s*(.*)$/)
-        const owner = ownerMatch ? ownerMatch[1].trim() : null
-        const task = ownerMatch ? ownerMatch[2].trim() : item
-
-        return `
-          <div class="task-row">
-            <input type="checkbox" class="task-chk" id="task_${idx}">
-            ${owner ? `<span class="owner-pill">@${escapeHtml(owner)}</span>` : ''}
-            <label class="task-label" for="task_${idx}">${escapeHtml(task)}</label>
-          </div>`
-      }).join('')
-
-      el.actionsList.querySelectorAll('.task-chk').forEach((chk) => {
-        chk.addEventListener('change', (e) => {
-          e.target.closest('.task-row').classList.toggle('done', e.target.checked)
-        })
-      })
-    } else {
-      el.actionsList.innerHTML = '<div class="empty-task">None recorded.</div>'
-    }
-
-    return { summary, decisions, actions }
-  }
-
-  // Direct File Upload
   async function handleFileUpload(e) {
     const file = e.target.files[0]
     if (!file) return
 
-    setState('loading')
-    el.loadingText.textContent = `Uploading and transcribing "${file.name}"...`
+    if (!state.user) {
+      openAuthModal('login')
+      showToast('Please sign in to upload meetings.')
+      return
+    }
 
     try {
+      el.idleState.classList.add('hidden')
+      el.loadingState.classList.remove('hidden')
+      el.loadingText.textContent = `Uploading "${file.name}" and transcribing...`
+
+      const startTime = performance.now()
+      const title = file.name.replace(/\.[^/.]+$/, '')
+
       const res = await fetch(`/api/transcribe?filename=${encodeURIComponent(file.name)}`, {
         method: 'POST',
-        headers: { 'Content-Type': file.type || 'application/octet-stream' },
+        headers: { 'Content-Type': file.type || 'audio/webm' },
         body: file,
       })
 
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || `Upload failed with HTTP ${res.status}`)
+        const errData = await res.json()
+        throw new Error(errData.error || 'Failed to transcribe file')
       }
 
       const data = await res.json()
-      const transcript = (data.text || '').trim()
+      const transcript = data.text || ''
 
+      if (!transcript.trim()) {
+        throw new Error('No speech detected in audio file.')
+      }
+
+      const sttSpeed = ((performance.now() - startTime) / 1000).toFixed(1)
       state.currentTranscript = transcript
       el.transcriptText.value = transcript
-      const words = transcript.split(/\s+/).filter(Boolean).length
-      el.statWords.textContent = `${words} words`
-      el.statDuration.textContent = data.durationSec ? `${data.durationSec.toFixed(1)}s duration` : '0s'
-      el.statSpeed.textContent = `STT speed: ${(data.latencyMs / 1000).toFixed(2)}s`
 
-      el.resultsSection.classList.remove('hidden')
+      const wordCount = transcript.trim().split(/\s+/).length
+      el.statWords.textContent = `${wordCount} words`
+      el.statDuration.textContent = 'Uploaded Audio'
+      el.statSpeed.textContent = `STT: ${sttSpeed}s`
 
-      if (transcript) {
-        await generateMoM(transcript, {
-          title: file.name.replace(/\.[^/.]+$/, ''),
-          durationSec: data.durationSec || 0,
-          wordCount: words,
-          audioSource: 'upload',
-        })
-      }
+      el.loadingText.textContent = 'Generating Minutes of Meeting...'
+      await generateMoM(transcript, 0, wordCount, title)
     } catch (err) {
-      alert(`File processing error: ${err.message}`)
-      setState('idle')
+      alert(err.message || 'File processing failed')
+      el.loadingState.classList.add('hidden')
+      el.idleState.classList.remove('hidden')
     } finally {
       el.audioFileInput.value = ''
     }
   }
 
-  // Waveform Visualizer
-  function setupWaveform(stream) {
+  async function generateMoM(transcript, durationSec = 0, wordCount = 0, title = 'Executive Sync') {
+    const model = el.aiModel.value
     try {
-      state.audioContext = new (window.AudioContext || window.webkitAudioContext)()
-      const src = state.audioContext.createMediaStreamSource(stream)
+      const res = await fetch('/api/mom', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript, model }),
+      })
+
+      if (!res.ok) {
+        const errData = await res.json()
+        throw new Error(errData.error || 'Failed to generate MoM')
+      }
+
+      const data = await res.json()
+      state.currentMoMRaw = data.mom
+
+      renderParsedMoMToContainer(
+        data.mom,
+        el.summaryContent,
+        el.decisionsList,
+        el.actionsList
+      )
+
+      el.loadingState.classList.add('hidden')
+      el.resultsSection.classList.remove('hidden')
+      el.idleState.classList.remove('hidden')
+      switchStudioResultTab('mom')
+
+      // Auto-save to Supabase Database
+      const meetingPayload = {
+        title: title || el.meetingTitleInput.value.trim() || 'Meeting Session',
+        transcript,
+        momRaw: data.mom,
+        summary: extractExecutiveSummary(data.mom),
+        decisions: extractDecisions(data.mom),
+        actions: extractActions(data.mom),
+        aiModel: model,
+        durationSec: durationSec || 0,
+        wordCount: wordCount || transcript.split(/\s+/).length,
+      }
+
+      await autoSaveMeetingToDb(meetingPayload)
+    } catch (err) {
+      alert(err.message || 'Failed to synthesize MoM')
+      el.loadingState.classList.add('hidden')
+      el.idleState.classList.remove('hidden')
+    }
+  }
+
+  // ==========================================================================
+  // MoM Rendering & Markdown Parser
+  // ==========================================================================
+  function renderParsedMoMToContainer(rawMarkdown, summaryEl, decisionsEl, actionsEl) {
+    if (!rawMarkdown) {
+      summaryEl.textContent = 'No summary available.'
+      decisionsEl.innerHTML = '<li>No decisions recorded.</li>'
+      actionsEl.innerHTML = '<div class="empty-task">No action items recorded.</div>'
+      return
+    }
+
+    const summary = extractExecutiveSummary(rawMarkdown)
+    const decisions = extractDecisions(rawMarkdown)
+    const actions = extractActions(rawMarkdown)
+
+    summaryEl.innerHTML = `<p>${escapeHtml(summary)}</p>`
+
+    if (decisions.length > 0) {
+      decisionsEl.innerHTML = decisions.map((d) => `<li>${escapeHtml(d)}</li>`).join('')
+    } else {
+      decisionsEl.innerHTML = '<li>No explicit decisions recorded.</li>'
+    }
+
+    if (actions.length > 0) {
+      actionsEl.innerHTML = actions.map((a) => `
+        <div class="action-task-item">
+          <input type="checkbox">
+          <span>${escapeHtml(a)}</span>
+        </div>`).join('')
+    } else {
+      actionsEl.innerHTML = '<div class="empty-task">No action items recorded.</div>'
+    }
+  }
+
+  function extractExecutiveSummary(md) {
+    const match = md.match(/###?\s*Executive Summary([\s\S]*?)(?=###?\s*Key Decisions|###?\s*Action Items|$)/i)
+    if (match && match[1].trim()) {
+      return match[1].replace(/^[*\s-]+/gm, '').trim()
+    }
+    return md.slice(0, 300)
+  }
+
+  function extractDecisions(md) {
+    const match = md.match(/###?\s*Key Decisions([\s\S]*?)(?=###?\s*Action Items|###?\s*Executive Summary|$)/i)
+    if (match && match[1].trim()) {
+      return match[1]
+        .split('\n')
+        .map((l) => l.replace(/^[*\s-]+/, '').trim())
+        .filter((l) => l.length > 2)
+    }
+    return []
+  }
+
+  function extractActions(md) {
+    const match = md.match(/###?\s*Action Items([\s\S]*?)(?=###?\s*Key Decisions|###?\s*Executive Summary|$)/i)
+    if (match && match[1].trim()) {
+      return match[1]
+        .split('\n')
+        .map((l) => l.replace(/^[*\s-]+/, '').trim())
+        .filter((l) => l.length > 2)
+    }
+    return []
+  }
+
+  // ==========================================================================
+  // Waveform Visualizer & Audio Timer
+  // ==========================================================================
+  function setupAudioVisualizer(stream) {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext
+      state.audioContext = new AudioCtx()
+      const source = state.audioContext.createMediaStreamSource(stream)
       state.analyserNode = state.audioContext.createAnalyser()
       state.analyserNode.fftSize = 64
-      src.connect(state.analyserNode)
+      source.connect(state.analyserNode)
 
+      const canvas = el.waveformCanvas
+      const ctx = canvas.getContext('2d')
       const bufferLength = state.analyserNode.frequencyBinCount
       const dataArray = new Uint8Array(bufferLength)
-      const ctx = el.waveformCanvas.getContext('2d')
-      const width = el.waveformCanvas.width
-      const height = el.waveformCanvas.height
 
       function draw() {
         state.animationId = requestAnimationFrame(draw)
         state.analyserNode.getByteFrequencyData(dataArray)
 
-        ctx.clearRect(0, 0, width, height)
+        ctx.fillStyle = '#ffffff'
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-        const barCount = 28
-        const barWidth = width / barCount - 3
+        const barWidth = (canvas.width / bufferLength) * 1.5
+        let x = 0
 
-        for (let i = 0; i < barCount; i++) {
-          const val = dataArray[i] || 0
-          const barHeight = Math.max(3, (val / 255) * (height - 6))
-          const x = i * (barWidth + 3)
-          const y = height - barHeight - 2
-
-          ctx.fillStyle = '#4f46e5'
+        for (let i = 0; i < bufferLength; i++) {
+          const barHeight = (dataArray[i] / 255) * canvas.height
+          ctx.fillStyle = '#4338ca' // Royal Indigo
           ctx.beginPath()
-          ctx.roundRect(x, y, barWidth, barHeight, [2, 2, 0, 0])
+          ctx.roundRect(x, canvas.height - barHeight, barWidth - 2, barHeight, [2, 2, 0, 0])
           ctx.fill()
+          x += barWidth + 1
         }
       }
+
       draw()
-    } catch {}
+    } catch (e) {
+      console.warn('Audio visualization not supported:', e)
+    }
   }
 
-  function teardownWaveform() {
-    if (state.animationId) cancelAnimationFrame(state.animationId)
-    if (state.audioContext && state.audioContext.state !== 'closed') state.audioContext.close()
-  }
-
-  // Timer
   function startTimer() {
-    state.startTime = Date.now()
-    updateTimer()
-    state.timerInterval = setInterval(updateTimer, 1000)
+    state.startTime = performance.now()
+    el.meetingTimer.textContent = '00:00'
+    state.timerInterval = setInterval(() => {
+      const elapsed = Math.floor((performance.now() - state.startTime) / 1000)
+      const mins = String(Math.floor(elapsed / 60)).padStart(2, '0')
+      const secs = String(elapsed % 60).padStart(2, '0')
+      el.meetingTimer.textContent = `${mins}:${secs}`
+    }, 1000)
   }
 
   function stopTimer() {
-    if (state.timerInterval) clearInterval(state.timerInterval)
+    if (state.timerInterval) {
+      clearInterval(state.timerInterval)
+      state.timerInterval = null
+    }
   }
 
-  function updateTimer() {
-    const elapsed = Math.floor((Date.now() - state.startTime) / 1000)
-    const m = String(Math.floor(elapsed / 60)).padStart(2, '0')
-    const s = String(elapsed % 60).padStart(2, '0')
-    el.meetingTimer.textContent = `${m}:${s}`
-  }
-
-  function setState(st) {
-    el.idleState.classList.add('hidden')
-    el.recordingState.classList.add('hidden')
-    el.loadingState.classList.add('hidden')
-
-    if (st === 'idle') el.idleState.classList.remove('hidden')
-    else if (st === 'recording') el.recordingState.classList.remove('hidden')
-    else if (st === 'loading') el.loadingState.classList.remove('hidden')
-  }
-
-  function switchTab(tab) {
-    state.activeTab = tab
+  // ==========================================================================
+  // Helper Utilities
+  // ==========================================================================
+  function switchStudioResultTab(tab) {
+    state.activeStudioResultTab = tab
     if (tab === 'mom') {
       el.tabMoMBtn.classList.add('active')
       el.tabTranscriptBtn.classList.remove('active')
@@ -901,37 +1140,44 @@
     }
   }
 
-  async function copyActiveContent() {
-    const text = state.activeTab === 'mom' ? state.currentMoMRaw : el.transcriptText.value
-    if (!text) return
-    await navigator.clipboard.writeText(text)
-    showToast('Copied to clipboard!')
+  function copyActiveContent(momRaw, transcript, activeTab) {
+    const textToCopy = activeTab === 'mom' ? momRaw : transcript
+    if (!textToCopy) return
+    navigator.clipboard.writeText(textToCopy).then(() => {
+      showToast('Copied to clipboard!')
+    })
   }
 
-  function downloadMarkdown() {
-    if (!state.currentMoMRaw && !el.transcriptText.value) return
-    const content = `# Meeting Minutes\nDate: ${new Date().toLocaleString()}\n\n${state.currentMoMRaw}\n\n---\n## Full Transcript\n\n${el.transcriptText.value}\n`
+  function downloadMarkdown(momRaw, transcript, title = 'Meeting_MoM') {
+    const content = `# ${title}\n\n## Minutes of Meeting\n\n${momRaw}\n\n---\n\n## Full Transcript\n\n${transcript}`
     const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `meeting-mom-${new Date().toISOString().slice(0, 10)}.md`
+    a.download = `${title.replace(/[^a-z0-9_-]/gi, '_')}.md`
     a.click()
     URL.revokeObjectURL(url)
-    showToast('Downloaded meeting Markdown file!')
+    showToast('Markdown file downloaded!')
   }
 
   function showToast(msg) {
     el.toast.textContent = msg
     el.toast.classList.remove('hidden')
-    setTimeout(() => el.toast.classList.add('hidden'), 2600)
+    setTimeout(() => {
+      el.toast.classList.add('hidden')
+    }, 3200)
   }
 
   function escapeHtml(str) {
-    const div = document.createElement('div')
-    div.textContent = str || ''
-    return div.innerHTML
+    if (!str) return ''
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;')
   }
 
+  // Boot Application
   init()
 })()

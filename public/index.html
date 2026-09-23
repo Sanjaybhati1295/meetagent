@@ -3,13 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MeetAgent — AI Meeting Intelligence & Minutes</title>
+  <title>MeetAgent — AI Meeting Intelligence & Executive Minutes</title>
+  <meta name="description" content="Turn every meeting into actionable executive intelligence with real-time speech streaming, sub-second transcription, and automated Minutes of Meeting powered by Supabase.">
   <link rel="stylesheet" href="/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+
   <!-- Toast Notification -->
   <div id="toast" class="toast hidden"></div>
 
@@ -19,101 +21,196 @@
       <div class="modal-header">
         <div class="auth-tabs">
           <button id="authTabLogin" class="auth-tab-btn active">Sign In</button>
-          <button id="authTabRegister" class="auth-tab-btn">Create Account</button>
+          <button id="authTabRegister" class="auth-tab-btn">Create Free Account</button>
         </div>
         <button id="closeAuthModalBtn" class="btn-close" title="Close">✕</button>
       </div>
 
-      <!-- Sign In Form -->
-      <form id="loginForm" class="auth-form">
-        <div class="form-group">
-          <label for="loginEmail">Email Address</label>
-          <input type="email" id="loginEmail" placeholder="you@company.com" required autocomplete="email">
-        </div>
-        <div class="form-group">
-          <label for="loginPassword">Password</label>
-          <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
-        </div>
-        <div id="loginError" class="auth-error hidden"></div>
-        <button type="submit" class="btn btn-primary-full">Sign In</button>
-      </form>
-
-      <!-- Register Form -->
-      <form id="registerForm" class="auth-form hidden">
-        <div class="form-group">
-          <label for="regName">Full Name</label>
-          <input type="text" id="regName" placeholder="Your Name" required autocomplete="name">
-        </div>
-        <div class="form-group">
-          <label for="regEmail">Work Email</label>
-          <input type="email" id="regEmail" placeholder="you@company.com" required autocomplete="email">
-        </div>
-        <div class="form-group">
-          <label for="regPassword">Password (Min. 6 chars)</label>
-          <input type="password" id="regPassword" placeholder="••••••••" required minlength="6" autocomplete="new-password">
-        </div>
-        <div id="regError" class="auth-error hidden"></div>
-        <button type="submit" class="btn btn-primary-full">Create Account</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- Past Meetings History Drawer -->
-  <div id="historyDrawer" class="drawer-overlay hidden">
-    <div class="drawer-panel">
-      <div class="drawer-header">
-        <div class="drawer-title">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/>
-            <polyline points="12 6 12 12 16 14"/>
+      <div class="auth-card-body">
+        <div class="auth-database-badge">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
           </svg>
-          <h3>My Meeting History</h3>
+          <span>Secured with Supabase Cloud & Row-Level Security</span>
         </div>
-        <button id="closeHistoryBtn" class="btn-close">✕</button>
-      </div>
-      
-      <div id="historyList" class="drawer-content">
-        <div class="drawer-empty">Loading meetings...</div>
+
+        <!-- Sign In Form -->
+        <form id="loginForm" class="auth-form">
+          <div class="form-group">
+            <label for="loginEmail">Email Address</label>
+            <input type="email" id="loginEmail" placeholder="you@company.com" required autocomplete="email">
+          </div>
+          <div class="form-group">
+            <label for="loginPassword">Password</label>
+            <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
+          </div>
+          <div id="loginError" class="auth-error hidden"></div>
+          <button type="submit" class="btn btn-primary-full">
+            <span>Sign In to Studio</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </button>
+          <div class="auth-switch-prompt">
+            Don't have an account? <a href="#" id="switchToRegister">Create one for free</a>
+          </div>
+        </form>
+
+        <!-- Register Form -->
+        <form id="registerForm" class="auth-form hidden">
+          <div class="form-group">
+            <label for="regName">Full Name</label>
+            <input type="text" id="regName" placeholder="Alex Morgan" required autocomplete="name">
+          </div>
+          <div class="form-group">
+            <label for="regEmail">Work Email</label>
+            <input type="email" id="regEmail" placeholder="you@company.com" required autocomplete="email">
+          </div>
+          <div class="form-group">
+            <label for="regPassword">Password (Min. 6 chars)</label>
+            <input type="password" id="regPassword" placeholder="••••••••" required minlength="6" autocomplete="new-password">
+          </div>
+          <div id="regError" class="auth-error hidden"></div>
+          <button type="submit" class="btn btn-primary-full">
+            <span>Create Account & Launch Studio</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </button>
+          <div class="auth-switch-prompt">
+            Already have an account? <a href="#" id="switchToLogin">Sign in here</a>
+          </div>
+        </form>
       </div>
     </div>
   </div>
 
-  <!-- Header -->
+  <!-- Past Meeting Detail Modal (Full MoM & Transcript Viewer) -->
+  <div id="meetingDetailModal" class="modal-overlay hidden">
+    <div class="modal-card modal-card-large">
+      <div class="modal-header">
+        <div class="detail-modal-title-box">
+          <h3 id="modalMeetingTitle">Meeting Details</h3>
+          <span id="modalMeetingMeta" class="modal-subtitle"></span>
+        </div>
+        <div class="detail-modal-actions">
+          <button id="modalCopyBtn" class="btn btn-sm btn-secondary" title="Copy MoM">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+              <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+            </svg>
+            <span>Copy</span>
+          </button>
+          <button id="modalDownloadBtn" class="btn btn-sm btn-secondary" title="Download Markdown">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" x2="12" y1="15" y2="3"/>
+            </svg>
+            <span>Export</span>
+          </button>
+          <button id="closeDetailModalBtn" class="btn-close">✕</button>
+        </div>
+      </div>
+      <div class="detail-modal-body">
+        <div class="results-tabs">
+          <div class="tab-buttons">
+            <button id="modalTabMoMBtn" class="tab-btn active">📋 Minutes of Meeting</button>
+            <button id="modalTabTranscriptBtn" class="tab-btn">💬 Full Transcript</button>
+          </div>
+        </div>
+
+        <div id="modalMoMPane" class="tab-pane active">
+          <div class="mom-card summary-card">
+            <div class="card-tag tag-indigo">Executive Summary</div>
+            <div class="card-body" id="modalSummaryContent"></div>
+          </div>
+          <div class="mom-card decisions-card">
+            <div class="card-tag tag-emerald">Decisions Made</div>
+            <div class="card-body">
+              <ul id="modalDecisionsList" class="clean-list"></ul>
+            </div>
+          </div>
+          <div class="mom-card actions-card">
+            <div class="card-tag tag-amber">Action Items & Deliverables</div>
+            <div class="card-body">
+              <div id="modalActionsList" class="action-tasks-container"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="modalTranscriptPane" class="tab-pane hidden">
+          <div class="transcript-meta-bar" id="modalTranscriptMeta"></div>
+          <textarea id="modalTranscriptText" rows="14" readonly></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Global Navigation Header -->
   <header class="app-header">
     <div class="header-inner">
-      <div class="logo">
+      <div class="logo" id="brandLogo">
         <div class="logo-mark">
-          <!-- Stylized Modern Audio-Check Logo -->
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
             <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
             <line x1="12" x2="12" y1="19" y2="22"/>
           </svg>
         </div>
-        <div>
-          <span class="logo-title">MeetAgent</span>
-          <span class="logo-subtitle">Intelligent Meeting Copilot</span>
+        <div class="logo-text-group">
+          <div class="logo-title-row">
+            <span class="logo-title">MeetAgent</span>
+            <span class="badge-pill-brand">v2.0</span>
+          </div>
+          <span class="logo-subtitle">Executive Meeting Intelligence</span>
         </div>
       </div>
 
-      <!-- User Nav / Auth Controls -->
+      <!-- Public Marketing Nav (Guest Only) -->
+      <nav id="marketingNav" class="marketing-nav">
+        <a href="#features" class="nav-link">Features</a>
+        <a href="#demo" class="nav-link">Interactive Demo</a>
+        <a href="#how-it-works" class="nav-link">How It Works</a>
+        <a href="#security" class="nav-link">Security & DB</a>
+        <a href="#pricing" class="nav-link">Pricing</a>
+      </nav>
+
+      <!-- App Workspace Nav (Authenticated Only) -->
+      <nav id="workspaceNav" class="workspace-nav hidden">
+        <button id="navStudioBtn" class="workspace-nav-btn active">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <circle cx="12" cy="12" r="3" fill="currentColor"/>
+          </svg>
+          <span>Meeting Studio</span>
+        </button>
+        <button id="navVaultBtn" class="workspace-nav-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/>
+            <path d="M6 6h10"/>
+            <path d="M6 10h10"/>
+          </svg>
+          <span>Meeting Vault</span>
+          <span id="vaultCountBadge" class="count-badge">0</span>
+        </button>
+      </nav>
+
+      <!-- Header Right Actions -->
       <div class="header-right">
-        <!-- Logged Out State -->
+        <!-- Logged Out Buttons -->
         <div id="guestNav" class="nav-auth-box">
-          <button id="openAuthBtn" class="btn btn-sm btn-brand">Sign In / Sign Up</button>
+          <button id="openLoginBtn" class="btn btn-ghost-subtle">Sign In</button>
+          <button id="openRegisterBtn" class="btn btn-brand">Get Started Free</button>
         </div>
 
-        <!-- Logged In State -->
+        <!-- Logged In Controls -->
         <div id="userNav" class="nav-auth-box hidden">
-          <button id="myMeetingsBtn" class="btn btn-sm btn-secondary" title="View past calls">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <polyline points="12 6 12 12 16 14"/>
-            </svg>
-            <span>My Calls</span>
-            <span id="userMeetingCount" class="count-badge">0</span>
-          </button>
-          
+          <div class="cloud-indicator" title="Connected to Supabase PostgreSQL Vault">
+            <span class="cloud-dot"></span>
+            <span class="cloud-text">Supabase Active</span>
+          </div>
+
           <div class="user-pill">
             <span id="userAvatar" class="avatar-circle">U</span>
             <span id="userName" class="user-display-name">User</span>
@@ -125,185 +222,702 @@
     </div>
   </header>
 
-  <!-- Main Container -->
-  <main class="main-container">
+  <!-- ========================================================================= -->
+  <!-- 1. PUBLIC MARKETING WEBSITE (Logged-out visitors)                        -->
+  <!-- ========================================================================= -->
+  <div id="landingView" class="landing-view">
     
-    <!-- 1. Meeting Card -->
-    <section class="card meeting-card">
-      
-      <!-- Options Row -->
-      <div class="options-row">
-        <div class="option-field">
-          <label for="audioSource">Audio Input</label>
-          <div class="select-wrap">
-            <select id="audioSource">
-              <option value="mic">🎙️ Microphone (Your Voice)</option>
-              <option value="display">🖥️ Google Meet / Tab Audio</option>
-            </select>
-          </div>
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="hero-container">
+        <div class="hero-announcement">
+          <span class="hero-sparkle">✨</span>
+          <span>Next-Gen Voice Intelligence • Powered by Groq Llama 3.3 & Gemini 1.5</span>
+          <span class="hero-announcement-arrow">→</span>
         </div>
 
-        <div class="option-field">
-          <label for="aiModel">MoM Intelligence Engine</label>
-          <div class="select-wrap">
-            <select id="aiModel">
-              <option value="groq">Groq (Llama 3.3 — Instant ~1s)</option>
-              <option value="gemini">Gemini (3.6 Flash — Deep)</option>
-            </select>
-          </div>
-        </div>
-      </div>
+        <h1 class="hero-headline">
+          Turn Every Meeting into Actionable <br>
+          <span class="gradient-text">Executive Intelligence</span>
+        </h1>
 
-      <!-- Action Panel -->
-      <div class="action-panel">
-        
-        <!-- Idle State -->
-        <div id="idleState" class="state-view">
-          <button id="startBtn" class="btn btn-primary-lg">
+        <p class="hero-subheadline">
+          Stream real-time speech from your microphone or Google Meet tab audio. MeetAgent extracts instant executive summaries, clear decisions, and assigned action items — securely organized in your cloud vault.
+        </p>
+
+        <div class="hero-cta-group">
+          <button id="heroGetStartedBtn" class="btn btn-hero-primary">
+            <span>Start Recording Free</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <circle cx="12" cy="12" r="10"/>
-              <circle cx="12" cy="12" r="3" fill="currentColor"/>
+              <path d="M5 12h14M12 5l7 7-7 7"/>
             </svg>
-            Start Meeting
           </button>
-          
-          <div class="file-upload-hint">
-            <span>or</span>
-            <label for="audioFileInput" class="upload-link">upload audio recording (.mp3, .wav, .webm)</label>
-            <input type="file" id="audioFileInput" accept="audio/*,.mp3,.wav,.webm,.m4a" style="display: none;">
-          </div>
+          <a href="#demo" class="btn btn-hero-secondary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            <span>Explore Live Demo</span>
+          </a>
         </div>
 
-        <!-- Recording State (Shows Live Transcript in real-time) -->
-        <div id="recordingState" class="state-view hidden">
-          <div class="recording-header">
-            <div class="rec-badge">
-              <span class="rec-pulse"></span>
-              <span>LIVE MEETING IN PROGRESS</span>
-            </div>
-            <div class="rec-timer" id="meetingTimer">00:00</div>
-          </div>
-
-          <!-- Waveform Visualizer -->
-          <canvas id="waveformCanvas" width="600" height="42"></canvas>
-
-          <!-- Live Transcript Stream Window -->
-          <div class="live-stream-box">
-            <div class="live-stream-header">
-              <span class="live-stream-title">
-                <span class="live-stream-dot"></span> Live Speech Stream
-              </span>
-              <span class="live-stream-badge">Listening...</span>
-            </div>
-            <div id="liveStreamText" class="live-stream-content">
-              Listening... Start speaking, and your words will appear here live in real-time.
-            </div>
-          </div>
-
-          <button id="stopBtn" class="btn btn-danger-lg">
+        <!-- Trust & Value Badges -->
+        <div class="hero-trust-bar">
+          <div class="trust-item">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <rect width="14" height="14" x="5" y="5" rx="2" fill="currentColor"/>
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
             </svg>
-            Stop Meeting & Generate MoM
-          </button>
+            <span>&lt; 1.2s Groq STT & MoM</span>
+          </div>
+          <div class="trust-sep">•</div>
+          <div class="trust-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 6v6l4 2"/>
+            </svg>
+            <span>Live Speech Streaming</span>
+          </div>
+          <div class="trust-sep">•</div>
+          <div class="trust-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+              <line x1="8" y1="21" x2="16" y2="21"/>
+              <line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+            <span>Google Meet Tab Audio</span>
+          </div>
+          <div class="trust-sep">•</div>
+          <div class="trust-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <span>Supabase Cloud Vault</span>
+          </div>
         </div>
 
-        <!-- Loading State -->
-        <div id="loadingState" class="state-view hidden">
-          <div class="spinner"></div>
-          <p id="loadingText" class="loading-msg">Processing audio and generating Minutes of Meeting...</p>
-        </div>
+        <!-- Interactive Hero Product Mockup Preview -->
+        <div class="hero-mockup-wrapper" id="demo">
+          <div class="mockup-window">
+            <div class="mockup-header">
+              <div class="mockup-dots">
+                <span class="mock-dot red"></span>
+                <span class="mock-dot yellow"></span>
+                <span class="mock-dot green"></span>
+              </div>
+              <div class="mockup-title">
+                <span class="rec-badge-mock">
+                  <span class="rec-dot-mock"></span> LIVE DEMO
+                </span>
+                <span>Sprint 42 Architecture & Roadmap Sync • 04:18</span>
+              </div>
+              <div class="mockup-badge">Groq Llama 3.3 Engine</div>
+            </div>
 
+            <div class="mockup-body">
+              <!-- Live Transcript Stream Column -->
+              <div class="mockup-stream-col">
+                <div class="mockup-col-header">
+                  <div class="col-title">
+                    <span class="live-dot-green"></span>
+                    <span>Real-time Speech Captioning</span>
+                  </div>
+                  <span class="stream-status">Active Ingestion</span>
+                </div>
+                <div class="mockup-chat-stream">
+                  <div class="mock-speech-bubble">
+                    <div class="speaker-tag">
+                      <span class="speaker-avatar" style="background:#4338ca;">A</span>
+                      <span class="speaker-name">Alex (Lead Architect)</span>
+                      <span class="speech-time">10:02 AM</span>
+                    </div>
+                    <p class="speech-text">
+                      "We’ve decided to migrate our persistent meeting state to Supabase PostgreSQL with Row Level Security. It gives us instant multi-tenant isolation."
+                    </p>
+                  </div>
+                  <div class="mock-speech-bubble">
+                    <div class="speaker-tag">
+                      <span class="speaker-avatar" style="background:#059669;">S</span>
+                      <span class="speaker-name">Sarah (Senior Frontend)</span>
+                      <span class="speech-time">10:03 AM</span>
+                    </div>
+                    <p class="speech-text">
+                      "Agreed. I will complete the new executive dashboard and connect the database sync by Thursday afternoon."
+                    </p>
+                  </div>
+                  <div class="mock-speech-bubble live-active-bubble">
+                    <div class="speaker-tag">
+                      <span class="speaker-avatar" style="background:#d97706;">D</span>
+                      <span class="speaker-name">David (Product Manager)</span>
+                      <span class="speech-time">Just now</span>
+                    </div>
+                    <p class="speech-text">
+                      "Perfect. I'll update the stakeholder release notes with our new sub-second benchmark results."
+                      <span class="typing-cursor">|</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Generated MoM Column -->
+              <div class="mockup-mom-col">
+                <div class="mockup-col-header">
+                  <div class="col-title">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                      <polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                    <span>Instant Minutes of Meeting (MoM)</span>
+                  </div>
+                  <span class="mom-ready-pill">Generated in 1.1s</span>
+                </div>
+
+                <div class="mockup-mom-cards">
+                  <!-- Summary Card -->
+                  <div class="mock-card mock-summary">
+                    <div class="mock-card-tag tag-indigo">Executive Summary</div>
+                    <p>The team finalized architecture upgrades, adopting Supabase PostgreSQL with RLS for multi-tenant cloud storage and deploying sub-second Groq transcription.</p>
+                  </div>
+
+                  <!-- Decisions Card -->
+                  <div class="mock-card mock-decisions">
+                    <div class="mock-card-tag tag-emerald">Decisions Made</div>
+                    <ul class="mock-list">
+                      <li>
+                        <span class="check-icon">✓</span>
+                        <span>Approved Supabase PostgreSQL with Row Level Security for production vault.</span>
+                      </li>
+                      <li>
+                        <span class="check-icon">✓</span>
+                        <span>Standardized dual-engine fallback: Groq Llama 3.3 (default) and Gemini 1.5 Flash.</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <!-- Action Items Card -->
+                  <div class="mock-card mock-actions">
+                    <div class="mock-card-tag tag-amber">Action Items</div>
+                    <div class="mock-tasks">
+                      <div class="mock-task">
+                        <input type="checkbox" checked disabled>
+                        <span>Sarah: Complete dashboard UI and database sync</span>
+                        <span class="task-badge">Thursday</span>
+                      </div>
+                      <div class="mock-task">
+                        <input type="checkbox" disabled>
+                        <span>David: Update stakeholder release notes with benchmarks</span>
+                        <span class="task-badge">Friday</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Mockup Bottom Bar -->
+            <div class="mockup-footer">
+              <div class="mock-footer-left">
+                <span class="pulse-ring"></span>
+                <span>Ready to transcribe your live calls with zero installation?</span>
+              </div>
+              <button id="mockupLaunchBtn" class="btn btn-sm btn-brand">Launch Free Studio ➜</button>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- 2. Results Section -->
-    <section id="resultsSection" class="results-section hidden">
-      
-      <!-- Tab Header -->
-      <div class="results-tabs">
-        <div class="tab-buttons">
-          <button id="tabMoMBtn" class="tab-btn active">
-            📋 Minutes of Meeting
-          </button>
-          <button id="tabTranscriptBtn" class="tab-btn">
-            💬 Full Transcript
-          </button>
+    <!-- Features Bento Grid -->
+    <section class="features-section" id="features">
+      <div class="section-container">
+        <div class="section-header">
+          <span class="section-badge">Enterprise Capabilities</span>
+          <h2 class="section-title">Engineered for High-Stakes Conversations</h2>
+          <p class="section-subtitle">
+            Say goodbye to messy notes, forgotten commitments, and meeting fatigue. MeetAgent gives your team executive recall with zero friction.
+          </p>
         </div>
 
-        <div class="tab-actions">
-          <button id="copyBtn" class="btn btn-sm btn-ghost" title="Copy to clipboard">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
-              <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
-            </svg>
-            <span>Copy</span>
-          </button>
-          <button id="downloadBtn" class="btn btn-sm btn-ghost" title="Download Markdown file">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" x2="12" y1="15" y2="3"/>
-            </svg>
-            <span>Download</span>
-          </button>
-        </div>
-      </div>
+        <div class="bento-grid">
+          <!-- Feature 1 -->
+          <div class="bento-card bento-card-large">
+            <div class="bento-icon icon-indigo">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" x2="12" y1="19" y2="22"/>
+              </svg>
+            </div>
+            <h3>Dual-Channel Audio Ingestion</h3>
+            <p>
+              Capture directly from your laptop microphone or stream high-fidelity Google Meet, Zoom, and Microsoft Teams audio via browser tab capture. No clunky bots joining the call or third-party permissions required.
+            </p>
+            <div class="bento-badge-row">
+              <span class="feature-tag">Browser Microphone</span>
+              <span class="feature-tag">Google Meet Tab Audio</span>
+              <span class="feature-tag">Audio File Upload</span>
+            </div>
+          </div>
 
-      <!-- Tab View 1: Minutes of Meeting (MoM) -->
-      <div id="momPane" class="tab-pane active">
-        
-        <!-- Summary Block (Indigo Brand Accent) -->
-        <div class="mom-card summary-card">
-          <div class="card-tag tag-indigo">Executive Summary</div>
-          <div class="card-body" id="summaryContent">
-            Meeting summary will appear here.
+          <!-- Feature 2 -->
+          <div class="bento-card">
+            <div class="bento-icon icon-emerald">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+              </svg>
+            </div>
+            <h3>Sub-Second Streaming STT</h3>
+            <p>
+              Watch your speech transcribe live on screen as participants speak. Whisper AI transcription combined with browser speech streaming delivers sub-second latency.
+            </p>
+            <div class="bento-metric">&lt; 1.2s Latency</div>
+          </div>
+
+          <!-- Feature 3 -->
+          <div class="bento-card">
+            <div class="bento-icon icon-amber">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+            </div>
+            <h3>Dual Intelligence Engines</h3>
+            <p>
+              Toggle seamlessly between Groq Llama 3.3 70B for near-instant processing, and Google Gemini 1.5 Flash for deep contextual understanding on complex architectural calls.
+            </p>
+            <div class="bento-badge-row">
+              <span class="feature-tag">Groq Llama 3.3</span>
+              <span class="feature-tag">Gemini 1.5 Flash</span>
+            </div>
+          </div>
+
+          <!-- Feature 4 -->
+          <div class="bento-card bento-card-large">
+            <div class="bento-icon icon-indigo">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+            </div>
+            <h3>Supabase Cloud Vault & Call History</h3>
+            <p>
+              Every meeting is encrypted and persisted in your private Supabase database with Row-Level Security. Search past transcripts, copy executive summaries, or re-run MoM generation with a single click.
+            </p>
+            <div class="bento-badge-row">
+              <span class="feature-tag">PostgreSQL Database</span>
+              <span class="feature-tag">Row-Level Security</span>
+              <span class="feature-tag">Search & Markdown Export</span>
+            </div>
           </div>
         </div>
+      </div>
+    </section>
 
-        <!-- Decisions Block (Emerald Accent) -->
-        <div class="mom-card decisions-card">
-          <div class="card-tag tag-emerald">Decisions Made</div>
-          <div class="card-body">
-            <ul id="decisionsList" class="clean-list">
-              <li>No decisions recorded.</li>
+    <!-- How It Works Section -->
+    <section class="how-section" id="how-it-works">
+      <div class="section-container">
+        <div class="section-header">
+          <span class="section-badge">Streamlined Workflow</span>
+          <h2 class="section-title">From Spoken Words to Executive MoM in 3 Steps</h2>
+          <p class="section-subtitle">
+            Zero complicated setup. Create an account, start speaking, and let the AI copilot do the heavy lifting.
+          </p>
+        </div>
+
+        <div class="steps-grid">
+          <div class="step-card">
+            <div class="step-number">01</div>
+            <h4>Select Audio Source</h4>
+            <p>Sign in to your studio and choose whether to capture your microphone or share your Google Meet browser tab audio with stereo clarity.</p>
+          </div>
+          <div class="step-card">
+            <div class="step-number">02</div>
+            <h4>Monitor Live Transcription</h4>
+            <p>Click "Start Meeting". Watch words stream onto your screen in real time as the conversation progresses, with visual audio waveform feedback.</p>
+          </div>
+          <div class="step-card">
+            <div class="step-number">03</div>
+            <h4>Instant MoM & Cloud Sync</h4>
+            <p>Click "Stop Meeting". Receive structured executive summaries, decisions, and action items in seconds, automatically saved to your Supabase vault.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Security & Architecture Section -->
+    <section class="security-section" id="security">
+      <div class="section-container">
+        <div class="security-card">
+          <div class="security-content">
+            <span class="section-badge">Enterprise Security & Privacy</span>
+            <h2 class="section-title">Your Data Stays Yours. Period.</h2>
+            <p class="section-subtitle">
+              We know meeting content is sensitive. MeetAgent is engineered with zero-compromise security principles:
+            </p>
+            <ul class="security-points">
+              <li>
+                <div class="sec-icon">🔒</div>
+                <div>
+                  <strong>Supabase Row-Level Security (RLS)</strong>
+                  <p>Your meetings, transcripts, and account data are cryptographically bound to your user ID. No cross-tenant data leakage is physically possible.</p>
+                </div>
+              </li>
+              <li>
+                <div class="sec-icon">🛡️</div>
+                <div>
+                  <strong>Zero Training On Your Conversations</strong>
+                  <p>Audio is ingested in-memory and deleted immediately after processing. Your speech is never used to train public foundation models.</p>
+                </div>
+              </li>
+              <li>
+                <div class="sec-icon">⚡️</div>
+                <div>
+                  <strong>Ephemeral Processing Pipeline</strong>
+                  <p>Transcripts are processed via encrypted HTTPS endpoints with fast Groq and Gemini APIs designed for enterprise compliance.</p>
+                </div>
+              </li>
             </ul>
           </div>
         </div>
+      </div>
+    </section>
 
-        <!-- Action Items Block (Amber Accent) -->
-        <div class="mom-card actions-card">
-          <div class="card-tag tag-amber">Action Items & Deliverables</div>
-          <div class="card-body">
-            <div id="actionsList" class="action-tasks-container">
-              <div class="empty-task">No action items recorded.</div>
+    <!-- Pricing Section -->
+    <section class="pricing-section" id="pricing">
+      <div class="section-container">
+        <div class="section-header">
+          <span class="section-badge">Transparent Access</span>
+          <h2 class="section-title">Start Free, Scale as You Grow</h2>
+          <p class="section-subtitle">Full access to live speech streaming, Groq & Gemini engines, and Supabase cloud persistence.</p>
+        </div>
+
+        <div class="pricing-cards">
+          <!-- Free Tier -->
+          <div class="pricing-card highlighted">
+            <div class="pricing-tag">Most Popular</div>
+            <h3>Community & Pro Developers</h3>
+            <div class="pricing-price">$0 <span>/ forever</span></div>
+            <p class="pricing-desc">Everything you need to turn daily meetings into structured action items.</p>
+            <ul class="pricing-features">
+              <li>✓ Live speech streaming & transcription</li>
+              <li>✓ Dual Groq Llama 3.3 & Gemini 1.5 Flash</li>
+              <li>✓ Google Meet & browser tab audio capture</li>
+              <li>✓ Supabase Cloud Vault with call history</li>
+              <li>✓ 1-click Markdown export & copy</li>
+              <li>✓ Unlimited recordings</li>
+            </ul>
+            <button id="pricingRegisterBtn" class="btn btn-primary-full">Create Free Account ➜</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bottom CTA Banner -->
+    <section class="cta-banner">
+      <div class="section-container">
+        <div class="cta-box">
+          <h2>Ready to Elevate Your Meeting Productivity?</h2>
+          <p>Join engineering leaders, product managers, and founders using MeetAgent to capture executive clarity.</p>
+          <button id="bottomCtaBtn" class="btn btn-hero-primary">
+            <span>Launch Free Meeting Studio</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Marketing Footer -->
+    <footer class="app-footer">
+      <div class="footer-container">
+        <div class="footer-brand">
+          <div class="logo-title-row">
+            <span class="logo-title">MeetAgent</span>
+            <span class="badge-pill-brand">v2.0</span>
+          </div>
+          <p class="footer-desc">Executive AI Meeting Copilot with real-time speech streaming, dual-engine intelligence, and Supabase cloud persistence.</p>
+        </div>
+        <div class="footer-links-group">
+          <div class="footer-col">
+            <h5>Product</h5>
+            <a href="#features">Features</a>
+            <a href="#demo">Interactive Demo</a>
+            <a href="#how-it-works">How It Works</a>
+            <a href="#pricing">Pricing</a>
+          </div>
+          <div class="footer-col">
+            <h5>Engines & Stack</h5>
+            <a href="https://groq.com" target="_blank" rel="noopener">Groq Llama 3.3</a>
+            <a href="https://ai.google.dev" target="_blank" rel="noopener">Google Gemini 1.5</a>
+            <a href="https://supabase.com" target="_blank" rel="noopener">Supabase Database</a>
+          </div>
+          <div class="footer-col">
+            <h5>Security</h5>
+            <a href="#security">Privacy Policy</a>
+            <a href="#security">Row-Level Security</a>
+            <a href="#security">Compliance</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2026 MeetAgent Inc. Built for high-performance product and engineering teams.</p>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 2. AUTHENTICATED APP WORKSPACE (Logged-in users)                         -->
+  <!-- ========================================================================= -->
+  <main id="appWorkspace" class="workspace-container hidden">
+
+    <!-- Sub-View 1: Meeting Studio -->
+    <div id="studioView" class="workspace-subview">
+      
+      <!-- Studio Header & Configuration Bar -->
+      <section class="card studio-config-card">
+        <div class="studio-header-row">
+          <div class="meeting-title-input-wrap">
+            <label for="meetingTitleInput">Meeting Session Title</label>
+            <input type="text" id="meetingTitleInput" class="meeting-title-input" value="Product & Engineering Sync">
+          </div>
+          <div class="engine-badge-pill" id="engineStatusPill">
+            <span class="engine-status-dot"></span>
+            <span id="engineStatusText">Groq Llama 3.3 Ready</span>
+          </div>
+        </div>
+
+        <div class="options-row">
+          <div class="option-field">
+            <label for="audioSource">Audio Input Source</label>
+            <div class="select-wrap">
+              <select id="audioSource">
+                <option value="mic">🎙️ Microphone (Your Voice)</option>
+                <option value="display">🖥️ Google Meet / Tab Audio</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="option-field">
+            <label for="aiModel">MoM Intelligence Engine</label>
+            <div class="select-wrap">
+              <select id="aiModel">
+                <option value="groq">Groq (Llama 3.3 — Instant ~1s)</option>
+                <option value="gemini">Gemini (1.5 Flash — Deep Reasoning)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Recording Action Card -->
+      <section class="card meeting-card">
+        <div class="action-panel">
+          
+          <!-- Idle State -->
+          <div id="idleState" class="state-view">
+            <div class="idle-hero-prompt">
+              <div class="mic-glow-ring">
+                <button id="startBtn" class="btn btn-primary-lg">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <circle cx="12" cy="12" r="10"/>
+                    <circle cx="12" cy="12" r="3" fill="currentColor"/>
+                  </svg>
+                  <span>Start Meeting Recording</span>
+                </button>
+              </div>
+              <p class="idle-subtext">Click above to start listening. Transcriptions will stream live onto your screen.</p>
+            </div>
+            
+            <div class="file-upload-hint">
+              <span>or</span>
+              <label for="audioFileInput" class="upload-link">upload pre-recorded meeting (.mp3, .wav, .webm, .m4a)</label>
+              <input type="file" id="audioFileInput" accept="audio/*,.mp3,.wav,.webm,.m4a" style="display: none;">
+            </div>
+
+            <div class="audio-tip-banner">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+              </svg>
+              <span><strong>Pro Tip for Google Meet / Zoom:</strong> Select "Google Meet / Tab Audio", choose your meeting tab, and ensure <em>"Also share tab audio"</em> is checked.</span>
+            </div>
+          </div>
+
+          <!-- Recording State (Shows Live Transcript in real-time) -->
+          <div id="recordingState" class="state-view hidden">
+            <div class="recording-header">
+              <div class="rec-badge">
+                <span class="rec-pulse"></span>
+                <span>LIVE MEETING IN PROGRESS</span>
+              </div>
+              <div class="rec-timer" id="meetingTimer">00:00</div>
+            </div>
+
+            <!-- Waveform Visualizer -->
+            <canvas id="waveformCanvas" width="600" height="48"></canvas>
+
+            <!-- Live Transcript Stream Window -->
+            <div class="live-stream-box">
+              <div class="live-stream-header">
+                <span class="live-stream-title">
+                  <span class="live-stream-dot"></span> Live Speech Captioning Stream
+                </span>
+                <span class="live-stream-badge">Listening...</span>
+              </div>
+              <div id="liveStreamText" class="live-stream-content">
+                Listening... Start speaking, and your words will appear here live in real-time.
+              </div>
+            </div>
+
+            <button id="stopBtn" class="btn btn-danger-lg">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <rect width="14" height="14" x="5" y="5" rx="2" fill="currentColor"/>
+              </svg>
+              <span>Stop Meeting & Generate MoM</span>
+            </button>
+          </div>
+
+          <!-- Loading State -->
+          <div id="loadingState" class="state-view hidden">
+            <div class="spinner"></div>
+            <p id="loadingText" class="loading-msg">Processing audio and synthesizing Minutes of Meeting...</p>
+            <div class="loading-progress-steps">
+              <div class="step-item active">✓ Audio Ingestion Complete</div>
+              <div class="step-item active">✓ Speech-to-Text Transcription</div>
+              <div class="step-item in-progress">● AI Executive Extraction & Cloud Sync</div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Results Section -->
+      <section id="resultsSection" class="results-section hidden">
+        <div class="results-header-bar">
+          <div class="results-tabs">
+            <div class="tab-buttons">
+              <button id="tabMoMBtn" class="tab-btn active">
+                📋 Minutes of Meeting
+              </button>
+              <button id="tabTranscriptBtn" class="tab-btn">
+                💬 Full Transcript
+              </button>
+            </div>
+          </div>
+
+          <div class="tab-actions">
+            <button id="saveVaultBtn" class="btn btn-sm btn-secondary" title="Saved to Supabase">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                <polyline points="17 21 17 13 7 13 7 21"/>
+                <polyline points="7 3 7 8 15 8"/>
+              </svg>
+              <span>Saved in Vault</span>
+            </button>
+            <button id="copyBtn" class="btn btn-sm btn-secondary" title="Copy to clipboard">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+              </svg>
+              <span>Copy</span>
+            </button>
+            <button id="downloadBtn" class="btn btn-sm btn-secondary" title="Download Markdown file">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" x2="12" y1="15" y2="3"/>
+              </svg>
+              <span>Export</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Tab View 1: Minutes of Meeting (MoM) -->
+        <div id="momPane" class="tab-pane active">
+          <!-- Summary Block (Indigo Accent) -->
+          <div class="mom-card summary-card">
+            <div class="card-tag tag-indigo">Executive Summary</div>
+            <div class="card-body" id="summaryContent">
+              Meeting summary will appear here.
+            </div>
+          </div>
+
+          <!-- Decisions Block (Emerald Accent) -->
+          <div class="mom-card decisions-card">
+            <div class="card-tag tag-emerald">Decisions Made</div>
+            <div class="card-body">
+              <ul id="decisionsList" class="clean-list">
+                <li>No decisions recorded.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Action Items Block (Amber Accent) -->
+          <div class="mom-card actions-card">
+            <div class="card-tag tag-amber">Action Items & Deliverables</div>
+            <div class="card-body">
+              <div id="actionsList" class="action-tasks-container">
+                <div class="empty-task">No action items recorded.</div>
+              </div>
             </div>
           </div>
         </div>
 
-      </div>
+        <!-- Tab View 2: Full Transcript -->
+        <div id="transcriptPane" class="tab-pane hidden">
+          <div class="transcript-meta-bar" id="transcriptMetaBar">
+            <span id="statWords">0 words</span>
+            <span class="dot-sep">•</span>
+            <span id="statDuration">0s duration</span>
+            <span class="dot-sep">•</span>
+            <span id="statSpeed">STT speed: 0.0s</span>
+          </div>
 
-      <!-- Tab View 2: Full Transcript -->
-      <div id="transcriptPane" class="tab-pane hidden">
-        <div class="transcript-meta-bar" id="transcriptMetaBar">
-          <span id="statWords">0 words</span>
-          <span class="dot-sep">•</span>
-          <span id="statDuration">0s duration</span>
-          <span class="dot-sep">•</span>
-          <span id="statSpeed">STT speed: 0.0s</span>
+          <textarea id="transcriptText" rows="12" placeholder="Full meeting transcript appears here..."></textarea>
+
+          <div class="transcript-footer">
+            <span class="hint-text">💡 You can edit this transcript and re-generate the MoM above.</span>
+            <button id="rerunMoMBtn" class="btn btn-sm btn-secondary">
+              🔄 Re-generate MoM from edited text
+            </button>
+          </div>
         </div>
 
-        <textarea id="transcriptText" rows="12" placeholder="Full meeting transcript appears here..."></textarea>
+      </section>
+    </div>
 
-        <div class="transcript-footer">
-          <span class="hint-text">💡 You can edit this transcript and re-generate the MoM above.</span>
-          <button id="rerunMoMBtn" class="btn btn-sm btn-secondary">
-            🔄 Re-generate MoM from edited text
+    <!-- Sub-View 2: Meeting Vault (Past Calls Archive) -->
+    <div id="vaultView" class="workspace-subview hidden">
+      <div class="vault-header">
+        <div class="vault-title-group">
+          <h2>Meeting Vault</h2>
+          <p>Search and review your past recorded calls, transcripts, and minutes saved in Supabase.</p>
+        </div>
+        <div class="vault-actions-group">
+          <div class="search-input-wrap">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" id="vaultSearchInput" placeholder="Filter by meeting title or keywords...">
+          </div>
+          <button id="vaultNewMeetingBtn" class="btn btn-brand">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            <span>Record New Call</span>
           </button>
         </div>
       </div>
 
-    </section>
+      <div id="vaultMeetingsGrid" class="vault-grid">
+        <div class="vault-empty">
+          <div class="empty-icon">📁</div>
+          <h3>No meetings in your vault yet</h3>
+          <p>Record your first meeting in the Studio, and your transcription, summary, and action items will be archived here automatically.</p>
+          <button id="emptyStartBtn" class="btn btn-brand">Start First Meeting</button>
+        </div>
+      </div>
+    </div>
 
   </main>
 
