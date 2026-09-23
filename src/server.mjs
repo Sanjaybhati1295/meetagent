@@ -17,7 +17,9 @@ import {
   saveMeeting,
   getUserMeetings,
   getMeetingById,
-  deleteMeeting
+  deleteMeeting,
+  IS_SUPABASE_CONFIGURED,
+  SUPABASE_URL
 } from './db.mjs'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
@@ -88,7 +90,12 @@ const server = createServer(async (req, res) => {
 
   // --- Auth & Meeting Middleware Helper ---
   const token = extractToken(req)
-  const user = token ? getUserByToken(token) : null
+  let user = null
+  try {
+    user = token ? await getUserByToken(token) : null
+  } catch (err) {
+    console.warn('Auth token verification error:', err.message)
+  }
 
   // --- API Endpoints ---
   if (pathname === '/api/config' && req.method === 'GET') {
@@ -103,7 +110,7 @@ const server = createServer(async (req, res) => {
     try {
       const rawBody = await collectRequestBody(req)
       const { name, email, password } = JSON.parse(rawBody.toString('utf-8') || '{}')
-      const result = registerUser(name, email, password)
+      const result = await registerUser(name, email, password)
       return sendJson(res, 201, result)
     } catch (err) {
       return sendError(res, 400, err.message)
@@ -114,7 +121,7 @@ const server = createServer(async (req, res) => {
     try {
       const rawBody = await collectRequestBody(req)
       const { email, password } = JSON.parse(rawBody.toString('utf-8') || '{}')
-      const result = loginUser(email, password)
+      const result = await loginUser(email, password)
       return sendJson(res, 200, result)
     } catch (err) {
       return sendError(res, 401, err.message)
@@ -122,7 +129,11 @@ const server = createServer(async (req, res) => {
   }
 
   if (pathname === '/api/auth/logout' && req.method === 'POST') {
-    if (token) invalidateSession(token)
+    if (token) {
+      try {
+        await invalidateSession(token)
+      } catch {}
+    }
     return sendJson(res, 200, { success: true })
   }
 
@@ -133,8 +144,12 @@ const server = createServer(async (req, res) => {
   // --- Meetings Database Routes ---
   if (pathname === '/api/meetings' && req.method === 'GET') {
     if (!user) return sendError(res, 401, 'Please sign in to access your meeting history')
-    const meetings = getUserMeetings(user.id)
-    return sendJson(res, 200, { meetings })
+    try {
+      const meetings = await getUserMeetings(user.id)
+      return sendJson(res, 200, { meetings })
+    } catch (err) {
+      return sendError(res, 500, err.message)
+    }
   }
 
   if (pathname === '/api/meetings' && req.method === 'POST') {
@@ -142,7 +157,7 @@ const server = createServer(async (req, res) => {
     try {
       const rawBody = await collectRequestBody(req)
       const meetingData = JSON.parse(rawBody.toString('utf-8') || '{}')
-      const saved = saveMeeting(user.id, meetingData)
+      const saved = await saveMeeting(user.id, meetingData)
       return sendJson(res, 201, { meeting: saved })
     } catch (err) {
       return sendError(res, 400, err.message)
@@ -151,17 +166,25 @@ const server = createServer(async (req, res) => {
 
   if (pathname.startsWith('/api/meetings/') && req.method === 'GET') {
     if (!user) return sendError(res, 401, 'Unauthorized')
-    const meetingId = pathname.replace('/api/meetings/', '')
-    const meeting = getMeetingById(meetingId, user.id)
-    if (!meeting) return sendError(res, 404, 'Meeting not found')
-    return sendJson(res, 200, { meeting })
+    try {
+      const meetingId = pathname.replace('/api/meetings/', '')
+      const meeting = await getMeetingById(meetingId, user.id)
+      if (!meeting) return sendError(res, 404, 'Meeting not found')
+      return sendJson(res, 200, { meeting })
+    } catch (err) {
+      return sendError(res, 500, err.message)
+    }
   }
 
   if (pathname.startsWith('/api/meetings/') && req.method === 'DELETE') {
     if (!user) return sendError(res, 401, 'Unauthorized')
-    const meetingId = pathname.replace('/api/meetings/', '')
-    deleteMeeting(meetingId, user.id)
-    return sendJson(res, 200, { success: true })
+    try {
+      const meetingId = pathname.replace('/api/meetings/', '')
+      await deleteMeeting(meetingId, user.id)
+      return sendJson(res, 200, { success: true })
+    } catch (err) {
+      return sendError(res, 500, err.message)
+    }
   }
 
   // --- AI Transcription Route ---
@@ -263,8 +286,11 @@ const server = createServer(async (req, res) => {
 })
 
 server.listen(PORT, () => {
+  const dbEngine = IS_SUPABASE_CONFIGURED
+    ? `Supabase Cloud (${SUPABASE_URL})`
+    : 'SQLite (data/meetagent.db)'
   console.log(`\n🚀 MeetAgent running at: http://localhost:${PORT}`)
-  console.log(`   Database Engine    : SQLite (data/meetagent.db)`)
+  console.log(`   Database Engine    : ${dbEngine}`)
   console.log(`   Audio STT Provider : Groq Whisper (large-v3-turbo)`)
   console.log(`   MoM LLM Providers  : Groq & Gemini\n`)
 })
