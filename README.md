@@ -1,4 +1,4 @@
-# MeetAgent — POC
+# MeetAgent
 
 Purpose: answer "is the free-tier quality good enough?" *before* building
 the full Cloudflare Worker + frontend. Two standalone scripts, no
