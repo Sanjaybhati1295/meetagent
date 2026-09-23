@@ -3,183 +3,425 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MeetAgent — Live Meeting Audio to MoM</title>
+  <title>MeetAgent — AI Meeting Intelligence & Automated MoM</title>
   <link rel="stylesheet" href="/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="app-container">
-    <!-- Header -->
-    <header class="app-header">
-      <div class="brand">
-        <div class="brand-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+  <!-- Toast Container -->
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+  <!-- App Wrapper -->
+  <div class="app-layout">
+    
+    <!-- Top Navigation Bar -->
+    <header class="navbar">
+      <div class="nav-left">
+        <div class="logo-mark">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
             <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
             <line x1="12" x2="12" y1="19" y2="22"/>
           </svg>
         </div>
-        <div>
-          <h1>MeetAgent <span class="badge">POC</span></h1>
-          <p class="subtitle">Listen to meeting audio &rarr; Convert to text &rarr; Generate Minutes of Meeting</p>
+        <div class="brand-text">
+          <div class="brand-title-wrap">
+            <span class="brand-name">MeetAgent</span>
+            <span class="brand-version">PRO</span>
+          </div>
+          <span class="brand-tagline">Autonomous Meeting Intelligence</span>
         </div>
       </div>
-      <div class="status-badges">
-        <span class="status-chip" id="groqStatusChip">
-          <span class="dot"></span> Groq Whisper + LLM
-        </span>
-        <span class="status-chip" id="geminiStatusChip">
-          <span class="dot"></span> Gemini MoM
-        </span>
+
+      <!-- Engine & System Telemetry -->
+      <div class="nav-center">
+        <div class="telemetry-bar">
+          <div class="telemetry-item" id="groqStatusChip" title="Groq LPU Whisper & Llama Engine">
+            <span class="telemetry-indicator"></span>
+            <span class="telemetry-label">Groq LPU</span>
+            <span class="telemetry-detail">Whisper Turbo</span>
+          </div>
+          <div class="telemetry-divider"></div>
+          <div class="telemetry-item" id="geminiStatusChip" title="Google Gemini 3.6 Flash Engine">
+            <span class="telemetry-indicator"></span>
+            <span class="telemetry-label">Gemini AI</span>
+            <span class="telemetry-detail">3.6 Flash</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Actions -->
+      <div class="nav-right">
+        <button id="historyToggleBtn" class="btn btn-nav" title="View Saved Sessions">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <span>History</span>
+          <span id="historyCountBadge" class="count-pill">0</span>
+        </button>
+        <button id="newSessionBtn" class="btn btn-nav btn-nav-primary" title="Start Fresh Meeting Session">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          <span>New Session</span>
+        </button>
       </div>
     </header>
 
-    <!-- Main Grid -->
-    <main class="main-content">
-      <!-- Control Panel -->
-      <section class="card control-card">
-        <div class="config-row">
-          <div class="config-group">
-            <label for="audioSourceSelect">Audio Input Source</label>
-            <select id="audioSourceSelect">
-              <option value="mic">🎙️ Microphone (Your voice / Room)</option>
-              <option value="display">🖥️ Google Meet / Tab Audio (Share tab with audio)</option>
-            </select>
-          </div>
-
-          <div class="config-group">
-            <label for="momProviderSelect">MoM AI Model</label>
-            <select id="momProviderSelect">
-              <option value="groq">Groq (openai/gpt-oss-120b - Fast)</option>
-              <option value="gemini">Gemini (gemini-3.6-flash - Deep)</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Meeting Action Area -->
-        <div class="action-box" id="actionBox">
-          <!-- Idle State -->
-          <div id="idleState" class="state-panel active">
-            <button id="startMeetingBtn" class="btn btn-primary btn-large">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                <circle cx="12" cy="12" r="10"/>
-                <circle cx="12" cy="12" r="3" fill="currentColor"/>
-              </svg>
-              Start Meeting
-            </button>
-            <div class="file-upload-hint">
-              <span>or</span>
-              <label class="btn btn-secondary btn-sm" for="audioFileInput">
-                📁 Upload Audio File (.mp3, .wav, .webm)
-              </label>
-              <input type="file" id="audioFileInput" accept="audio/*,.mp3,.wav,.webm,.m4a" style="display: none;">
-            </div>
-          </div>
-
-          <!-- Active Recording State -->
-          <div id="recordingState" class="state-panel hidden">
-            <div class="live-indicator-bar">
-              <div class="recording-pulse">
-                <span class="pulse-dot"></span>
-                <span class="pulse-text">LISTENING LIVE</span>
+    <!-- Main Workspace -->
+    <div class="workspace-container">
+      
+      <!-- Meeting Control Deck (Hero Cockpit) -->
+      <section class="control-deck">
+        <div class="deck-grid">
+          
+          <!-- Source & Engine Configuration -->
+          <div class="deck-settings">
+            <div class="setting-group">
+              <label class="setting-label">Audio Input Source</label>
+              <div class="segmented-control" id="audioSourceGroup">
+                <button type="button" class="segment-btn active" data-value="mic">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                  </svg>
+                  <span>Microphone</span>
+                </button>
+                <button type="button" class="segment-btn" data-value="display">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect width="20" height="14" x="2" y="3" rx="2"/>
+                    <line x1="8" x2="16" y1="21" y2="21"/>
+                    <line x1="12" x2="12" y1="17" y2="21"/>
+                  </svg>
+                  <span>Google Meet / Tab</span>
+                </button>
               </div>
-              <div class="meeting-timer" id="meetingTimer">00:00</div>
             </div>
 
-            <!-- Waveform Canvas -->
-            <canvas id="waveformCanvas" width="600" height="64"></canvas>
-
-            <button id="stopMeetingBtn" class="btn btn-danger btn-large">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                <rect width="14" height="14" x="5" y="5" rx="2" fill="currentColor"/>
-              </svg>
-              End Meeting & Generate MoM
-            </button>
+            <div class="setting-group">
+              <label class="setting-label">MoM Intelligence Engine</label>
+              <div class="segmented-control" id="momProviderGroup">
+                <button type="button" class="segment-btn active" data-value="groq">
+                  <span class="engine-dot groq-dot"></span>
+                  <span>Groq (Llama 3.3)</span>
+                  <span class="engine-tag">Fast ~1s</span>
+                </button>
+                <button type="button" class="segment-btn" data-value="gemini">
+                  <span class="engine-dot gemini-dot"></span>
+                  <span>Gemini (3.6 Flash)</span>
+                  <span class="engine-tag">Deep</span>
+                </button>
+              </div>
+            </div>
           </div>
 
-          <!-- Processing State -->
-          <div id="processingState" class="state-panel hidden">
-            <div class="spinner"></div>
-            <p id="processingStatusText">Transcribing meeting audio with Groq Whisper...</p>
+          <!-- Meeting Live Action Hub -->
+          <div class="deck-hub">
+            
+            <!-- Idle State -->
+            <div id="idleState" class="hub-state active">
+              <div class="hub-cta-area">
+                <button id="startMeetingBtn" class="btn btn-hero btn-start">
+                  <span class="btn-glow"></span>
+                  <span class="btn-icon-wrap">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <circle cx="12" cy="12" r="10"/>
+                      <circle cx="12" cy="12" r="3.5" fill="currentColor"/>
+                    </svg>
+                  </span>
+                  <span class="btn-text-wrap">
+                    <span class="btn-main-title">Start Meeting Audio</span>
+                    <span class="btn-sub-title">Listen live & auto-generate MoM on completion</span>
+                  </span>
+                </button>
+
+                <div class="dropzone-divider">
+                  <span class="divider-line"></span>
+                  <span class="divider-text">OR UPLOAD RECORDING</span>
+                  <span class="divider-line"></span>
+                </div>
+
+                <div class="file-dropzone" id="fileDropzone">
+                  <input type="file" id="audioFileInput" accept="audio/*,.mp3,.wav,.webm,.m4a" class="file-input-hidden">
+                  <div class="dropzone-content">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="17 8 12 3 7 8"/>
+                      <line x1="12" x2="12" y1="3" y2="15"/>
+                    </svg>
+                    <span class="dropzone-label">Drop meeting audio or <span class="browse-link">browse</span></span>
+                    <span class="dropzone-formats">Supports MP3, WAV, WEBM, M4A up to 25MB</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Live Recording State -->
+            <div id="recordingState" class="hub-state hidden">
+              <div class="live-meeting-banner">
+                <div class="live-badge-group">
+                  <div class="pulse-beacon">
+                    <span class="beacon-ring"></span>
+                    <span class="beacon-core"></span>
+                  </div>
+                  <span class="live-title">MEETING IN PROGRESS</span>
+                </div>
+
+                <div class="live-timer-container">
+                  <span class="timer-digits" id="meetingTimer">00:00</span>
+                  <span class="timer-label">ELAPSED</span>
+                </div>
+              </div>
+
+              <!-- Multi-Bar Frequency Equalizer Canvas -->
+              <div class="visualizer-wrapper">
+                <canvas id="waveformCanvas" width="700" height="72"></canvas>
+                <div class="visualizer-overlay">
+                  <span class="mic-status-text" id="liveSourceIndicator">🎙️ Listening to Microphone Audio...</span>
+                  <span class="db-level-text" id="audioDbLevel">LIVE AUDIO</span>
+                </div>
+              </div>
+
+              <div class="live-controls-row">
+                <button id="stopMeetingBtn" class="btn btn-hero btn-stop">
+                  <span class="btn-icon-wrap">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <rect width="14" height="14" x="5" y="5" rx="3" fill="currentColor"/>
+                    </svg>
+                  </span>
+                  <span>End Meeting & Generate MoM</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Processing / Pipeline State -->
+            <div id="processingState" class="hub-state hidden">
+              <div class="pipeline-loader">
+                <div class="ai-orbit">
+                  <div class="orbit-ring"></div>
+                  <div class="orbit-planet"></div>
+                </div>
+                <div class="pipeline-details">
+                  <h3 id="processingStepTitle">Transcribing Audio Stream</h3>
+                  <p id="processingStatusText">Whisper LPU is converting audio speech into text...</p>
+                  <div class="progress-bar-wrap">
+                    <div class="progress-bar-fill"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
 
-      <!-- Two-Column Results: Transcript & MoM -->
-      <div class="results-grid">
-        <!-- Transcript Column -->
-        <section class="card transcript-card">
-          <div class="card-header">
-            <div class="card-title">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-              </svg>
-              <h2>Speech-to-Text Transcript</h2>
+      <!-- Main Results Grid (Split Workspace) -->
+      <div class="results-workspace">
+        
+        <!-- Left Panel: Live Transcript -->
+        <section class="panel panel-transcript">
+          <div class="panel-header">
+            <div class="panel-title-group">
+              <div class="panel-icon icon-transcript">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </div>
+              <div>
+                <h2>Meeting Transcript</h2>
+                <span class="panel-subtitle">Speech-to-text generated stream</span>
+              </div>
             </div>
-            <div class="card-actions">
-              <button id="copyTranscriptBtn" class="btn btn-ghost btn-xs" title="Copy transcript">
-                📋 Copy
+
+            <div class="panel-toolbar">
+              <div class="search-wrap">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" x2="16.65" y1="21" y2="16.65"/>
+                </svg>
+                <input type="text" id="transcriptSearch" placeholder="Find in transcript..." class="search-input">
+              </div>
+              <button id="copyTranscriptBtn" class="btn btn-tool" title="Copy raw transcript">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                  <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                </svg>
+                <span>Copy</span>
               </button>
             </div>
           </div>
 
-          <div class="meta-strip" id="transcriptMetaStrip" style="display: none;">
-            <span id="metaLang">Lang: -</span>
-            <span id="metaDuration">Duration: -</span>
-            <span id="metaLatency">STT Latency: -</span>
-            <span id="metaWords">Words: 0</span>
+          <!-- Telemetry Badges Strip -->
+          <div class="metrics-strip" id="transcriptMetaStrip" style="display: none;">
+            <div class="metric-pill">
+              <span class="metric-name">LANG</span>
+              <span class="metric-val" id="metaLang">Auto</span>
+            </div>
+            <div class="metric-pill">
+              <span class="metric-name">AUDIO DURATION</span>
+              <span class="metric-val" id="metaDuration">0.0s</span>
+            </div>
+            <div class="metric-pill">
+              <span class="metric-name">WORDS</span>
+              <span class="metric-val" id="metaWords">0</span>
+            </div>
+            <div class="metric-pill highlight-pill">
+              <span class="metric-name">STT SPEED</span>
+              <span class="metric-val" id="metaLatency">0.00s</span>
+            </div>
           </div>
 
-          <textarea id="transcriptText" placeholder="Start a meeting and speak, or upload an audio file to see transcript here..." rows="12"></textarea>
-          
-          <div class="transcript-footer">
-            <button id="manualMoMBtn" class="btn btn-secondary btn-sm" disabled>
-              ⚡ Re-run MoM from this Transcript
-            </button>
+          <!-- Transcript Editor / Display Container -->
+          <div class="transcript-editor-container">
+            <textarea id="transcriptText" placeholder="Start speaking or upload meeting audio. The live transcript will stream into this pane..." spellcheck="false"></textarea>
+          </div>
+
+          <!-- Transcript Footer Bar -->
+          <div class="panel-footer">
+            <div class="footer-left">
+              <span class="editor-hint">💡 You can edit transcript text before re-running MoM</span>
+            </div>
+            <div class="footer-actions">
+              <button id="manualMoMBtn" class="btn btn-secondary btn-sm" disabled>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                </svg>
+                <span>Re-generate MoM</span>
+              </button>
+            </div>
           </div>
         </section>
 
-        <!-- Minutes of Meeting (MoM) Column -->
-        <section class="card mom-card">
-          <div class="card-header">
-            <div class="card-title">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-                <line x1="16" y1="13" x2="8" y2="13"/>
-                <line x1="16" y1="17" x2="8" y2="17"/>
-                <polyline points="10 9 9 9 8 9"/>
-              </svg>
-              <h2>Minutes of Meeting (MoM)</h2>
+        <!-- Right Panel: Executive MoM -->
+        <section class="panel panel-mom">
+          <div class="panel-header">
+            <div class="panel-title-group">
+              <div class="panel-icon icon-mom">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+              </div>
+              <div>
+                <h2>Minutes of Meeting (MoM)</h2>
+                <span class="panel-subtitle" id="momModelSubtitle">Executive summary & action tracker</span>
+              </div>
             </div>
-            <div class="card-actions">
-              <span id="momModelBadge" class="badge badge-outline">Groq</span>
-              <button id="copyMoMBtn" class="btn btn-ghost btn-xs" title="Copy MoM">📋 Copy</button>
+
+            <!-- View Switcher & Action Tools -->
+            <div class="panel-toolbar">
+              <div class="view-toggle-tabs">
+                <button type="button" class="tab-btn active" id="tabStructuredBtn">Structured</button>
+                <button type="button" class="tab-btn" id="tabMarkdownBtn">Markdown</button>
+              </div>
+
+              <div class="export-dropdown-wrap">
+                <button id="exportMdBtn" class="btn btn-tool" title="Export Markdown File">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" x2="12" y1="15" y2="3"/>
+                  </svg>
+                  <span>Export</span>
+                </button>
+                <button id="copyMoMBtn" class="btn btn-tool btn-primary-tool" title="Copy formatted MoM to clipboard">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                    <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                  </svg>
+                  <span>Copy MoM</span>
+                </button>
+              </div>
             </div>
           </div>
 
-          <!-- Structured MoM View -->
-          <div id="momOutput" class="mom-output">
-            <div class="empty-state">
-              <p>Minutes of Meeting will automatically appear here once you stop the meeting.</p>
+          <!-- Structured MoM View Pane -->
+          <div id="momStructuredView" class="mom-view-pane active">
+            <div id="momOutput" class="mom-content-scroll">
+              <div class="empty-state-pro">
+                <div class="empty-icon-shield">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <rect width="18" height="18" x="3" y="3" rx="2"/>
+                    <path d="M3 9h18"/>
+                    <path d="M9 21V9"/>
+                  </svg>
+                </div>
+                <h3>Awaiting Meeting Audio</h3>
+                <p>Start a live meeting or upload a recorded session to automatically extract structured decisions, owners, and action items.</p>
+                <div class="feature-pills">
+                  <span class="pill-tip">✨ Clear Decisions</span>
+                  <span class="pill-tip">🎯 Assigned Action Items</span>
+                  <span class="pill-tip">📌 Executive Brief</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- Raw Markdown View (Collapsible) -->
-          <details class="mom-raw-details">
-            <summary>View Raw Markdown Output</summary>
-            <pre id="momRawText" class="code-block"></pre>
-          </details>
+          <!-- Raw Markdown View Pane -->
+          <div id="momMarkdownView" class="mom-view-pane hidden">
+            <div class="markdown-editor-wrap">
+              <pre id="momRawText" class="raw-markdown-pre"></pre>
+            </div>
+          </div>
+
+          <!-- MoM Footer Metrics -->
+          <div class="panel-footer mom-footer-meta">
+            <div class="footer-left">
+              <span id="momStatsBadge" class="footer-meta-pill">Engine: Idle</span>
+            </div>
+            <div class="footer-actions">
+              <button id="printMoMBtn" class="btn btn-ghost btn-xs" title="Print or save as PDF">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 6 2 18 2 18 9"/>
+                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                  <rect width="12" height="8" x="6" y="14"/>
+                </svg>
+                <span>Print PDF</span>
+              </button>
+            </div>
+          </div>
         </section>
+
       </div>
-    </main>
+    </div>
 
-    <!-- Footer -->
-    <footer class="app-footer">
-      <span>MeetAgent POC &bull; Free-Tier Audio STT & MoM Generation</span>
-    </footer>
+    <!-- Slide-over History Drawer -->
+    <div id="historyDrawer" class="drawer-overlay hidden">
+      <div class="drawer-container">
+        <div class="drawer-header">
+          <div class="drawer-title-wrap">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <h3>Meeting Session History</h3>
+          </div>
+          <button id="closeDrawerBtn" class="btn btn-ghost btn-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="drawer-body" id="historyListContainer">
+          <div class="history-empty">
+            <p>No saved sessions found in local history.</p>
+          </div>
+        </div>
+
+        <div class="drawer-footer">
+          <button id="clearHistoryBtn" class="btn btn-ghost btn-sm btn-danger-ghost">Clear All History</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <script src="/app.js"></script>
