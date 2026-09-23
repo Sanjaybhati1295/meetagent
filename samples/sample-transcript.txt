@@ -1,0 +1,9 @@
+Ravi: Okay let's start. Today we need to decide on the launch date for the new panel cutting optimizer feature.
+Meera: I think we should push it to next Friday, the sheet nesting algorithm still has a bug with rotated pieces.
+Ravi: Agreed, let's not rush it. Meera can you own fixing that bug by Wednesday?
+Meera: Yes I'll have it done by Wednesday.
+Ravi: Good. Also we decided to switch the export format from CSV to PDF for the cut list, customers were asking for that.
+Arjun: I can handle the PDF export, give me till Thursday.
+Ravi: Perfect. One more thing, we're not doing the bulk import feature this sprint, deprioritized it.
+Meera: Makes sense, too risky this close to launch.
+Ravi: Alright, so to summarize — launch moves to next Friday, Meera fixes the rotation bug by Wednesday, Arjun ships PDF export by Thursday, bulk import is out of scope for this sprint. Anything else? No? Let's wrap up.

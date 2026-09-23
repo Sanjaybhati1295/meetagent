@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MeetAgent — Live Meeting Audio to MoM</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" x2="12" y1="19" y2="22"/>
+          </svg>
+        </div>
+        <div>
+          <h1>MeetAgent <span class="badge">POC</span></h1>
+          <p class="subtitle">Listen to meeting audio &rarr; Convert to text &rarr; Generate Minutes of Meeting</p>
+        </div>
+      </div>
+      <div class="status-badges">
+        <span class="status-chip" id="groqStatusChip">
+          <span class="dot"></span> Groq Whisper + LLM
+        </span>
+        <span class="status-chip" id="geminiStatusChip">
+          <span class="dot"></span> Gemini MoM
+        </span>
+      </div>
+    </header>
+
+    <!-- Main Grid -->
+    <main class="main-content">
+      <!-- Control Panel -->
+      <section class="card control-card">
+        <div class="config-row">
+          <div class="config-group">
+            <label for="audioSourceSelect">Audio Input Source</label>
+            <select id="audioSourceSelect">
+              <option value="mic">🎙️ Microphone (Your voice / Room)</option>
+              <option value="display">🖥️ Google Meet / Tab Audio (Share tab with audio)</option>
+            </select>
+          </div>
+
+          <div class="config-group">
+            <label for="momProviderSelect">MoM AI Model</label>
+            <select id="momProviderSelect">
+              <option value="groq">Groq (openai/gpt-oss-120b - Fast)</option>
+              <option value="gemini">Gemini (gemini-3.6-flash - Deep)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Meeting Action Area -->
+        <div class="action-box" id="actionBox">
+          <!-- Idle State -->
+          <div id="idleState" class="state-panel active">
+            <button id="startMeetingBtn" class="btn btn-primary btn-large">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <circle cx="12" cy="12" r="10"/>
+                <circle cx="12" cy="12" r="3" fill="currentColor"/>
+              </svg>
+              Start Meeting
+            </button>
+            <div class="file-upload-hint">
+              <span>or</span>
+              <label class="btn btn-secondary btn-sm" for="audioFileInput">
+                📁 Upload Audio File (.mp3, .wav, .webm)
+              </label>
+              <input type="file" id="audioFileInput" accept="audio/*,.mp3,.wav,.webm,.m4a" style="display: none;">
+            </div>
+          </div>
+
+          <!-- Active Recording State -->
+          <div id="recordingState" class="state-panel hidden">
+            <div class="live-indicator-bar">
+              <div class="recording-pulse">
+                <span class="pulse-dot"></span>
+                <span class="pulse-text">LISTENING LIVE</span>
+              </div>
+              <div class="meeting-timer" id="meetingTimer">00:00</div>
+            </div>
+
+            <!-- Waveform Canvas -->
+            <canvas id="waveformCanvas" width="600" height="64"></canvas>
+
+            <button id="stopMeetingBtn" class="btn btn-danger btn-large">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <rect width="14" height="14" x="5" y="5" rx="2" fill="currentColor"/>
+              </svg>
+              End Meeting & Generate MoM
+            </button>
+          </div>
+
+          <!-- Processing State -->
+          <div id="processingState" class="state-panel hidden">
+            <div class="spinner"></div>
+            <p id="processingStatusText">Transcribing meeting audio with Groq Whisper...</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Two-Column Results: Transcript & MoM -->
+      <div class="results-grid">
+        <!-- Transcript Column -->
+        <section class="card transcript-card">
+          <div class="card-header">
+            <div class="card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              <h2>Speech-to-Text Transcript</h2>
+            </div>
+            <div class="card-actions">
+              <button id="copyTranscriptBtn" class="btn btn-ghost btn-xs" title="Copy transcript">
+                📋 Copy
+              </button>
+            </div>
+          </div>
+
+          <div class="meta-strip" id="transcriptMetaStrip" style="display: none;">
+            <span id="metaLang">Lang: -</span>
+            <span id="metaDuration">Duration: -</span>
+            <span id="metaLatency">STT Latency: -</span>
+            <span id="metaWords">Words: 0</span>
+          </div>
+
+          <textarea id="transcriptText" placeholder="Start a meeting and speak, or upload an audio file to see transcript here..." rows="12"></textarea>
+          
+          <div class="transcript-footer">
+            <button id="manualMoMBtn" class="btn btn-secondary btn-sm" disabled>
+              ⚡ Re-run MoM from this Transcript
+            </button>
+          </div>
+        </section>
+
+        <!-- Minutes of Meeting (MoM) Column -->
+        <section class="card mom-card">
+          <div class="card-header">
+            <div class="card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10 9 9 9 8 9"/>
+              </svg>
+              <h2>Minutes of Meeting (MoM)</h2>
+            </div>
+            <div class="card-actions">
+              <span id="momModelBadge" class="badge badge-outline">Groq</span>
+              <button id="copyMoMBtn" class="btn btn-ghost btn-xs" title="Copy MoM">📋 Copy</button>
+            </div>
+          </div>
+
+          <!-- Structured MoM View -->
+          <div id="momOutput" class="mom-output">
+            <div class="empty-state">
+              <p>Minutes of Meeting will automatically appear here once you stop the meeting.</p>
+            </div>
+          </div>
+
+          <!-- Raw Markdown View (Collapsible) -->
+          <details class="mom-raw-details">
+            <summary>View Raw Markdown Output</summary>
+            <pre id="momRawText" class="code-block"></pre>
+          </details>
+        </section>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <span>MeetAgent POC &bull; Free-Tier Audio STT & MoM Generation</span>
+    </footer>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
