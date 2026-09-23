@@ -8,9 +8,9 @@ import { createClient } from '@supabase/supabase-js'
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const DATA_DIR = join(__dirname, '..', 'data')
 
-const SUPABASE_URL = process.env.SUPABASE_URL
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY
-const IS_SUPABASE_CONFIGURED = Boolean(SUPABASE_URL && SUPABASE_KEY)
+export const SUPABASE_URL = process.env.SUPABASE_URL
+export const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY
+export const IS_SUPABASE_CONFIGURED = Boolean(SUPABASE_URL && SUPABASE_KEY)
 
 let supabase = null
 let localDb = null
