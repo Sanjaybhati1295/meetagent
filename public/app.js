@@ -1,354 +1,185 @@
-// MeetAgent PRO — Enterprise Client Controller
+// MeetAgent — Clean & Simple Client Controller
 (() => {
   'use strict'
 
-  // Application State
-  const state = {
-    audioSource: 'mic',          // 'mic' | 'display'
-    momProvider: 'groq',         // 'groq' | 'gemini'
-    viewMode: 'structured',      // 'structured' | 'markdown'
-    isRecording: false,
-    mediaStream: null,
-    mediaRecorder: null,
-    audioChunks: [],
-    timerInterval: null,
-    meetingStartTime: null,
-    audioContext: null,
-    analyserNode: null,
-    animationFrameId: null,
-    currentTranscript: '',
-    currentMoMRaw: '',
-    sessions: [],
-  }
+  // State
+  let mediaStream = null
+  let mediaRecorder = null
+  let audioChunks = []
+  let timerInterval = null
+  let startTime = null
+  let audioContext = null
+  let analyserNode = null
+  let animationId = null
+  let currentMoMRaw = ''
+  let activeTab = 'mom' // 'mom' | 'transcript'
 
-  // DOM Elements Cache
-  const el = {
-    toastContainer: document.getElementById('toastContainer'),
-    groqStatusChip: document.getElementById('groqStatusChip'),
-    geminiStatusChip: document.getElementById('geminiStatusChip'),
-    historyCountBadge: document.getElementById('historyCountBadge'),
-    historyToggleBtn: document.getElementById('historyToggleBtn'),
-    newSessionBtn: document.getElementById('newSessionBtn'),
+  // DOM Elements
+  const audioSource = document.getElementById('audioSource')
+  const aiModel = document.getElementById('aiModel')
+  const engineStatusText = document.getElementById('engineStatusText')
 
-    audioSourceGroup: document.getElementById('audioSourceGroup'),
-    momProviderGroup: document.getElementById('momProviderGroup'),
-    momModelSubtitle: document.getElementById('momModelSubtitle'),
+  const idleState = document.getElementById('idleState')
+  const recordingState = document.getElementById('recordingState')
+  const loadingState = document.getElementById('loadingState')
+  const loadingText = document.getElementById('loadingText')
 
-    idleState: document.getElementById('idleState'),
-    recordingState: document.getElementById('recordingState'),
-    processingState: document.getElementById('processingState'),
-    processingStepTitle: document.getElementById('processingStepTitle'),
-    processingStatusText: document.getElementById('processingStatusText'),
+  const startBtn = document.getElementById('startBtn')
+  const stopBtn = document.getElementById('stopBtn')
+  const audioFileInput = document.getElementById('audioFileInput')
+  const meetingTimer = document.getElementById('meetingTimer')
+  const waveformCanvas = document.getElementById('waveformCanvas')
 
-    startMeetingBtn: document.getElementById('startMeetingBtn'),
-    stopMeetingBtn: document.getElementById('stopMeetingBtn'),
-    fileDropzone: document.getElementById('fileDropzone'),
-    audioFileInput: document.getElementById('audioFileInput'),
+  const resultsSection = document.getElementById('resultsSection')
+  const tabMoMBtn = document.getElementById('tabMoMBtn')
+  const tabTranscriptBtn = document.getElementById('tabTranscriptBtn')
+  const momPane = document.getElementById('momPane')
+  const transcriptPane = document.getElementById('transcriptPane')
 
-    meetingTimer: document.getElementById('meetingTimer'),
-    waveformCanvas: document.getElementById('waveformCanvas'),
-    liveSourceIndicator: document.getElementById('liveSourceIndicator'),
-    audioDbLevel: document.getElementById('audioDbLevel'),
+  const summaryContent = document.getElementById('summaryContent')
+  const decisionsList = document.getElementById('decisionsList')
+  const actionsList = document.getElementById('actionsList')
 
-    transcriptText: document.getElementById('transcriptText'),
-    transcriptSearch: document.getElementById('transcriptSearch'),
-    transcriptMetaStrip: document.getElementById('transcriptMetaStrip'),
-    metaLang: document.getElementById('metaLang'),
-    metaDuration: document.getElementById('metaDuration'),
-    metaWords: document.getElementById('metaWords'),
-    metaLatency: document.getElementById('metaLatency'),
-    copyTranscriptBtn: document.getElementById('copyTranscriptBtn'),
-    manualMoMBtn: document.getElementById('manualMoMBtn'),
+  const transcriptText = document.getElementById('transcriptText')
+  const statWords = document.getElementById('statWords')
+  const statDuration = document.getElementById('statDuration')
+  const statSpeed = document.getElementById('statSpeed')
 
-    tabStructuredBtn: document.getElementById('tabStructuredBtn'),
-    tabMarkdownBtn: document.getElementById('tabMarkdownBtn'),
-    momStructuredView: document.getElementById('momStructuredView'),
-    momMarkdownView: document.getElementById('momMarkdownView'),
-    momOutput: document.getElementById('momOutput'),
-    momRawText: document.getElementById('momRawText'),
-    momStatsBadge: document.getElementById('momStatsBadge'),
-    copyMoMBtn: document.getElementById('copyMoMBtn'),
-    exportMdBtn: document.getElementById('exportMdBtn'),
-    printMoMBtn: document.getElementById('printMoMBtn'),
+  const copyBtn = document.getElementById('copyBtn')
+  const downloadBtn = document.getElementById('downloadBtn')
+  const rerunMoMBtn = document.getElementById('rerunMoMBtn')
+  const toast = document.getElementById('toast')
 
-    historyDrawer: document.getElementById('historyDrawer'),
-    closeDrawerBtn: document.getElementById('closeDrawerBtn'),
-    historyListContainer: document.getElementById('historyListContainer'),
-    clearHistoryBtn: document.getElementById('clearHistoryBtn'),
-  }
-
-  // ==========================================================================
-  // Initialization
-  // ==========================================================================
+  // Initialize
   async function init() {
-    loadSessions()
-    setupEventListeners()
-    await checkEngineHealth()
-  }
-
-  async function checkEngineHealth() {
+    setupListeners()
     try {
       const res = await fetch('/api/config')
       if (res.ok) {
         const config = await res.json()
-        if (config.groqConfigured) el.groqStatusChip.classList.add('ready')
-        if (config.geminiConfigured) el.geminiStatusChip.classList.add('ready')
+        if (config.groqConfigured && config.geminiConfigured) {
+          engineStatusText.textContent = 'Groq & Gemini Ready'
+        } else if (config.groqConfigured) {
+          engineStatusText.textContent = 'Groq Ready'
+        }
       }
-    } catch (err) {
-      console.warn('API engine health check could not connect:', err)
+    } catch {}
+  }
+
+  function setupListeners() {
+    startBtn.addEventListener('click', startMeeting)
+    stopBtn.addEventListener('click', stopMeeting)
+    audioFileInput.addEventListener('change', handleFileUpload)
+
+    tabMoMBtn.addEventListener('click', () => switchTab('mom'))
+    tabTranscriptBtn.addEventListener('click', () => switchTab('transcript'))
+
+    copyBtn.addEventListener('click', copyActiveContent)
+    downloadBtn.addEventListener('click', downloadMarkdown)
+
+    rerunMoMBtn.addEventListener('click', () => {
+      const text = transcriptText.value.trim()
+      if (text) generateMoM(text)
+    })
+  }
+
+  // Tab Switcher
+  function switchTab(tab) {
+    activeTab = tab
+    if (tab === 'mom') {
+      tabMoMBtn.classList.add('active')
+      tabTranscriptBtn.classList.remove('active')
+      momPane.classList.remove('hidden')
+      transcriptPane.classList.add('hidden')
+    } else {
+      tabTranscriptBtn.classList.add('active')
+      tabMoMBtn.classList.remove('active')
+      transcriptPane.classList.remove('hidden')
+      momPane.classList.add('hidden')
     }
   }
 
-  function setupEventListeners() {
-    // Segmented Controls (Source & Model)
-    el.audioSourceGroup.addEventListener('click', (e) => {
-      const btn = e.target.closest('.segment-btn')
-      if (!btn) return
-      el.audioSourceGroup.querySelectorAll('.segment-btn').forEach((b) => b.classList.remove('active'))
-      btn.classList.add('active')
-      state.audioSource = btn.dataset.value
-      showToast(`Input source switched to: ${state.audioSource === 'mic' ? 'Microphone' : 'Tab Audio'}`)
-    })
-
-    el.momProviderGroup.addEventListener('click', (e) => {
-      const btn = e.target.closest('.segment-btn')
-      if (!btn) return
-      el.momProviderGroup.querySelectorAll('.segment-btn').forEach((b) => b.classList.remove('active'))
-      btn.classList.add('active')
-      state.momProvider = btn.dataset.value
-      el.momModelSubtitle.textContent = state.momProvider === 'gemini' ? 'Gemini 3.6 Flash reasoning' : 'Groq Llama 3.3 LPU acceleration'
-      showToast(`MoM Engine switched to: ${state.momProvider.toUpperCase()}`)
-    })
-
-    // Meeting Actions
-    el.startMeetingBtn.addEventListener('click', startMeeting)
-    el.stopMeetingBtn.addEventListener('click', stopMeeting)
-    el.newSessionBtn.addEventListener('click', resetSession)
-
-    // Manual MoM Generation from edited transcript
-    el.manualMoMBtn.addEventListener('click', () => {
-      const transcript = el.transcriptText.value.trim()
-      if (transcript) runMoMGeneration(transcript)
-    })
-
-    // Transcript Input Listener
-    el.transcriptText.addEventListener('input', () => {
-      el.manualMoMBtn.disabled = !el.transcriptText.value.trim()
-    })
-
-    // Search in Transcript
-    el.transcriptSearch.addEventListener('input', handleTranscriptSearch)
-
-    // View Tabs (Structured vs Raw Markdown)
-    el.tabStructuredBtn.addEventListener('click', () => switchView('structured'))
-    el.tabMarkdownBtn.addEventListener('click', () => switchView('markdown'))
-
-    // Copy & Export Tools
-    el.copyTranscriptBtn.addEventListener('click', () => {
-      copyToClipboard(el.transcriptText.value, 'Meeting transcript copied to clipboard')
-    })
-
-    el.copyMoMBtn.addEventListener('click', () => {
-      copyToClipboard(state.currentMoMRaw || el.momRawText.textContent, 'Minutes of Meeting copied to clipboard')
-    })
-
-    el.exportMdBtn.addEventListener('click', exportMarkdownFile)
-    el.printMoMBtn.addEventListener('click', () => window.print())
-
-    // File Dropzone
-    setupDropzone()
-
-    // History Drawer
-    el.historyToggleBtn.addEventListener('click', () => el.historyDrawer.classList.remove('hidden'))
-    el.closeDrawerBtn.addEventListener('click', () => el.historyDrawer.classList.add('hidden'))
-    el.clearHistoryBtn.addEventListener('click', clearAllHistory)
-    el.historyDrawer.addEventListener('click', (e) => {
-      if (e.target === el.historyDrawer) el.historyDrawer.classList.add('hidden')
-    })
-
-    // Keyboard Shortcuts
-    window.addEventListener('keydown', (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-        e.preventDefault()
-        if (state.isRecording) stopMeeting()
-        else startMeeting()
-      }
-    })
-  }
-
-  // ==========================================================================
-  // Audio Capture & Visualizer
-  // ==========================================================================
+  // Meeting Start / Stop
   async function startMeeting() {
     try {
-      state.audioChunks = []
+      audioChunks = []
+      const source = audioSource.value
 
-      if (state.audioSource === 'mic') {
-        el.liveSourceIndicator.textContent = '🎙️ Listening to Microphone Audio...'
-        state.mediaStream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
-          },
+      if (source === 'mic') {
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
         })
       } else {
-        el.liveSourceIndicator.textContent = '🖥️ Capturing Google Meet / Tab Audio...'
         const displayStream = await navigator.mediaDevices.getDisplayMedia({
           video: true,
           audio: true,
         })
-
         const audioTracks = displayStream.getAudioTracks()
         if (audioTracks.length === 0) {
           displayStream.getTracks().forEach((t) => t.stop())
-          showToast('No audio track selected! Make sure "Share tab audio" is checked.', 'error')
+          showToast('Please check "Share tab audio" in the browser share dialog.')
           return
         }
-
-        // Keep audio track only, stop video
         displayStream.getVideoTracks().forEach((t) => t.stop())
-        state.mediaStream = new MediaStream(audioTracks)
+        mediaStream = new MediaStream(audioTracks)
       }
 
-      // Initialize Equalizer Visualizer
-      setupEqualizerVisualizer(state.mediaStream)
+      setupWaveform(mediaStream)
 
-      // MediaRecorder Setup
-      const supportedMimes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg']
-      const mimeType = supportedMimes.find((m) => MediaRecorder.isTypeSupported(m)) || ''
+      const supportedMimes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4']
+      const mime = supportedMimes.find((m) => MediaRecorder.isTypeSupported(m)) || ''
+      mediaRecorder = new MediaRecorder(mediaStream, mime ? { mimeType: mime } : undefined)
 
-      state.mediaRecorder = new MediaRecorder(state.mediaStream, mimeType ? { mimeType } : undefined)
-      state.mediaRecorder.ondataavailable = (event) => {
-        if (event.data && event.data.size > 0) {
-          state.audioChunks.push(event.data)
-        }
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) audioChunks.push(e.data)
       }
 
-      state.mediaRecorder.start(1000)
-      state.isRecording = true
+      mediaRecorder.start(1000)
 
-      setUIState('recording')
+      setState('recording')
       startTimer()
-      showToast('Meeting started. Recording audio in real-time...')
     } catch (err) {
-      console.error('Failed to start audio capture:', err)
-      showToast(`Audio capture failed: ${err.message}`, 'error')
-      setUIState('idle')
+      alert(`Could not access audio: ${err.message}`)
+      setState('idle')
     }
   }
 
   async function stopMeeting() {
-    if (!state.mediaRecorder || state.mediaRecorder.state === 'inactive') return
+    if (!mediaRecorder || mediaRecorder.state === 'inactive') return
 
     stopTimer()
-    teardownEqualizerVisualizer()
-    state.isRecording = false
-
-    setUIState('processing')
-    el.processingStepTitle.textContent = 'Finalizing Recording'
-    el.processingStatusText.textContent = 'Flushing audio stream buffer and packaging...'
+    teardownWaveform()
+    setState('loading')
+    loadingText.textContent = 'Transcribing meeting speech with Groq Whisper...'
 
     return new Promise((resolve) => {
-      state.mediaRecorder.onstop = async () => {
-        if (state.mediaStream) {
-          state.mediaStream.getTracks().forEach((track) => track.stop())
-          state.mediaStream = null
+      mediaRecorder.onstop = async () => {
+        if (mediaStream) {
+          mediaStream.getTracks().forEach((t) => t.stop())
+          mediaStream = null
         }
 
-        const mimeType = state.mediaRecorder.mimeType || 'audio/webm'
-        const audioBlob = new Blob(state.audioChunks, { type: mimeType })
+        const mime = mediaRecorder.mimeType || 'audio/webm'
+        const audioBlob = new Blob(audioChunks, { type: mime })
 
         try {
-          await processMeetingAudio(audioBlob)
+          await processAudio(audioBlob)
         } catch (err) {
-          console.error('Pipeline error:', err)
-          showToast(`Processing error: ${err.message}`, 'error')
-          setUIState('idle')
+          alert(`Error processing audio: ${err.message}`)
+          setState('idle')
         }
         resolve()
       }
-
-      state.mediaRecorder.stop()
+      mediaRecorder.stop()
     })
   }
 
-  // Dynamic 32-Bar Equalizer Canvas Visualizer
-  function setupEqualizerVisualizer(stream) {
-    try {
-      state.audioContext = new (window.AudioContext || window.webkitAudioContext)()
-      const source = state.audioContext.createMediaStreamSource(stream)
-      state.analyserNode = state.audioContext.createAnalyser()
-      state.analyserNode.fftSize = 64
-      source.connect(state.analyserNode)
-
-      const bufferLength = state.analyserNode.frequencyBinCount
-      const dataArray = new Uint8Array(bufferLength)
-      const ctx = el.waveformCanvas.getContext('2d')
-      const width = el.waveformCanvas.width
-      const height = el.waveformCanvas.height
-
-      function renderFrame() {
-        state.animationFrameId = requestAnimationFrame(renderFrame)
-        state.analyserNode.getByteFrequencyData(dataArray)
-
-        ctx.clearRect(0, 0, width, height)
-
-        const barCount = 28
-        const totalBarWidth = width / barCount
-        const barWidth = totalBarWidth - 4
-        let sum = 0
-
-        for (let i = 0; i < barCount; i++) {
-          const val = dataArray[i] || 0
-          sum += val
-          const percent = val / 255
-          const barHeight = Math.max(4, percent * (height - 10))
-          const x = i * totalBarWidth + 2
-          const y = height - barHeight - 4
-
-          // Gradient color: Indigo to Cyan
-          const gradient = ctx.createLinearGradient(0, height, 0, 0)
-          gradient.addColorStop(0, '#4f46e5')
-          gradient.addColorStop(0.6, '#06b6d4')
-          gradient.addColorStop(1, '#34d399')
-
-          ctx.fillStyle = gradient
-          ctx.beginPath()
-          ctx.roundRect(x, y, barWidth, barHeight, [3, 3, 0, 0])
-          ctx.fill()
-        }
-
-        const avg = sum / barCount
-        el.audioDbLevel.textContent = avg > 8 ? `${Math.round((avg / 255) * 100)}% VOL` : 'SILENCE'
-      }
-
-      renderFrame()
-    } catch (err) {
-      console.warn('Audio visualization context not available:', err)
-    }
-  }
-
-  function teardownEqualizerVisualizer() {
-    if (state.animationFrameId) {
-      cancelAnimationFrame(state.animationFrameId)
-      state.animationFrameId = null
-    }
-    if (state.audioContext && state.audioContext.state !== 'closed') {
-      state.audioContext.close().catch(() => {})
-      state.audioContext = null
-    }
-  }
-
-  // ==========================================================================
-  // Pipeline Processing: STT -> MoM
-  // ==========================================================================
-  async function processMeetingAudio(audioBlob) {
-    el.processingStepTitle.textContent = 'Transcribing Speech'
-    el.processingStatusText.textContent = 'Groq Whisper LPU is transcribing audio at sub-second speeds...'
+  // Audio Pipeline: STT -> MoM
+  async function processAudio(audioBlob) {
+    loadingText.textContent = 'Transcribing audio speech with Groq Whisper...'
 
     const ext = audioBlob.type.includes('mp4') ? 'mp4' : 'webm'
-    const res = await fetch(`/api/transcribe?filename=meeting-audio.${ext}`, {
+    const res = await fetch(`/api/transcribe?filename=recording.${ext}`, {
       method: 'POST',
       headers: { 'Content-Type': audioBlob.type },
       body: audioBlob,
@@ -359,47 +190,33 @@
       throw new Error(err.error || `Transcription failed with HTTP ${res.status}`)
     }
 
-    const stt = await res.json()
-    const transcript = (stt.text || '').trim()
+    const data = await res.json()
+    const transcript = (data.text || '').trim()
 
-    state.currentTranscript = transcript
-    el.transcriptText.value = transcript
-    el.manualMoMBtn.disabled = !transcript
+    transcriptText.value = transcript
 
-    // Update Telemetry Metrics
     const words = transcript.split(/\s+/).filter(Boolean).length
-    el.metaLang.textContent = (stt.language || 'English').toUpperCase()
-    el.metaDuration.textContent = stt.durationSec ? `${stt.durationSec.toFixed(1)}s` : 'n/a'
-    el.metaWords.textContent = words
-    el.metaLatency.textContent = `${(stt.latencyMs / 1000).toFixed(2)}s`
-    el.transcriptMetaStrip.style.display = 'flex'
+    statWords.textContent = `${words} words`
+    statDuration.textContent = data.durationSec ? `${data.durationSec.toFixed(1)}s duration` : '0s'
+    statSpeed.textContent = `STT speed: ${(data.latencyMs / 1000).toFixed(2)}s`
+
+    resultsSection.classList.remove('hidden')
 
     if (!transcript) {
-      setUIState('idle')
-      showToast('No clear speech was detected in this recording.', 'error')
-      el.momOutput.innerHTML = `
-        <div class="empty-state-pro">
-          <h3>No Speech Detected</h3>
-          <p>Please check your microphone input volume or ensure the meeting tab is actively playing audio.</p>
-        </div>`
+      setState('idle')
+      summaryContent.textContent = 'No speech detected in this recording.'
       return
     }
 
-    showToast(`Transcribed ${words} words in ${(stt.latencyMs / 1000).toFixed(2)}s`)
-
-    // Step 2: Auto-run MoM Generation
-    await runMoMGeneration(transcript, stt)
+    await generateMoM(transcript)
   }
 
-  async function runMoMGeneration(transcript, sttMetrics = null) {
-    if (!transcript) return
-
-    setUIState('processing')
-    const provider = state.momProvider
-    const providerName = provider === 'gemini' ? 'Gemini 3.6 Flash' : 'Groq Llama 3.3'
-
-    el.processingStepTitle.textContent = 'Generating Minutes of Meeting'
-    el.processingStatusText.textContent = `${providerName} is extracting executive summaries, key decisions, and action items...`
+  // MoM Generation
+  async function generateMoM(transcript) {
+    setState('loading')
+    const provider = aiModel.value
+    const providerLabel = provider === 'gemini' ? 'Gemini 3.6 Flash' : 'Groq Llama 3.3'
+    loadingText.textContent = `Generating Minutes of Meeting using ${providerLabel}...`
 
     try {
       const res = await fetch('/api/mom', {
@@ -410,41 +227,23 @@
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || `MoM generation failed with HTTP ${res.status}`)
+        throw new Error(err.error || `MoM failed with HTTP ${res.status}`)
       }
 
       const data = await res.json()
-      state.currentMoMRaw = data.mom
-
-      renderStructuredMoM(data.mom, data.latencyMs, provider)
-
-      // Save Session to Local History
-      saveSessionToHistory({
-        id: `meet_${Date.now()}`,
-        timestamp: new Date().toISOString(),
-        provider,
-        transcript,
-        momRaw: data.mom,
-        wordCount: transcript.split(/\s+/).filter(Boolean).length,
-        latencyMs: data.latencyMs,
-      })
-
-      showToast(`Minutes of Meeting generated in ${(data.latencyMs / 1000).toFixed(2)}s!`)
+      currentMoMRaw = data.mom
+      renderMoM(data.mom)
+      switchTab('mom')
+      showToast('Minutes of Meeting generated successfully!')
     } catch (err) {
-      console.error('MoM error:', err)
-      showToast(`MoM generation failed: ${err.message}`, 'error')
+      alert(`Could not generate MoM: ${err.message}`)
     } finally {
-      setUIState('idle')
+      setState('idle')
     }
   }
 
-  // ==========================================================================
-  // Render MoM in Executive Cards
-  // ==========================================================================
-  function renderStructuredMoM(rawText, latencyMs, provider) {
-    el.momRawText.textContent = rawText
-    el.momStatsBadge.textContent = `Model: ${provider.toUpperCase()} • Latency: ${(latencyMs / 1000).toFixed(2)}s`
-
+  // Render MoM in Clean Blocks
+  function renderMoM(rawText) {
     const summaryMatch = rawText.match(/===SUMMARY===([\s\S]*?)(?====DECISIONS===|===ACTION ITEMS===|===TRANSCRIPT===|$)/i)
     const decisionsMatch = rawText.match(/===DECISIONS===([\s\S]*?)(?====ACTION ITEMS===|===TRANSCRIPT===|$)/i)
     const actionsMatch = rawText.match(/===ACTION ITEMS===([\s\S]*?)(?====TRANSCRIPT===|$)/i)
@@ -453,136 +252,50 @@
     const decisions = (decisionsMatch ? decisionsMatch[1] : '').trim()
     const actions = (actionsMatch ? actionsMatch[1] : '').trim()
 
-    let html = ''
+    // 1. Summary
+    summaryContent.textContent = summary || 'No summary recorded.'
 
-    // 1. Executive Summary Card
-    if (summary) {
-      html += `
-        <div class="pro-card">
-          <div class="pro-card-header">
-            <span class="card-tag tag-summary">Executive Summary</span>
-          </div>
-          <div class="pro-card-body">
-            <p>${escapeHtml(summary)}</p>
-          </div>
-        </div>`
-    }
-
-    // 2. Key Decisions Card
+    // 2. Decisions
     if (decisions) {
-      const items = decisions
-        .split('\n')
-        .map((l) => l.trim().replace(/^[-*•]\s*/, ''))
-        .filter(Boolean)
-
-      html += `
-        <div class="pro-card">
-          <div class="pro-card-header">
-            <span class="card-tag tag-decisions">Key Decisions Made</span>
-          </div>
-          <div class="pro-card-body">
-            <ul class="decisions-list">
-              ${items.map((item) => `
-                <li class="decision-item">
-                  <svg class="decision-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                  <span>${escapeHtml(item)}</span>
-                </li>
-              `).join('')}
-            </ul>
-          </div>
-        </div>`
+      const items = decisions.split('\n').map((l) => l.trim().replace(/^[-*•]\s*/, '')).filter(Boolean)
+      decisionsList.innerHTML = items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')
+    } else {
+      decisionsList.innerHTML = '<li>None recorded.</li>'
     }
 
-    // 3. Action Items Tracker Card
+    // 3. Action Items
     if (actions) {
-      const items = actions
-        .split('\n')
-        .map((l) => l.trim().replace(/^[-*•]\s*/, ''))
-        .filter(Boolean)
+      const items = actions.split('\n').map((l) => l.trim().replace(/^[-*•]\s*/, '')).filter(Boolean)
+      actionsList.innerHTML = items.map((item, idx) => {
+        const ownerMatch = item.match(/^\[?([^:\]]+)\]?:\s*(.*)$/)
+        const owner = ownerMatch ? ownerMatch[1].trim() : null
+        const task = ownerMatch ? ownerMatch[2].trim() : item
 
-      html += `
-        <div class="pro-card">
-          <div class="pro-card-header">
-            <span class="card-tag tag-actions">Action Items & Deliverables</span>
-          </div>
-          <div class="pro-card-body">
-            <div class="action-items-list">
-              ${items.map((item, idx) => {
-                const ownerMatch = item.match(/^\[?([^:\]]+)\]?:\s*(.*)$/)
-                const owner = ownerMatch ? ownerMatch[1].trim() : null
-                const task = ownerMatch ? ownerMatch[2].trim() : item
+        return `
+          <div class="task-row">
+            <input type="checkbox" class="task-chk" id="task_${idx}">
+            ${owner ? `<span class="owner-pill">@${escapeHtml(owner)}</span>` : ''}
+            <label class="task-label" for="task_${idx}">${escapeHtml(task)}</label>
+          </div>`
+      }).join('')
 
-                return `
-                  <div class="action-task-row" data-task-id="task_${idx}">
-                    <input type="checkbox" class="action-checkbox" id="chk_${idx}">
-                    ${owner ? `<span class="action-owner-badge">@${escapeHtml(owner)}</span>` : ''}
-                    <label class="task-text" for="chk_${idx}">${escapeHtml(task)}</label>
-                  </div>`
-              }).join('')}
-            </div>
-          </div>
-        </div>`
-    }
-
-    if (!html) {
-      html = `<div class="pro-card"><pre class="raw-markdown-pre">${escapeHtml(rawText)}</pre></div>`
-    }
-
-    el.momOutput.innerHTML = html
-
-    // Attach Interactive Task Checkboxes
-    el.momOutput.querySelectorAll('.action-checkbox').forEach((checkbox) => {
-      checkbox.addEventListener('change', (e) => {
-        const row = e.target.closest('.action-task-row')
-        if (row) row.classList.toggle('completed', e.target.checked)
+      actionsList.querySelectorAll('.task-chk').forEach((chk) => {
+        chk.addEventListener('change', (e) => {
+          e.target.closest('.task-row').classList.toggle('done', e.target.checked)
+        })
       })
-    })
-
-    switchView('structured')
+    } else {
+      actionsList.innerHTML = '<div class="empty-task">None recorded.</div>'
+    }
   }
 
-  // ==========================================================================
-  // File Dropzone Handling
-  // ==========================================================================
-  function setupDropzone() {
-    const dropzone = el.fileDropzone
-
-    dropzone.addEventListener('click', () => el.audioFileInput.click())
-
-    ;['dragenter', 'dragover'].forEach((eventName) => {
-      dropzone.addEventListener(eventName, (e) => {
-        e.preventDefault()
-        e.stopPropagation()
-        dropzone.classList.add('dragover')
-      })
-    })
-
-    ;['dragleave', 'drop'].forEach((eventName) => {
-      dropzone.addEventListener(eventName, (e) => {
-        e.preventDefault()
-        e.stopPropagation()
-        dropzone.classList.remove('dragover')
-      })
-    })
-
-    dropzone.addEventListener('drop', (e) => {
-      const files = e.dataTransfer.files
-      if (files.length > 0) handleDirectFileUpload(files[0])
-    })
-
-    el.audioFileInput.addEventListener('change', (e) => {
-      if (e.target.files.length > 0) handleDirectFileUpload(e.target.files[0])
-    })
-  }
-
-  async function handleDirectFileUpload(file) {
+  // Direct File Upload
+  async function handleFileUpload(e) {
+    const file = e.target.files[0]
     if (!file) return
 
-    setUIState('processing')
-    el.processingStepTitle.textContent = 'Processing Audio File'
-    el.processingStatusText.textContent = `Uploading "${file.name}" to Groq Whisper LPU...`
+    setState('loading')
+    loadingText.textContent = `Uploading and transcribing "${file.name}"...`
 
     try {
       const res = await fetch(`/api/transcribe?filename=${encodeURIComponent(file.name)}`, {
@@ -596,268 +309,127 @@
         throw new Error(err.error || `Upload failed with HTTP ${res.status}`)
       }
 
-      const stt = await res.json()
-      const transcript = (stt.text || '').trim()
+      const data = await res.json()
+      const transcript = (data.text || '').trim()
 
-      state.currentTranscript = transcript
-      el.transcriptText.value = transcript
-      el.manualMoMBtn.disabled = !transcript
-
+      transcriptText.value = transcript
       const words = transcript.split(/\s+/).filter(Boolean).length
-      el.metaLang.textContent = (stt.language || 'English').toUpperCase()
-      el.metaDuration.textContent = stt.durationSec ? `${stt.durationSec.toFixed(1)}s` : 'n/a'
-      el.metaWords.textContent = words
-      el.metaLatency.textContent = `${(stt.latencyMs / 1000).toFixed(2)}s`
-      el.transcriptMetaStrip.style.display = 'flex'
+      statWords.textContent = `${words} words`
+      statDuration.textContent = data.durationSec ? `${data.durationSec.toFixed(1)}s duration` : '0s'
+      statSpeed.textContent = `STT speed: ${(data.latencyMs / 1000).toFixed(2)}s`
 
-      showToast(`Uploaded and transcribed "${file.name}" in ${(stt.latencyMs / 1000).toFixed(2)}s`)
+      resultsSection.classList.remove('hidden')
 
       if (transcript) {
-        await runMoMGeneration(transcript, stt)
+        await generateMoM(transcript)
       }
     } catch (err) {
-      console.error('File upload error:', err)
-      showToast(`File processing failed: ${err.message}`, 'error')
-      setUIState('idle')
+      alert(`File processing error: ${err.message}`)
+      setState('idle')
     } finally {
-      el.audioFileInput.value = ''
+      audioFileInput.value = ''
     }
   }
 
-  // ==========================================================================
-  // Session History (Local Storage)
-  // ==========================================================================
-  function loadSessions() {
+  // Waveform Visualizer
+  function setupWaveform(stream) {
     try {
-      const saved = localStorage.getItem('meetagent_sessions')
-      state.sessions = saved ? JSON.parse(saved) : []
-      updateHistoryUI()
-    } catch (err) {
-      console.warn('Could not read session history:', err)
-    }
+      audioContext = new (window.AudioContext || window.webkitAudioContext)()
+      const src = audioContext.createMediaStreamSource(stream)
+      analyserNode = audioContext.createAnalyser()
+      analyserNode.fftSize = 64
+      src.connect(analyserNode)
+
+      const bufferLength = analyserNode.frequencyBinCount
+      const dataArray = new Uint8Array(bufferLength)
+      const ctx = waveformCanvas.getContext('2d')
+      const width = waveformCanvas.width
+      const height = waveformCanvas.height
+
+      function draw() {
+        animationId = requestAnimationFrame(draw)
+        analyserNode.getByteFrequencyData(dataArray)
+
+        ctx.clearRect(0, 0, width, height)
+
+        const barCount = 24
+        const barWidth = width / barCount - 3
+
+        for (let i = 0; i < barCount; i++) {
+          const val = dataArray[i] || 0
+          const barHeight = Math.max(3, (val / 255) * (height - 6))
+          const x = i * (barWidth + 3)
+          const y = height - barHeight - 2
+
+          ctx.fillStyle = '#6366f1'
+          ctx.beginPath()
+          ctx.roundRect(x, y, barWidth, barHeight, [2, 2, 0, 0])
+          ctx.fill()
+        }
+      }
+      draw()
+    } catch {}
   }
 
-  function saveSessionToHistory(session) {
-    state.sessions.unshift(session)
-    if (state.sessions.length > 20) state.sessions.pop()
-    try {
-      localStorage.setItem('meetagent_sessions', JSON.stringify(state.sessions))
-    } catch (err) {
-      console.warn('Storage quota exceeded:', err)
-    }
-    updateHistoryUI()
+  function teardownWaveform() {
+    if (animationId) cancelAnimationFrame(animationId)
+    if (audioContext && audioContext.state !== 'closed') audioContext.close()
   }
 
-  function updateHistoryUI() {
-    el.historyCountBadge.textContent = state.sessions.length
-
-    if (state.sessions.length === 0) {
-      el.historyListContainer.innerHTML = `
-        <div class="history-empty">
-          <p>No saved sessions found in local history.</p>
-        </div>`
-      return
-    }
-
-    el.historyListContainer.innerHTML = state.sessions.map((s, index) => {
-      const date = new Date(s.timestamp)
-      const dateStr = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-      const preview = s.transcript ? s.transcript.slice(0, 110) + '...' : 'Empty transcript'
-
-      return `
-        <div class="history-card" data-session-index="${index}">
-          <div class="history-meta">
-            <span>${dateStr}</span>
-            <span>${s.provider.toUpperCase()} • ${s.wordCount} words</span>
-          </div>
-          <div class="history-title">Session ${state.sessions.length - index}</div>
-          <div class="history-preview">${escapeHtml(preview)}</div>
-        </div>`
-    }).join('')
-
-    el.historyListContainer.querySelectorAll('.history-card').forEach((card) => {
-      card.addEventListener('click', () => {
-        const index = parseInt(card.dataset.sessionIndex, 10)
-        loadHistorySession(state.sessions[index])
-        el.historyDrawer.classList.add('hidden')
-      })
-    })
-  }
-
-  function loadHistorySession(s) {
-    state.currentTranscript = s.transcript
-    state.currentMoMRaw = s.momRaw
-    el.transcriptText.value = s.transcript
-    el.manualMoMBtn.disabled = !s.transcript
-
-    const words = s.transcript.split(/\s+/).filter(Boolean).length
-    el.metaLang.textContent = 'SAVED'
-    el.metaDuration.textContent = 'Past Session'
-    el.metaWords.textContent = words
-    el.metaLatency.textContent = `${(s.latencyMs / 1000).toFixed(2)}s`
-    el.transcriptMetaStrip.style.display = 'flex'
-
-    renderStructuredMoM(s.momRaw, s.latencyMs, s.provider)
-    showToast('Loaded past session into workspace')
-  }
-
-  function clearAllHistory() {
-    if (confirm('Are you sure you want to clear all saved meeting sessions?')) {
-      state.sessions = []
-      localStorage.removeItem('meetagent_sessions')
-      updateHistoryUI()
-      showToast('All meeting history cleared')
-    }
-  }
-
-  function resetSession() {
-    if (state.isRecording) {
-      if (!confirm('A meeting recording is currently active. Do you want to discard it and start fresh?')) return
-      stopTimer()
-      teardownEqualizerVisualizer()
-      if (state.mediaStream) state.mediaStream.getTracks().forEach((t) => t.stop())
-      state.isRecording = false
-    }
-
-    state.currentTranscript = ''
-    state.currentMoMRaw = ''
-    el.transcriptText.value = ''
-    el.momRawText.textContent = ''
-    el.manualMoMBtn.disabled = true
-    el.transcriptMetaStrip.style.display = 'none'
-
-    el.momOutput.innerHTML = `
-      <div class="empty-state-pro">
-        <div class="empty-icon-shield">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-            <rect width="18" height="18" x="3" y="3" rx="2"/>
-            <path d="M3 9h18"/>
-            <path d="M9 21V9"/>
-          </svg>
-        </div>
-        <h3>Awaiting Meeting Audio</h3>
-        <p>Start a live meeting or upload a recorded session to automatically extract structured decisions, owners, and action items.</p>
-      </div>`
-
-    setUIState('idle')
-    showToast('Workspace reset for a fresh session')
-  }
-
-  // ==========================================================================
-  // Export & Utility Helpers
-  // ==========================================================================
-  function switchView(mode) {
-    state.viewMode = mode
-    if (mode === 'structured') {
-      el.tabStructuredBtn.classList.add('active')
-      el.tabMarkdownBtn.classList.remove('active')
-      el.momStructuredView.classList.remove('hidden')
-      el.momMarkdownView.classList.add('hidden')
-    } else {
-      el.tabMarkdownBtn.classList.add('active')
-      el.tabStructuredBtn.classList.remove('active')
-      el.momMarkdownView.classList.remove('hidden')
-      el.momStructuredView.classList.add('hidden')
-    }
-  }
-
-  function handleTranscriptSearch(e) {
-    const query = e.target.value.toLowerCase().trim()
-    if (!query) return
-
-    // Simple scroll highlight helper
-    const text = el.transcriptText.value
-    const idx = text.toLowerCase().indexOf(query)
-    if (idx !== -1) {
-      el.transcriptText.focus()
-      el.transcriptText.setSelectionRange(idx, idx + query.length)
-    }
-  }
-
-  function exportMarkdownFile() {
-    const content = state.currentMoMRaw || el.momRawText.textContent
-    if (!content) {
-      showToast('No Minutes of Meeting to export yet.', 'error')
-      return
-    }
-
-    const fullDoc = `# Meeting Minutes\nGenerated by MeetAgent AI on ${new Date().toLocaleString()}\n\n${content}\n\n---\n## Raw Transcript\n\n${state.currentTranscript || el.transcriptText.value}\n`
-    const blob = new Blob([fullDoc], { type: 'text/markdown;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `meeting-minutes-${new Date().toISOString().slice(0, 10)}.md`
-    link.click()
-    URL.revokeObjectURL(url)
-    showToast('Meeting minutes exported as Markdown file')
-  }
-
-  async function copyToClipboard(text, successMsg) {
-    if (!text) {
-      showToast('Nothing to copy yet', 'error')
-      return
-    }
-    try {
-      await navigator.clipboard.writeText(text)
-      showToast(successMsg)
-    } catch {
-      const ta = document.createElement('textarea')
-      ta.value = text
-      document.body.appendChild(ta)
-      ta.select()
-      document.execCommand('copy')
-      document.body.removeChild(ta)
-      showToast(successMsg)
-    }
-  }
-
-  function showToast(message, type = 'success') {
-    const toast = document.createElement('div')
-    toast.className = `toast toast-${type}`
-
-    const icon = type === 'success'
-      ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`
-      : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`
-
-    toast.innerHTML = `${icon}<span>${escapeHtml(message)}</span>`
-    el.toastContainer.appendChild(toast)
-
-    setTimeout(() => {
-      toast.style.opacity = '0'
-      toast.style.transform = 'translateY(-10px)'
-      toast.style.transition = 'all 0.25s ease'
-      setTimeout(() => toast.remove(), 250)
-    }, 3200)
-  }
-
-  function setUIState(stateName) {
-    el.idleState.classList.add('hidden')
-    el.recordingState.classList.add('hidden')
-    el.processingState.classList.add('hidden')
-
-    if (stateName === 'idle') el.idleState.classList.remove('hidden')
-    else if (stateName === 'recording') el.recordingState.classList.remove('hidden')
-    else if (stateName === 'processing') el.processingState.classList.remove('hidden')
-  }
-
+  // Timer
   function startTimer() {
-    state.meetingStartTime = Date.now()
-    updateTimerDisplay()
-    state.timerInterval = setInterval(updateTimerDisplay, 1000)
+    startTime = Date.now()
+    updateTimer()
+    timerInterval = setInterval(updateTimer, 1000)
   }
 
   function stopTimer() {
-    if (state.timerInterval) {
-      clearInterval(state.timerInterval)
-      state.timerInterval = null
-    }
+    if (timerInterval) clearInterval(timerInterval)
   }
 
-  function updateTimerDisplay() {
-    const elapsedSec = Math.floor((Date.now() - state.meetingStartTime) / 1000)
-    const mins = String(Math.floor(elapsedSec / 60)).padStart(2, '0')
-    const secs = String(elapsedSec % 60).padStart(2, '0')
-    el.meetingTimer.textContent = `${mins}:${secs}`
+  function updateTimer() {
+    const elapsed = Math.floor((Date.now() - startTime) / 1000)
+    const m = String(Math.floor(elapsed / 60)).padStart(2, '0')
+    const s = String(elapsed % 60).padStart(2, '0')
+    meetingTimer.textContent = `${m}:${s}`
+  }
+
+  // UI State
+  function setState(state) {
+    idleState.classList.add('hidden')
+    recordingState.classList.add('hidden')
+    loadingState.classList.add('hidden')
+
+    if (state === 'idle') idleState.classList.remove('hidden')
+    else if (state === 'recording') recordingState.classList.remove('hidden')
+    else if (state === 'loading') loadingState.classList.remove('hidden')
+  }
+
+  // Copy & Download
+  async function copyActiveContent() {
+    const text = activeTab === 'mom' ? currentMoMRaw : transcriptText.value
+    if (!text) return
+    await navigator.clipboard.writeText(text)
+    showToast('Copied to clipboard!')
+  }
+
+  function downloadMarkdown() {
+    if (!currentMoMRaw && !transcriptText.value) return
+    const content = `# Meeting Minutes\nDate: ${new Date().toLocaleString()}\n\n${currentMoMRaw}\n\n---\n## Full Transcript\n\n${transcriptText.value}\n`
+    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `meeting-mom-${new Date().toISOString().slice(0, 10)}.md`
+    a.click()
+    URL.revokeObjectURL(url)
+    showToast('Downloaded meeting Markdown file!')
+  }
+
+  function showToast(msg) {
+    toast.textContent = msg
+    toast.classList.remove('hidden')
+    setTimeout(() => toast.classList.add('hidden'), 2500)
   }
 
   function escapeHtml(str) {
@@ -866,6 +438,5 @@
     return div.innerHTML
   }
 
-  // Launch Controller
   init()
 })()
