@@ -228,6 +228,9 @@ export async function invalidateSession(token) {
 // Meeting Operations
 // ============================================================================
 export async function saveMeeting(userId, meeting) {
+  if (!userId) {
+    throw new Error('User ID is required to save a meeting')
+  }
   const id = `meet_${randomUUID()}`
   const now = new Date().toISOString()
   const title = (meeting.title || '').trim() || `Meeting on ${new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`
@@ -241,9 +244,9 @@ export async function saveMeeting(userId, meeting) {
     word_count: meeting.wordCount || 0,
     transcript: meeting.transcript || '',
     mom_raw: meeting.momRaw || '',
-    summary: meeting.summary || '',
-    decisions: meeting.decisions || '',
-    actions: meeting.actions || '',
+    summary: typeof meeting.summary === 'string' ? meeting.summary : JSON.stringify(meeting.summary || ''),
+    decisions: typeof meeting.decisions === 'object' ? JSON.stringify(meeting.decisions) : String(meeting.decisions || ''),
+    actions: typeof meeting.actions === 'object' ? JSON.stringify(meeting.actions) : String(meeting.actions || ''),
     ai_model: meeting.aiModel || 'groq',
     created_at: now
   }
