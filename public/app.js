@@ -1611,7 +1611,7 @@
         state.animationId = requestAnimationFrame(draw)
         state.analyserNode.getByteFrequencyData(dataArray)
 
-        ctx.fillStyle = '#ffffff'
+        ctx.fillStyle = '#080d18'
         ctx.fillRect(0, 0, canvas.width, canvas.height)
 
         const barWidth = (canvas.width / bufferLength) * 1.5
@@ -1619,7 +1619,11 @@
 
         for (let i = 0; i < bufferLength; i++) {
           const barHeight = (dataArray[i] / 255) * canvas.height
-          ctx.fillStyle = '#4338ca' // Royal Indigo
+          const grad = ctx.createLinearGradient(0, canvas.height, 0, 0)
+          grad.addColorStop(0, '#4338ca')
+          grad.addColorStop(0.5, '#6366f1')
+          grad.addColorStop(1, '#10b981')
+          ctx.fillStyle = grad
           ctx.beginPath()
           ctx.roundRect(x, canvas.height - barHeight, Math.max(barWidth - 2, 2), barHeight, [2, 2, 0, 0])
           ctx.fill()
