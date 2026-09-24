@@ -7,7 +7,7 @@
   const state = {
     user: null,
     token: localStorage.getItem('meetagent_token') || null,
-    activeWorkspaceTab: 'studio', // 'studio' | 'vault'
+    activeWorkspaceTab: localStorage.getItem('meetagent_active_tab') || 'studio',
     mediaStream: null,
     mediaRecorder: null,
     audioChunks: [],
@@ -223,6 +223,43 @@
   }
 
   // ==========================================================================
+  // Global Spinner & Request Feedback Management
+  // ==========================================================================
+  let activeServerProcesses = 0
+
+  function showGlobalSpinner() {
+    activeServerProcesses++
+    const bar = document.getElementById('globalProgressBar')
+    if (bar) bar.classList.add('active')
+  }
+
+  function hideGlobalSpinner() {
+    activeServerProcesses = Math.max(0, activeServerProcesses - 1)
+    if (activeServerProcesses === 0) {
+      const bar = document.getElementById('globalProgressBar')
+      if (bar) bar.classList.remove('active')
+    }
+  }
+
+  function setButtonLoading(btn, isLoading, loadingText = '') {
+    if (!btn) return
+    if (isLoading) {
+      btn.disabled = true
+      if (!btn.getAttribute('data-original-html')) {
+        btn.setAttribute('data-original-html', btn.innerHTML)
+      }
+      btn.innerHTML = `<span class="btn-spinner"></span><span>${loadingText || 'Processing...'}</span>`
+    } else {
+      btn.disabled = false
+      const orig = btn.getAttribute('data-original-html')
+      if (orig) {
+        btn.innerHTML = orig
+        btn.removeAttribute('data-original-html')
+      }
+    }
+  }
+
+  // ==========================================================================
   // Application Lifecycle & Boot
   // ==========================================================================
   async function init() {
@@ -234,6 +271,10 @@
     // Immediate Zero-FOUC optimistic session restoration
     if (state.token) {
       document.documentElement.classList.add('has-auth-session')
+      const savedTab = localStorage.getItem('meetagent_active_tab') || 'studio'
+      state.activeWorkspaceTab = savedTab
+      document.documentElement.setAttribute('data-active-tab', savedTab)
+
       try {
         const cachedUser = localStorage.getItem('meetagent_user')
         if (cachedUser) {
@@ -243,6 +284,7 @@
       renderViewState(true)
     } else {
       document.documentElement.classList.remove('has-auth-session')
+      document.documentElement.removeAttribute('data-active-tab')
       renderViewState(false)
     }
 
@@ -684,6 +726,10 @@
 
     if (!email || !newPassword) return
 
+    const submitBtn = el.resetForm ? el.resetForm.querySelector('button[type="submit"]') : null
+    setButtonLoading(submitBtn, true, 'Resetting Password...')
+    showGlobalSpinner()
+
     try {
       const res = await fetch('/api/auth/reset', {
         method: 'POST',
@@ -725,6 +771,9 @@
         el.resetError.textContent = err.message
         el.resetError.classList.remove('hidden')
       }
+    } finally {
+      setButtonLoading(submitBtn, false)
+      hideGlobalSpinner()
     }
   }
 
@@ -734,6 +783,10 @@
 
     const email = el.loginEmail.value.trim()
     const password = el.loginPassword.value
+
+    const submitBtn = el.loginForm ? el.loginForm.querySelector('button[type="submit"]') : null
+    setButtonLoading(submitBtn, true, 'Signing In...')
+    showGlobalSpinner()
 
     try {
       const res = await fetch('/api/auth/login', {
@@ -760,6 +813,9 @@
     } catch (err) {
       el.loginError.textContent = err.message
       el.loginError.classList.remove('hidden')
+    } finally {
+      setButtonLoading(submitBtn, false)
+      hideGlobalSpinner()
     }
   }
 
@@ -770,6 +826,10 @@
     const name = el.regName.value.trim()
     const email = el.regEmail.value.trim()
     const password = el.regPassword.value
+
+    const submitBtn = el.registerForm ? el.registerForm.querySelector('button[type="submit"]') : null
+    setButtonLoading(submitBtn, true, 'Creating Account...')
+    showGlobalSpinner()
 
     try {
       const res = await fetch('/api/auth/register', {
@@ -796,10 +856,14 @@
     } catch (err) {
       el.regError.textContent = err.message
       el.regError.classList.remove('hidden')
+    } finally {
+      setButtonLoading(submitBtn, false)
+      hideGlobalSpinner()
     }
   }
 
   async function handleLogout() {
+    showGlobalSpinner()
     try {
       if (state.token) {
         await fetch('/api/auth/logout', {
@@ -807,10 +871,14 @@
           headers: { Authorization: `Bearer ${state.token}` },
         })
       }
-    } catch {}
+    } catch {} finally {
+      hideGlobalSpinner()
+    }
 
     localStorage.removeItem('meetagent_token')
     localStorage.removeItem('meetagent_user')
+    localStorage.removeItem('meetagent_active_tab')
+    document.documentElement.removeAttribute('data-active-tab')
     document.documentElement.classList.remove('has-auth-session')
     state.token = null
     state.user = null
@@ -824,6 +892,8 @@
   // ==========================================================================
   function switchWorkspaceTab(tab) {
     state.activeWorkspaceTab = tab
+    localStorage.setItem('meetagent_active_tab', tab)
+    document.documentElement.setAttribute('data-active-tab', tab)
 
     // Reset top nav tab buttons
     if (el.navStudioBtn) el.navStudioBtn.classList.remove('active')
@@ -882,6 +952,15 @@
   async function loadUserMeetings() {
     if (!state.token) return
 
+    if (state.meetings.length === 0 && el.vaultMeetingsGrid) {
+      el.vaultMeetingsGrid.innerHTML = `
+        <div class="vault-loading-wrap">
+          <div class="modern-spinner"></div>
+          <p class="vault-loading-text">Loading your saved meetings...</p>
+        </div>`
+    }
+
+    showGlobalSpinner()
     try {
       const res = await fetch('/api/meetings', {
         headers: { Authorization: `Bearer ${state.token}` },
@@ -897,6 +976,8 @@
       }
     } catch (err) {
       console.warn('Failed to load meetings:', err)
+    } finally {
+      hideGlobalSpinner()
     }
   }
 
@@ -905,19 +986,24 @@
   // ==========================================================================
   async function updateProfileOnServer(payload) {
     if (!state.token) throw new Error('Not authenticated')
-    const res = await fetch('/api/auth/profile', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${state.token}`,
-      },
-      body: JSON.stringify(payload),
-    })
-    const data = await res.json()
-    if (!res.ok) {
-      throw new Error(data.error || 'Failed to update profile')
+    showGlobalSpinner()
+    try {
+      const res = await fetch('/api/auth/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${state.token}`,
+        },
+        body: JSON.stringify(payload),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to update profile')
+      }
+      return data.user
+    } finally {
+      hideGlobalSpinner()
     }
-    return data.user
   }
 
   function resizeImageToDataUrl(file, maxWidth = 256, maxHeight = 256) {
@@ -967,6 +1053,8 @@
       return
     }
 
+    setButtonLoading(el.profileUploadPhotoBtn, true, 'Uploading...')
+
     try {
       showToast('Optimizing and uploading profile photo...')
       const dataUrl = await resizeImageToDataUrl(file, 256, 256)
@@ -979,6 +1067,7 @@
     } catch (err) {
       showToast(`Error updating photo: ${err.message}`)
     } finally {
+      setButtonLoading(el.profileUploadPhotoBtn, false)
       e.target.value = ''
     }
   }
@@ -1028,9 +1117,7 @@
       return
     }
 
-    const origBtnHtml = el.profileSaveInfoBtn.innerHTML
-    el.profileSaveInfoBtn.disabled = true
-    el.profileSaveInfoBtn.innerHTML = '<span>Saving...</span>'
+    setButtonLoading(el.profileSaveInfoBtn, true, 'Saving Profile...')
 
     try {
       const updated = await updateProfileOnServer({ name, email })
@@ -1055,8 +1142,7 @@
       alertEl.textContent = err.message
       alertEl.classList.remove('hidden')
     } finally {
-      el.profileSaveInfoBtn.disabled = false
-      el.profileSaveInfoBtn.innerHTML = origBtnHtml
+      setButtonLoading(el.profileSaveInfoBtn, false)
     }
   }
 
@@ -1091,9 +1177,7 @@
       return
     }
 
-    const origBtnHtml = el.profileSavePasswordBtn.innerHTML
-    el.profileSavePasswordBtn.disabled = true
-    el.profileSavePasswordBtn.innerHTML = '<span>Updating...</span>'
+    setButtonLoading(el.profileSavePasswordBtn, true, 'Updating Password...')
 
     try {
       await updateProfileOnServer({ currentPassword, newPassword })
@@ -1110,8 +1194,7 @@
       alertEl.textContent = err.message
       alertEl.classList.remove('hidden')
     } finally {
-      el.profileSavePasswordBtn.disabled = false
-      el.profileSavePasswordBtn.innerHTML = origBtnHtml
+      setButtonLoading(el.profileSavePasswordBtn, false)
     }
   }
 
@@ -1499,10 +1582,10 @@
     }
 
     if (state.emailConfigured) {
-      try {
-        el.sendEmailSubmitBtn.disabled = true
-        el.sendEmailSubmitBtn.innerHTML = `<span>Sending...</span>`
+      setButtonLoading(el.sendEmailSubmitBtn, true, 'Sending Email...')
+      showGlobalSpinner()
 
+      try {
         const res = await fetch('/api/email/send', {
           method: 'POST',
           headers: {
@@ -1531,8 +1614,9 @@
         el.emailStatusBanner.className = 'email-status-banner banner-error'
         el.emailStatusBanner.innerHTML = `<strong>Error sending:</strong> ${escapeHtml(err.message)}<br><span style="font-size:0.75rem;">Click "Open in Mail App" below to draft using your local email client.</span>`
         el.emailStatusBanner.classList.remove('hidden')
-        el.sendEmailSubmitBtn.disabled = false
-        el.sendEmailSubmitBtn.innerHTML = `<span>Retry Sending</span>`
+      } finally {
+        setButtonLoading(el.sendEmailSubmitBtn, false)
+        hideGlobalSpinner()
       }
     } else {
       handleMailtoFallback()
@@ -1637,6 +1721,7 @@
       showToast('Meeting minutes generated! Sign in to save to your Cloud Vault.', 4000)
       return
     }
+    showGlobalSpinner()
     try {
       const res = await fetch('/api/meetings', {
         method: 'POST',
@@ -1652,6 +1737,8 @@
       }
     } catch (err) {
       console.warn('Auto-save error:', err)
+    } finally {
+      hideGlobalSpinner()
     }
   }
 
@@ -1854,6 +1941,7 @@
   }
 
   async function processMeetingAudio(audioBlob) {
+    showGlobalSpinner()
     try {
       const startTime = performance.now()
       const title = el.meetingTitleInput.value.trim() || 'Executive Sync'
@@ -1902,6 +1990,8 @@
       if (el.loadingState) el.loadingState.classList.add('hidden')
       if (el.callConsoleCard) el.callConsoleCard.classList.remove('hidden')
       if (el.idleState) el.idleState.classList.remove('hidden')
+    } finally {
+      hideGlobalSpinner()
     }
   }
 
@@ -1916,6 +2006,7 @@
       return
     }
 
+    showGlobalSpinner()
     try {
       if (el.resultsSection) el.resultsSection.classList.add('hidden')
       if (el.callConsoleCard) el.callConsoleCard.classList.remove('hidden')
@@ -1961,12 +2052,16 @@
       if (el.callConsoleCard) el.callConsoleCard.classList.remove('hidden')
       if (el.idleState) el.idleState.classList.remove('hidden')
     } finally {
+      hideGlobalSpinner()
       el.audioFileInput.value = ''
     }
   }
 
   async function generateMoM(transcript, durationSec = 0, wordCount = 0, title = 'Executive Sync') {
     const model = (el.aiModel && el.aiModel.value) ? el.aiModel.value : 'groq'
+    if (el.rerunMoMBtn) setButtonLoading(el.rerunMoMBtn, true, 'Synthesizing MoM...')
+    showGlobalSpinner()
+
     try {
       const res = await fetch('/api/mom', {
         method: 'POST',
@@ -2017,6 +2112,9 @@
       if (el.loadingState) el.loadingState.classList.add('hidden')
       if (el.callConsoleCard) el.callConsoleCard.classList.remove('hidden')
       if (el.idleState) el.idleState.classList.remove('hidden')
+    } finally {
+      if (el.rerunMoMBtn) setButtonLoading(el.rerunMoMBtn, false)
+      hideGlobalSpinner()
     }
   }
 

@@ -5,21 +5,62 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agentmeet — AI Agents for Smarter Meetings</title>
   <meta name="description" content="AI Agents for Smarter Meetings. Real-time browser audio capture, autonomous speech intelligence, and instant structured minutes of meeting without uninvited bots.">
-  <link rel="stylesheet" href="/style.css?v=3.3">
+  <link rel="stylesheet" href="/style.css?v=3.4">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <script>
     (function() {
       try {
-        if (localStorage.getItem('meetagent_token')) {
+        var token = localStorage.getItem('meetagent_token');
+        if (token) {
           document.documentElement.classList.add('has-auth-session');
+          var activeTab = localStorage.getItem('meetagent_active_tab') || 'studio';
+          document.documentElement.setAttribute('data-active-tab', activeTab);
         }
       } catch (e) {}
     })();
   </script>
+  <style id="anti-fouc-critical">
+    /* Instant Zero-FOUC Authentication Protection */
+    html.has-auth-session #landingView {
+      display: none !important;
+    }
+    html.has-auth-session #appWorkspace {
+      display: block !important;
+    }
+    html.has-auth-session #guestNav {
+      display: none !important;
+    }
+    html.has-auth-session #userNav {
+      display: flex !important;
+    }
+    html.has-auth-session #workspaceBreadcrumb {
+      display: flex !important;
+    }
+    html.has-auth-session #engineStatusBadge {
+      display: flex !important;
+    }
+
+    /* Sub-view instantaneous restoration on page reload */
+    html.has-auth-session[data-active-tab="vault"] #studioView {
+      display: none !important;
+    }
+    html.has-auth-session[data-active-tab="vault"] #vaultView {
+      display: block !important;
+    }
+    html.has-auth-session[data-active-tab="profile"] #studioView {
+      display: none !important;
+    }
+    html.has-auth-session[data-active-tab="profile"] #profileView {
+      display: block !important;
+    }
+  </style>
 </head>
 <body class="theme-light">
+
+  <!-- Global Progress Indicator for Server Tasks -->
+  <div id="globalProgressBar" class="global-progress-bar" aria-hidden="true"></div>
 
   <!-- Floating Toast Notification -->
   <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
@@ -1348,6 +1389,6 @@
 
   </main>
 
-  <script src="/app.js?v=3.3"></script>
+  <script src="/app.js?v=3.4"></script>
 </body>
 </html>
