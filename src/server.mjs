@@ -21,6 +21,11 @@ import {
   IS_SUPABASE_CONFIGURED,
   SUPABASE_URL
 } from './db.mjs'
+import {
+  sendMeetingEmail,
+  isEmailConfigured,
+  getEmailProviderName
+} from './email.mjs'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const PUBLIC_DIR = join(__dirname, '..', 'public')
@@ -102,6 +107,8 @@ const server = createServer(async (req, res) => {
     return sendJson(res, 200, {
       groqConfigured: Boolean(process.env.GROQ_API_KEY),
       geminiConfigured: Boolean(process.env.GEMINI_API_KEY),
+      emailConfigured: isEmailConfigured(),
+      emailProvider: getEmailProviderName(),
     })
   }
 
@@ -247,6 +254,61 @@ const server = createServer(async (req, res) => {
     }
   }
 
+  // --- Email MoM Routes ---
+  if (pathname === '/api/email/status' && req.method === 'GET') {
+    return sendJson(res, 200, {
+      configured: isEmailConfigured(),
+      provider: getEmailProviderName(),
+    })
+  }
+
+  if (pathname === '/api/email/send' && req.method === 'POST') {
+    if (!user || !user.id) {
+      return sendError(res, 401, 'Please sign in to send meeting minutes via email')
+    }
+
+    try {
+      const rawBody = await collectRequestBody(req)
+      const {
+        to,
+        subject,
+        note,
+        meetingTitle,
+        mom,
+        transcript,
+      } = JSON.parse(rawBody.toString('utf-8') || '{}')
+
+      if (!to || !to.trim()) {
+        return sendError(res, 400, 'Recipient email address is required')
+      }
+
+      if (!mom || !mom.trim()) {
+        return sendError(res, 400, 'Minutes of Meeting content is required')
+      }
+
+      const result = await sendMeetingEmail({
+        to,
+        subject,
+        note,
+        meetingTitle: meetingTitle || 'Executive Meeting Sync',
+        momText: mom,
+        transcriptText: transcript || '',
+        senderName: user.name || 'MeetAgent User',
+        senderEmail: user.email || null,
+      })
+
+      return sendJson(res, 200, {
+        success: true,
+        provider: result.provider,
+        recipients: result.recipients,
+        message: `Minutes of Meeting successfully emailed to ${result.recipients.join(', ')}`,
+      })
+    } catch (err) {
+      console.error('Email sending error:', err)
+      return sendError(res, 500, err.message || 'Failed to dispatch email')
+    }
+  }
+
   // --- Static File Serving ---
   if (req.method === 'GET' || req.method === 'HEAD') {
     let filePath = pathname === '/' ? 'index.html' : pathname
@@ -289,8 +351,12 @@ server.listen(PORT, () => {
   const dbEngine = IS_SUPABASE_CONFIGURED
     ? `Supabase Cloud (${SUPABASE_URL})`
     : 'SQLite (data/meetagent.db)'
+  const emailService = isEmailConfigured()
+    ? `Configured (${getEmailProviderName()})`
+    : 'Client Mailto Fallback (Set SMTP_HOST or RESEND_API_KEY in .env to enable direct dispatch)'
   console.log(`\n🚀 MeetAgent running at: http://localhost:${PORT}`)
   console.log(`   Database Engine    : ${dbEngine}`)
   console.log(`   Audio STT Provider : Groq Whisper (large-v3-turbo)`)
-  console.log(`   MoM LLM Providers  : Groq & Gemini\n`)
+  console.log(`   MoM LLM Providers  : Groq & Gemini`)
+  console.log(`   Email Service      : ${emailService}\n`)
 })

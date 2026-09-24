@@ -23,6 +23,9 @@
     liveFinalText: '',
     meetings: [],
     selectedPastMeeting: null,
+    emailConfigured: false,
+    emailProvider: null,
+    activeEmailTarget: null,
   }
 
   // DOM Elements Cache
@@ -115,6 +118,7 @@
     copyBtn: document.getElementById('copyBtn'),
     downloadBtn: document.getElementById('downloadBtn'),
     saveVaultBtn: document.getElementById('saveVaultBtn'),
+    emailMoMBtn: document.getElementById('emailMoMBtn'),
     rerunMoMBtn: document.getElementById('rerunMoMBtn'),
 
     // Vault View
@@ -129,6 +133,7 @@
     modalMeetingTitle: document.getElementById('modalMeetingTitle'),
     modalMeetingMeta: document.getElementById('modalMeetingMeta'),
     modalCopyBtn: document.getElementById('modalCopyBtn'),
+    modalEmailBtn: document.getElementById('modalEmailBtn'),
     modalDownloadBtn: document.getElementById('modalDownloadBtn'),
     modalTabMoMBtn: document.getElementById('modalTabMoMBtn'),
     modalTabTranscriptBtn: document.getElementById('modalTabTranscriptBtn'),
@@ -139,6 +144,20 @@
     modalActionsList: document.getElementById('modalActionsList'),
     modalTranscriptMeta: document.getElementById('modalTranscriptMeta'),
     modalTranscriptText: document.getElementById('modalTranscriptText'),
+
+    // Email MoM Modal
+    emailModal: document.getElementById('emailModal'),
+    closeEmailModalBtn: document.getElementById('closeEmailModalBtn'),
+    emailModalMeetingTitle: document.getElementById('emailModalMeetingTitle'),
+    emailForm: document.getElementById('emailForm'),
+    emailToInput: document.getElementById('emailToInput'),
+    emailSubjectInput: document.getElementById('emailSubjectInput'),
+    emailNoteInput: document.getElementById('emailNoteInput'),
+    emailPreviewContent: document.getElementById('emailPreviewContent'),
+    emailServiceBadge: document.getElementById('emailServiceBadge'),
+    emailStatusBanner: document.getElementById('emailStatusBanner'),
+    emailOpenMailtoBtn: document.getElementById('emailOpenMailtoBtn'),
+    sendEmailSubmitBtn: document.getElementById('sendEmailSubmitBtn'),
 
     toast: document.getElementById('toast'),
   }
@@ -173,6 +192,8 @@
         } else if (config.groqConfigured) {
           el.engineStatusText.textContent = 'Groq Llama 3.3 Ready'
         }
+        state.emailConfigured = Boolean(config.emailConfigured)
+        state.emailProvider = config.emailProvider || null
       }
     } catch {}
   }
@@ -287,6 +308,19 @@
     el.tabTranscriptBtn.addEventListener('click', () => switchStudioResultTab('transcript'))
     el.copyBtn.addEventListener('click', () => copyActiveContent(state.currentMoMRaw, state.currentTranscript, state.activeStudioResultTab))
     el.downloadBtn.addEventListener('click', () => downloadMarkdown(state.currentMoMRaw, state.currentTranscript, el.meetingTitleInput.value))
+    if (el.emailMoMBtn) {
+      el.emailMoMBtn.addEventListener('click', () => {
+        if (!state.currentMoMRaw && !state.currentTranscript) {
+          showToast('Record or synthesize a meeting first to email the MoM')
+          return
+        }
+        openEmailModal({
+          title: el.meetingTitleInput.value.trim() || 'Meeting Minutes',
+          mom: state.currentMoMRaw || '',
+          transcript: state.currentTranscript || '',
+        })
+      })
+    }
     el.rerunMoMBtn.addEventListener('click', () => {
       const text = el.transcriptText.value.trim()
       if (text) generateMoM(text)
@@ -300,7 +334,28 @@
     el.modalTabMoMBtn.addEventListener('click', () => switchModalTab('mom'))
     el.modalTabTranscriptBtn.addEventListener('click', () => switchModalTab('transcript'))
     el.modalCopyBtn.addEventListener('click', copyModalContent)
+    if (el.modalEmailBtn) {
+      el.modalEmailBtn.addEventListener('click', () => {
+        if (!state.selectedPastMeeting) return
+        openEmailModal({
+          title: state.selectedPastMeeting.title || 'Meeting Minutes',
+          mom: state.selectedPastMeeting.summary || '',
+          transcript: state.selectedPastMeeting.transcript || '',
+          id: state.selectedPastMeeting.id,
+        })
+      })
+    }
     el.modalDownloadBtn.addEventListener('click', downloadModalContent)
+
+    // Email MoM Modal Controls
+    if (el.closeEmailModalBtn) el.closeEmailModalBtn.addEventListener('click', closeEmailModal)
+    if (el.emailModal) {
+      el.emailModal.addEventListener('click', (e) => {
+        if (e.target === el.emailModal) closeEmailModal()
+      })
+    }
+    if (el.emailForm) el.emailForm.addEventListener('submit', handleEmailSend)
+    if (el.emailOpenMailtoBtn) el.emailOpenMailtoBtn.addEventListener('click', handleMailtoFallback)
   }
 
   // ==========================================================================
@@ -617,9 +672,18 @@
                 <path d="M5 12h14M12 5l7 7-7 7"/>
               </svg>
             </button>
-            <button class="btn-delete-meeting" data-delete-id="${m.id}" title="Delete meeting from vault">
-              🗑️ Delete
-            </button>
+            <div class="v-card-footer-right">
+              <button class="btn-email-call" data-email-id="${m.id}" title="Email Minutes of Meeting">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect width="20" height="16" x="2" y="4" rx="2"/>
+                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+                </svg>
+                <span>Email</span>
+              </button>
+              <button class="btn-delete-meeting" data-delete-id="${m.id}" title="Delete meeting from vault">
+                🗑️ Delete
+              </button>
+            </div>
           </div>
         </div>`
     }).join('')
@@ -633,10 +697,27 @@
       })
     })
 
+    // Email past meeting click listeners
+    el.vaultMeetingsGrid.querySelectorAll('.btn-email-call').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation()
+        const id = btn.dataset.emailId
+        const meeting = state.meetings.find((m) => String(m.id) === String(id))
+        if (meeting) {
+          openEmailModal({
+            title: meeting.title || 'Meeting Minutes',
+            mom: meeting.summary || '',
+            transcript: meeting.transcript || '',
+            id: meeting.id,
+          })
+        }
+      })
+    })
+
     // Click whole card to open
     el.vaultMeetingsGrid.querySelectorAll('.vault-card').forEach((card) => {
       card.addEventListener('click', (e) => {
-        if (e.target.closest('.btn-delete-meeting')) return
+        if (e.target.closest('.btn-delete-meeting') || e.target.closest('.btn-email-call')) return
         const id = card.dataset.id
         openPastMeetingDetail(id)
       })
@@ -746,6 +827,213 @@
     } catch (err) {
       alert('Failed to delete meeting.')
     }
+  }
+
+  // ==========================================================================
+  // Email Modal & Sharing Operations
+  // ==========================================================================
+  function openEmailModal({ title, mom, transcript, id }) {
+    state.activeEmailTarget = { title, mom, transcript, id }
+
+    if (el.emailModalMeetingTitle) {
+      el.emailModalMeetingTitle.textContent = title || 'Meeting Minutes'
+    }
+
+    if (el.emailSubjectInput) {
+      el.emailSubjectInput.value = `[Meeting Minutes] ${title || 'Meeting Sync'}`
+    }
+
+    if (el.emailToInput) {
+      el.emailToInput.value = ''
+    }
+
+    if (el.emailNoteInput) {
+      el.emailNoteInput.value = ''
+    }
+
+    // Populate Preview
+    if (el.emailPreviewContent) {
+      const summary = extractSummary(mom)
+      const decisions = extractDecisions(mom)
+      const actions = extractActions(mom)
+
+      let previewHtml = `<div class="email-preview-summary">${escapeHtml(summary || 'No summary text available.')}</div>`
+      if (decisions.length) {
+        previewHtml += `<div style="font-weight:700;color:#065f46;margin-top:8px;font-size:0.75rem;text-transform:uppercase;">Decisions Made:</div><ul class="email-preview-decisions">` +
+          decisions.map((d) => `<li>✓ ${escapeHtml(d)}</li>`).join('') + `</ul>`
+      }
+      if (actions.length) {
+        previewHtml += `<div style="font-weight:700;color:#92400e;margin-top:8px;font-size:0.75rem;text-transform:uppercase;">Action Items:</div><ul class="email-preview-actions">` +
+          actions.map((a) => `<li>→ ${escapeHtml(a)}</li>`).join('') + `</ul>`
+      }
+      el.emailPreviewContent.innerHTML = previewHtml
+    }
+
+    // Status Banner and Provider info
+    if (state.emailConfigured) {
+      if (el.emailServiceBadge) el.emailServiceBadge.textContent = state.emailProvider || 'Direct SMTP Delivery'
+      if (el.emailStatusBanner) {
+        el.emailStatusBanner.className = 'email-status-banner banner-success'
+        el.emailStatusBanner.innerHTML = `<strong>● Cloud Email Ready:</strong> Connected to ${escapeHtml(state.emailProvider || 'SMTP')}. Recipients will receive a styled executive HTML briefing.`
+        el.emailStatusBanner.classList.remove('hidden')
+      }
+    } else {
+      if (el.emailServiceBadge) el.emailServiceBadge.textContent = 'Mail App / SMTP'
+      if (el.emailStatusBanner) {
+        el.emailStatusBanner.className = 'email-status-banner banner-info'
+        el.emailStatusBanner.innerHTML = `<strong>💡 Tip:</strong> Direct server SMTP is not configured in <code>.env</code>. You can click <em>"Open in Mail App"</em> to draft immediately in your Gmail, Outlook, or Apple Mail!`
+        el.emailStatusBanner.classList.remove('hidden')
+      }
+    }
+
+    if (el.sendEmailSubmitBtn) {
+      el.sendEmailSubmitBtn.disabled = false
+      el.sendEmailSubmitBtn.innerHTML = `
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+        <span>Send Email</span>`
+    }
+
+    el.emailModal.classList.remove('hidden')
+    if (el.emailToInput) {
+      setTimeout(() => el.emailToInput.focus(), 80)
+    }
+  }
+
+  function closeEmailModal() {
+    if (el.emailModal) {
+      el.emailModal.classList.add('hidden')
+    }
+    state.activeEmailTarget = null
+  }
+
+  async function handleEmailSend(e) {
+    e.preventDefault()
+    if (!state.activeEmailTarget) return
+
+    const to = el.emailToInput.value.trim()
+    const subject = (el.emailSubjectInput && el.emailSubjectInput.value.trim()) || `[Meeting Minutes] ${state.activeEmailTarget.title}`
+    const note = el.emailNoteInput ? el.emailNoteInput.value.trim() : ''
+
+    if (!to) {
+      showToast('Please enter at least one recipient email address')
+      el.emailToInput.focus()
+      return
+    }
+
+    if (state.emailConfigured) {
+      try {
+        el.sendEmailSubmitBtn.disabled = true
+        el.sendEmailSubmitBtn.innerHTML = `<span>Sending...</span>`
+
+        const res = await fetch('/api/email/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(state.token ? { Authorization: `Bearer ${state.token}` } : {}),
+          },
+          body: JSON.stringify({
+            to,
+            subject,
+            note,
+            meetingTitle: state.activeEmailTarget.title,
+            mom: state.activeEmailTarget.mom,
+            transcript: state.activeEmailTarget.transcript,
+          }),
+        })
+
+        const data = await res.json()
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to dispatch email')
+        }
+
+        showToast(`✓ MoM successfully emailed to ${data.recipients.join(', ')}!`)
+        closeEmailModal()
+      } catch (err) {
+        console.error('Failed to send email:', err)
+        el.emailStatusBanner.className = 'email-status-banner banner-error'
+        el.emailStatusBanner.innerHTML = `<strong>Error sending:</strong> ${escapeHtml(err.message)}<br><span style="font-size:0.75rem;">Click "Open in Mail App" below to draft using your local email client.</span>`
+        el.emailStatusBanner.classList.remove('hidden')
+        el.sendEmailSubmitBtn.disabled = false
+        el.sendEmailSubmitBtn.innerHTML = `<span>Retry Sending</span>`
+      }
+    } else {
+      handleMailtoFallback()
+    }
+  }
+
+  function handleMailtoFallback() {
+    if (!state.activeEmailTarget) return
+
+    const to = el.emailToInput ? el.emailToInput.value.trim() : ''
+    const subject = (el.emailSubjectInput && el.emailSubjectInput.value.trim()) || `[Meeting Minutes] ${state.activeEmailTarget.title}`
+    const note = el.emailNoteInput ? el.emailNoteInput.value.trim() : ''
+
+    const plainText = buildPlainTextMoM({
+      title: state.activeEmailTarget.title,
+      note,
+      mom: state.activeEmailTarget.mom,
+      transcript: state.activeEmailTarget.transcript,
+    })
+
+    const mailtoUrl = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(plainText)}`
+    
+    window.location.href = mailtoUrl
+    showToast('Opening draft in your default email client...')
+    closeEmailModal()
+  }
+
+  function buildPlainTextMoM({ title, note, mom, transcript }) {
+    const summary = extractSummary(mom)
+    const decisions = extractDecisions(mom)
+    const actions = extractActions(mom)
+    const dateStr = new Date().toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    })
+
+    let out = `MINUTES OF MEETING (MoM) — ${title}\n`
+    out += `Date: ${dateStr}\n`
+    out += `==================================================\n\n`
+
+    if (note && note.trim()) {
+      out += `NOTE FROM SENDER:\n`
+      out += `${note.trim()}\n\n`
+      out += `--------------------------------------------------\n\n`
+    }
+
+    out += `EXECUTIVE SUMMARY:\n`
+    out += `${summary || 'No summary available.'}\n\n`
+
+    out += `KEY DECISIONS MADE:\n`
+    if (decisions.length) {
+      decisions.forEach((d) => { out += `  [✓] ${d}\n` })
+    } else {
+      out += `  (No decisions recorded)\n`
+    }
+    out += `\n`
+
+    out += `ACTION ITEMS & DELIVERABLES:\n`
+    if (actions.length) {
+      actions.forEach((a) => { out += `  [→] ${a}\n` })
+    } else {
+      out += `  (No action items recorded)\n`
+    }
+    out += `\n`
+
+    if (transcript && transcript.trim()) {
+      out += `--------------------------------------------------\n`
+      out += `SPEECH TRANSCRIPT:\n\n`
+      out += `${transcript.trim()}\n\n`
+    }
+
+    out += `==================================================\n`
+    out += `Generated with MeetAgent — Executive Meeting Intelligence\n`
+
+    return out
   }
 
   async function autoSaveMeetingToDb(meetingData) {

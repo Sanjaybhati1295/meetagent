@@ -101,6 +101,13 @@
             </svg>
             <span>Copy</span>
           </button>
+          <button id="modalEmailBtn" class="btn btn-sm btn-secondary" title="Email Minutes of Meeting">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect width="20" height="16" x="2" y="4" rx="2"/>
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+            </svg>
+            <span>Email</span>
+          </button>
           <button id="modalDownloadBtn" class="btn btn-sm btn-secondary" title="Download Markdown">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -143,6 +150,75 @@
           <div class="transcript-meta-bar" id="modalTranscriptMeta"></div>
           <textarea id="modalTranscriptText" rows="14" readonly></textarea>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Email MoM Modal (Send Minutes via Email) -->
+  <div id="emailModal" class="modal-overlay hidden">
+    <div class="modal-card modal-card-email">
+      <div class="modal-header">
+        <div class="detail-modal-title-box">
+          <div class="email-modal-header-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect width="20" height="16" x="2" y="4" rx="2"/>
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+            </svg>
+            <span>Share Minutes of Meeting</span>
+          </div>
+          <h3 id="emailModalMeetingTitle">Send Executive Briefing</h3>
+        </div>
+        <button id="closeEmailModalBtn" class="btn-close" title="Close">✕</button>
+      </div>
+
+      <div class="email-modal-body">
+        <form id="emailForm" class="email-form">
+          <div class="form-group">
+            <label for="emailToInput">Recipient Email(s) <span class="required-star">*</span></label>
+            <input type="text" id="emailToInput" placeholder="colleague@company.com, team@company.com" required autocomplete="email">
+            <span class="field-hint">Enter one or more email addresses separated by commas</span>
+          </div>
+
+          <div class="form-group">
+            <label for="emailSubjectInput">Subject Line</label>
+            <input type="text" id="emailSubjectInput" placeholder="[Meeting Minutes] ...">
+          </div>
+
+          <div class="form-group">
+            <label for="emailNoteInput">Personal Message (Optional)</label>
+            <textarea id="emailNoteInput" rows="2" placeholder="e.g. Hi team, here are the minutes, decisions, and action items from our sync today."></textarea>
+          </div>
+
+          <div class="email-preview-box">
+            <div class="email-preview-header">
+              <span class="preview-title">MoM Content Preview</span>
+              <span class="badge-pill-email" id="emailServiceBadge">Executive Email</span>
+            </div>
+            <div id="emailPreviewContent" class="email-preview-content">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <div id="emailStatusBanner" class="email-status-banner hidden"></div>
+
+          <div class="email-modal-footer">
+            <button type="button" id="emailOpenMailtoBtn" class="btn btn-secondary" title="Open draft in your local email app (Gmail, Outlook, Apple Mail)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                <polyline points="15 3 21 3 21 9"/>
+                <line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+              <span>Open in Mail App</span>
+            </button>
+            <button type="submit" id="sendEmailSubmitBtn" class="btn btn-brand">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="22" y1="2" x2="11" y2="13"/>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
+              <span>Send Email</span>
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
@@ -835,6 +911,13 @@
                 <polyline points="7 3 7 8 15 8"/>
               </svg>
               <span>Saved in Vault</span>
+            </button>
+            <button id="emailMoMBtn" class="btn btn-sm btn-secondary" title="Email Minutes of Meeting">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect width="20" height="16" x="2" y="4" rx="2"/>
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+              </svg>
+              <span>Email</span>
             </button>
             <button id="copyBtn" class="btn btn-sm btn-secondary" title="Copy to clipboard">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
