@@ -285,14 +285,14 @@ export async function getUserMeetings(userId) {
   if (IS_SUPABASE_CONFIGURED) {
     const { data, error } = await supabase
       .from('meetings')
-      .select('id, title, audio_source, duration_sec, word_count, summary, decisions, actions, ai_model, created_at')
+      .select('id, title, audio_source, duration_sec, word_count, transcript, mom_raw, summary, decisions, actions, ai_model, created_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
     if (error) throw new Error(error.message)
     return data || []
   } else {
     const stmt = localDb.prepare(`
-      SELECT id, title, audio_source, duration_sec, word_count, summary, decisions, actions, ai_model, created_at
+      SELECT id, title, audio_source, duration_sec, word_count, transcript, mom_raw, summary, decisions, actions, ai_model, created_at
       FROM meetings
       WHERE user_id = ?
       ORDER BY created_at DESC

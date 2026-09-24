@@ -339,9 +339,11 @@
         if (!state.selectedPastMeeting) return
         openEmailModal({
           title: state.selectedPastMeeting.title || 'Meeting Minutes',
-          mom: state.selectedPastMeeting.summary || '',
+          mom: state.selectedPastMeeting.mom_raw || state.selectedPastMeeting.summary || '',
           transcript: state.selectedPastMeeting.transcript || '',
           id: state.selectedPastMeeting.id,
+          decisions: state.selectedPastMeeting.decisions,
+          actions: state.selectedPastMeeting.actions,
         })
       })
     }
@@ -706,9 +708,11 @@
         if (meeting) {
           openEmailModal({
             title: meeting.title || 'Meeting Minutes',
-            mom: meeting.summary || '',
+            mom: meeting.mom_raw || meeting.summary || '',
             transcript: meeting.transcript || '',
             id: meeting.id,
+            decisions: meeting.decisions,
+            actions: meeting.actions,
           })
         }
       })
@@ -832,8 +836,8 @@
   // ==========================================================================
   // Email Modal & Sharing Operations
   // ==========================================================================
-  function openEmailModal({ title, mom, transcript, id }) {
-    state.activeEmailTarget = { title, mom, transcript, id }
+  function openEmailModal({ title, mom, transcript, id, decisions: directDecisions, actions: directActions }) {
+    state.activeEmailTarget = { title, mom, transcript, id, decisions: directDecisions, actions: directActions }
 
     if (el.emailModalMeetingTitle) {
       el.emailModalMeetingTitle.textContent = title || 'Meeting Minutes'
@@ -853,9 +857,28 @@
 
     // Populate Preview
     if (el.emailPreviewContent) {
-      const summary = extractSummary(mom)
-      const decisions = extractDecisions(mom)
-      const actions = extractActions(mom)
+      const summary = extractExecutiveSummary(mom)
+      let decisions = extractDecisions(mom)
+      if (!decisions.length && directDecisions) {
+        try {
+          const parsed = typeof directDecisions === 'string' ? JSON.parse(directDecisions) : directDecisions
+          if (Array.isArray(parsed)) decisions = parsed
+          else if (typeof directDecisions === 'string') decisions = extractListLines(directDecisions)
+        } catch {
+          decisions = extractListLines(String(directDecisions))
+        }
+      }
+
+      let actions = extractActions(mom)
+      if (!actions.length && directActions) {
+        try {
+          const parsed = typeof directActions === 'string' ? JSON.parse(directActions) : directActions
+          if (Array.isArray(parsed)) actions = parsed
+          else if (typeof directActions === 'string') actions = extractListLines(directActions)
+        } catch {
+          actions = extractListLines(String(directActions))
+        }
+      }
 
       let previewHtml = `<div class="email-preview-summary">${escapeHtml(summary || 'No summary text available.')}</div>`
       if (decisions.length) {
@@ -976,6 +999,8 @@
       note,
       mom: state.activeEmailTarget.mom,
       transcript: state.activeEmailTarget.transcript,
+      decisions: state.activeEmailTarget.decisions,
+      actions: state.activeEmailTarget.actions,
     })
 
     const mailtoUrl = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(plainText)}`
@@ -985,10 +1010,29 @@
     closeEmailModal()
   }
 
-  function buildPlainTextMoM({ title, note, mom, transcript }) {
-    const summary = extractSummary(mom)
-    const decisions = extractDecisions(mom)
-    const actions = extractActions(mom)
+  function buildPlainTextMoM({ title, note, mom, transcript, decisions: directDecisions, actions: directActions }) {
+    const summary = extractExecutiveSummary(mom)
+    let decisions = extractDecisions(mom)
+    if (!decisions.length && directDecisions) {
+      try {
+        const parsed = typeof directDecisions === 'string' ? JSON.parse(directDecisions) : directDecisions
+        if (Array.isArray(parsed)) decisions = parsed
+        else if (typeof directDecisions === 'string') decisions = extractListLines(directDecisions)
+      } catch {
+        decisions = extractListLines(String(directDecisions))
+      }
+    }
+
+    let actions = extractActions(mom)
+    if (!actions.length && directActions) {
+      try {
+        const parsed = typeof directActions === 'string' ? JSON.parse(directActions) : directActions
+        if (Array.isArray(parsed)) actions = parsed
+        else if (typeof directActions === 'string') actions = extractListLines(directActions)
+      } catch {
+        actions = extractListLines(String(directActions))
+      }
+    }
     const dateStr = new Date().toLocaleDateString(undefined, {
       month: 'short',
       day: 'numeric',
@@ -1422,6 +1466,10 @@
       .split('\n')
       .map((l) => l.replace(/^[*\s\-•\d.]+|\[[ xX]\]/g, '').trim())
       .filter((l) => l.length > 2 && !/^none(\s*recorded|\s*explicitly)?\.?$/i.test(l))
+  }
+
+  function extractSummary(md) {
+    return extractExecutiveSummary(md)
   }
 
   function extractExecutiveSummary(md) {
