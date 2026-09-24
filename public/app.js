@@ -43,6 +43,12 @@
     userAvatar: document.getElementById('userAvatar'),
     logoutBtn: document.getElementById('logoutBtn'),
 
+    // Mobile Navigation Drawer
+    mobileMenuBtn: document.getElementById('mobileMenuBtn'),
+    mobileMenuDrawer: document.getElementById('mobileMenuDrawer'),
+    mobileLoginBtn: document.getElementById('mobileLoginBtn'),
+    mobileRegisterBtn: document.getElementById('mobileRegisterBtn'),
+
     // Views
     landingView: document.getElementById('landingView'),
     appWorkspace: document.getElementById('appWorkspace'),
@@ -192,6 +198,40 @@
     if (el.pricingRegisterBtn) el.pricingRegisterBtn.addEventListener('click', () => openAuthModal('register'))
     if (el.bottomCtaBtn) el.bottomCtaBtn.addEventListener('click', () => openAuthModal('register'))
 
+    // Mobile Navigation Controls
+    if (el.mobileMenuBtn) {
+      el.mobileMenuBtn.addEventListener('click', toggleMobileMenu)
+    }
+    if (el.mobileLoginBtn) {
+      el.mobileLoginBtn.addEventListener('click', () => {
+        closeMobileMenu()
+        openAuthModal('login')
+      })
+    }
+    if (el.mobileRegisterBtn) {
+      el.mobileRegisterBtn.addEventListener('click', () => {
+        closeMobileMenu()
+        openAuthModal('register')
+      })
+    }
+    document.querySelectorAll('.mobile-nav-link').forEach((link) => {
+      link.addEventListener('click', () => {
+        closeMobileMenu()
+      })
+    })
+    document.addEventListener('click', (e) => {
+      if (el.mobileMenuDrawer && !el.mobileMenuDrawer.classList.contains('hidden')) {
+        if (!el.mobileMenuDrawer.contains(e.target) && !el.mobileMenuBtn.contains(e.target)) {
+          closeMobileMenu()
+        }
+      }
+    })
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 900) {
+        closeMobileMenu()
+      }
+    })
+
     // Auth Modal Controls
     el.closeAuthModalBtn.addEventListener('click', closeAuthModal)
     el.authModal.addEventListener('click', (e) => {
@@ -295,6 +335,8 @@
   }
 
   function renderViewState(isAuthenticated) {
+    closeMobileMenu()
+
     if (isAuthenticated && state.user) {
       // Show Authenticated Workspace
       el.landingView.classList.add('hidden')
@@ -305,6 +347,7 @@
       el.guestNav.classList.add('hidden')
       el.workspaceNav.classList.remove('hidden')
       el.userNav.classList.remove('hidden')
+      if (el.mobileMenuBtn) el.mobileMenuBtn.classList.add('hidden')
 
       const name = state.user.name || (state.user.email ? state.user.email.split('@')[0] : 'User')
       el.userName.textContent = name
@@ -321,6 +364,35 @@
       el.guestNav.classList.remove('hidden')
       el.workspaceNav.classList.add('hidden')
       el.userNav.classList.add('hidden')
+      if (el.mobileMenuBtn) el.mobileMenuBtn.classList.remove('hidden')
+    }
+  }
+
+  function toggleMobileMenu() {
+    if (!el.mobileMenuDrawer) return
+    const isOpen = !el.mobileMenuDrawer.classList.contains('hidden')
+    if (isOpen) {
+      closeMobileMenu()
+    } else {
+      openMobileMenu()
+    }
+  }
+
+  function openMobileMenu() {
+    if (!el.mobileMenuDrawer) return
+    el.mobileMenuDrawer.classList.remove('hidden')
+    if (el.mobileMenuBtn) {
+      el.mobileMenuBtn.classList.add('active')
+      el.mobileMenuBtn.setAttribute('aria-expanded', 'true')
+    }
+  }
+
+  function closeMobileMenu() {
+    if (!el.mobileMenuDrawer) return
+    el.mobileMenuDrawer.classList.add('hidden')
+    if (el.mobileMenuBtn) {
+      el.mobileMenuBtn.classList.remove('active')
+      el.mobileMenuBtn.setAttribute('aria-expanded', 'false')
     }
   }
 
@@ -826,6 +898,10 @@
   }
 
   function cleanupStream() {
+    if (state.visualizerResizeHandler) {
+      window.removeEventListener('resize', state.visualizerResizeHandler)
+      state.visualizerResizeHandler = null
+    }
     if (state.mediaStream) {
       state.mediaStream.getTracks().forEach((track) => track.stop())
       state.mediaStream = null
@@ -1135,6 +1211,15 @@
       const bufferLength = state.analyserNode.frequencyBinCount
       const dataArray = new Uint8Array(bufferLength)
 
+      function syncCanvasDimensions() {
+        if (canvas && canvas.parentElement) {
+          canvas.width = canvas.parentElement.clientWidth || 300
+        }
+      }
+      syncCanvasDimensions()
+      state.visualizerResizeHandler = syncCanvasDimensions
+      window.addEventListener('resize', syncCanvasDimensions)
+
       function draw() {
         state.animationId = requestAnimationFrame(draw)
         state.analyserNode.getByteFrequencyData(dataArray)
@@ -1149,7 +1234,7 @@
           const barHeight = (dataArray[i] / 255) * canvas.height
           ctx.fillStyle = '#4338ca' // Royal Indigo
           ctx.beginPath()
-          ctx.roundRect(x, canvas.height - barHeight, barWidth - 2, barHeight, [2, 2, 0, 0])
+          ctx.roundRect(x, canvas.height - barHeight, Math.max(barWidth - 2, 2), barHeight, [2, 2, 0, 0])
           ctx.fill()
           x += barWidth + 1
         }

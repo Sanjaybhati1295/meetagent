@@ -86,6 +86,8 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 body {
@@ -97,6 +99,8 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 /* Utilities */
@@ -436,6 +440,115 @@ body {
 .btn-close:hover {
   background: var(--bg-card-hover);
   color: var(--text-main);
+}
+
+.btn-full {
+  width: 100%;
+  justify-content: center;
+}
+
+/* ==========================================================================
+   Mobile Navigation Hamburger & Drawer
+   ========================================================================== */
+.mobile-menu-btn {
+  display: none;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem;
+  cursor: pointer;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  width: 38px;
+  height: 38px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.mobile-menu-btn:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--brand-primary-border);
+}
+
+.hamburger-line {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background-color: var(--text-main);
+  border-radius: 2px;
+  transition: transform 0.22s ease, opacity 0.22s ease;
+}
+
+.mobile-menu-btn.active .hamburger-line:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.mobile-menu-btn.active .hamburger-line:nth-child(2) {
+  opacity: 0;
+}
+
+.mobile-menu-btn.active .hamburger-line:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
+.mobile-menu-drawer {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 16px 32px -4px rgba(15, 23, 42, 0.12);
+  animation: slideDownDrawer 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 99;
+}
+
+@keyframes slideDownDrawer {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.mobile-drawer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.25rem 1.5rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.mobile-nav-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.mobile-nav-link {
+  display: block;
+  padding: 0.75rem 0.85rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-main);
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  transition: all 0.15s ease;
+}
+
+.mobile-nav-link:hover, .mobile-nav-link:active {
+  background: var(--brand-primary-light);
+  color: var(--brand-primary);
+}
+
+.mobile-drawer-auth {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-light);
 }
 
 /* ==========================================================================
@@ -2284,10 +2397,14 @@ body {
   to { transform: translateY(0); opacity: 1; }
 }
 
-/* Responsive Breakpoints */
+/* ==========================================================================
+   Responsive Architecture & Mobile-First Breakpoints
+   ========================================================================== */
+
+/* 1. Medium Tablets & Small Desktops (<= 900px) */
 @media (max-width: 900px) {
   .hero-headline {
-    font-size: 2.5rem;
+    font-size: 2.75rem;
   }
   .mockup-body {
     grid-template-columns: 1fr;
@@ -2310,6 +2427,7 @@ body {
   }
   .footer-container {
     flex-direction: column;
+    gap: 2.5rem;
   }
   .footer-links-group {
     flex-wrap: wrap;
@@ -2321,8 +2439,487 @@ body {
   .marketing-nav {
     display: none;
   }
+  .mobile-menu-btn {
+    display: flex;
+  }
   .vault-header {
     flex-direction: column;
     align-items: flex-start;
+  }
+}
+
+/* 2. Mobile Tablets & Smartphones (<= 768px) */
+@media (max-width: 768px) {
+  /* Prevent iOS Auto-Zoom on form fields */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+
+  /* App Header & Navigation */
+  .app-header {
+    padding: 0 1rem;
+  }
+  
+  .header-inner {
+    height: auto;
+    min-height: 60px;
+    padding: 0.5rem 0;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  #guestNav {
+    display: none; /* Accessible directly via mobileMenuBtn */
+  }
+
+  .mobile-menu-btn {
+    display: flex;
+  }
+
+  /* Segmented Workspace Nav Bar for Logged-In Users on Mobile */
+  .workspace-nav {
+    width: 100%;
+    order: 3;
+    display: flex;
+    justify-content: stretch;
+    margin-top: 0.25rem;
+    padding: 0.2rem;
+  }
+
+  .workspace-nav-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 0.5rem 0.35rem;
+    font-size: 0.82rem;
+    min-height: 38px;
+  }
+
+  .cloud-text {
+    display: none;
+  }
+
+  .cloud-indicator {
+    padding: 0.35rem;
+  }
+
+  .user-display-name {
+    max-width: 90px;
+  }
+
+  /* Landing Page Hero */
+  .hero-section {
+    padding: 2.75rem 1rem 2rem;
+  }
+
+  .hero-announcement {
+    font-size: 0.76rem;
+    padding: 0.35rem 0.75rem;
+    text-align: center;
+    justify-content: center;
+    max-width: 100%;
+    line-height: 1.4;
+  }
+
+  .hero-headline {
+    font-size: 2.15rem;
+    line-height: 1.22;
+    letter-spacing: -0.025em;
+  }
+
+  .hero-subheadline {
+    font-size: 0.98rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .hero-cta-group {
+    flex-direction: column;
+    width: 100%;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+  }
+
+  .hero-cta-group .btn {
+    width: 100%;
+    min-height: 48px;
+    font-size: 0.95rem;
+    justify-content: center;
+  }
+
+  /* Hero Trust Bar Grid */
+  .hero-trust-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem 1rem;
+    padding: 0.85rem 1rem;
+    width: 100%;
+  }
+
+  .hero-trust-bar .trust-sep {
+    display: none;
+  }
+
+  .trust-item {
+    font-size: 0.78rem;
+    justify-content: flex-start;
+  }
+
+  /* Interactive Mockup Preview */
+  .hero-mockup-wrapper {
+    margin-top: 1.75rem;
+  }
+
+  .mockup-header {
+    padding: 0.75rem 0.85rem;
+    gap: 0.5rem;
+  }
+
+  .mockup-badge {
+    display: none;
+  }
+
+  .mockup-title {
+    font-size: 0.75rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: calc(100% - 60px);
+  }
+
+  .mockup-body {
+    padding: 0.85rem;
+    gap: 1rem;
+  }
+
+  .mockup-chat-stream {
+    max-height: 250px;
+  }
+
+  .mock-speech-bubble {
+    padding: 0.75rem;
+  }
+
+  .speech-text {
+    font-size: 0.82rem;
+  }
+
+  .mockup-footer {
+    flex-direction: column;
+    gap: 0.75rem;
+    text-align: center;
+    padding: 1rem 0.85rem;
+  }
+
+  .mockup-footer .btn {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+  }
+
+  /* Sections & Containers */
+  .section-container {
+    padding: 0 1rem;
+  }
+
+  .section-header {
+    margin-bottom: 2rem;
+  }
+
+  .section-title {
+    font-size: 1.8rem;
+  }
+
+  .section-subtitle {
+    font-size: 0.92rem;
+  }
+
+  .bento-card {
+    padding: 1.5rem 1.25rem;
+  }
+
+  .step-card {
+    padding: 1.5rem 1.25rem;
+  }
+
+  .pricing-card {
+    padding: 2rem 1.25rem;
+  }
+
+  .cta-box {
+    padding: 2.5rem 1.25rem;
+  }
+
+  .cta-box h2 {
+    font-size: 1.6rem;
+  }
+
+  .cta-box p {
+    font-size: 0.95rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .cta-box .btn {
+    width: 100%;
+    min-height: 48px;
+    justify-content: center;
+  }
+
+  /* Authenticated Workspace & Studio */
+  .workspace-container {
+    padding: 1rem 0.75rem;
+  }
+
+  .studio-config-card {
+    padding: 1.25rem 1rem;
+  }
+
+  .studio-header-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .meeting-title-input {
+    font-size: 1rem;
+    width: 100%;
+  }
+
+  .options-row {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+    padding-top: 0.85rem;
+  }
+
+  .action-panel {
+    padding: 1.5rem 1rem;
+  }
+
+  .mic-glow-ring {
+    width: 100%;
+  }
+
+  #startBtn {
+    width: 100%;
+    min-height: 52px;
+    font-size: 1rem;
+    justify-content: center;
+  }
+
+  #stopBtn {
+    width: 100%;
+    min-height: 52px;
+    font-size: 1rem;
+    justify-content: center;
+  }
+
+  .audio-tip-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.45rem;
+    font-size: 0.78rem;
+    padding: 0.75rem 0.85rem;
+  }
+
+  .recording-header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+
+  #waveformCanvas {
+    width: 100%;
+    max-width: 100%;
+    height: 48px;
+  }
+
+  .live-stream-box {
+    max-height: 220px;
+  }
+
+  .live-stream-content {
+    font-size: 0.88rem;
+  }
+
+  /* Results Section */
+  .results-header-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    padding: 0.85rem;
+  }
+
+  .results-tabs, .results-tabs .tab-buttons {
+    width: 100%;
+  }
+
+  .tab-btn {
+    flex: 1;
+    text-align: center;
+    justify-content: center;
+    padding: 0.55rem 0.35rem;
+    font-size: 0.82rem;
+    min-height: 40px;
+  }
+
+  .tab-actions {
+    width: 100%;
+    display: flex;
+    gap: 0.4rem;
+  }
+
+  .tab-actions .btn {
+    flex: 1;
+    justify-content: center;
+    padding: 0.5rem 0.25rem;
+    font-size: 0.78rem;
+    min-height: 38px;
+  }
+
+  .mom-card {
+    padding: 1.25rem 1rem;
+  }
+
+  .transcript-meta-bar {
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+  }
+
+  .transcript-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  #rerunMoMBtn {
+    width: 100%;
+    justify-content: center;
+    min-height: 42px;
+  }
+
+  /* Meeting Vault Subview */
+  .vault-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .vault-actions-group {
+    flex-direction: column;
+    width: 100%;
+    gap: 0.75rem;
+  }
+
+  .search-input-wrap {
+    width: 100%;
+  }
+
+  .search-input-wrap input {
+    width: 100% !important;
+  }
+
+  #vaultNewMeetingBtn {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .vault-empty {
+    grid-column: span 1;
+    padding: 2.5rem 1rem;
+  }
+
+  /* Modals on Mobile */
+  .modal-overlay {
+    padding: 0.75rem;
+  }
+
+  .modal-card {
+    max-width: 100%;
+    width: 100%;
+    border-radius: var(--radius-lg);
+  }
+
+  .modal-card-large {
+    max-height: 92vh;
+    width: 100%;
+  }
+
+  .modal-header {
+    padding: 1rem 1.15rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .detail-modal-title-box h3 {
+    font-size: 1.1rem;
+  }
+
+  .detail-modal-actions {
+    width: 100%;
+    justify-content: flex-end;
+    gap: 0.35rem;
+  }
+
+  .detail-modal-actions .btn {
+    padding: 0.45rem 0.65rem;
+    font-size: 0.75rem;
+  }
+
+  .detail-modal-body {
+    padding: 1rem;
+  }
+
+  .toast {
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    text-align: center;
+  }
+}
+
+/* 3. Small Mobile Devices (<= 480px) */
+@media (max-width: 480px) {
+  .logo-subtitle {
+    display: none;
+  }
+
+  .badge-pill-brand {
+    display: none;
+  }
+
+  .logo-title {
+    font-size: 1.05rem;
+  }
+
+  .user-display-name {
+    max-width: 65px;
+  }
+
+  .hero-headline {
+    font-size: 1.85rem;
+  }
+
+  .hero-trust-bar {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .hero-announcement {
+    padding: 0.4rem 0.65rem;
+    font-size: 0.72rem;
+  }
+
+  .bento-card {
+    padding: 1.25rem 1rem;
+  }
+
+  .footer-links-group {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .modal-card-large {
+    max-height: 95vh;
   }
 }
