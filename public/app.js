@@ -1,5 +1,5 @@
 // MeetAgent — Professional Enterprise SaaS Controller
-// High-Reliability Architecture with Supabase Database Persistence & Speech Intelligence
+// High-Reliability Architecture with Cloud Database Persistence & Speech Intelligence
 (() => {
   'use strict'
 
@@ -36,15 +36,28 @@
     workspaceNav: document.getElementById('workspaceNav'),
     navStudioBtn: document.getElementById('navStudioBtn'),
     navVaultBtn: document.getElementById('navVaultBtn'),
+    navProfileBtn: document.getElementById('navProfileBtn'),
     vaultCountBadge: document.getElementById('vaultCountBadge'),
 
     guestNav: document.getElementById('guestNav'),
     openLoginBtn: document.getElementById('openLoginBtn'),
     openRegisterBtn: document.getElementById('openRegisterBtn'),
     userNav: document.getElementById('userNav'),
+    topUserPill: document.getElementById('topUserPill'),
     userName: document.getElementById('userName'),
     userAvatar: document.getElementById('userAvatar'),
     logoutBtn: document.getElementById('logoutBtn'),
+
+    // Sidebar Navigation Elements
+    sidebarNavStudio: document.getElementById('sidebarNavStudio'),
+    sidebarNavVault: document.getElementById('sidebarNavVault'),
+    sidebarNavProfile: document.getElementById('sidebarNavProfile'),
+    sidebarVaultCountBadge: document.getElementById('sidebarVaultCountBadge'),
+    sidebarUserCard: document.getElementById('sidebarUserCard'),
+    sidebarUserAvatar: document.getElementById('sidebarUserAvatar'),
+    sidebarUserName: document.getElementById('sidebarUserName'),
+    sidebarUserEmail: document.getElementById('sidebarUserEmail'),
+    sidebarLogoutBtn: document.getElementById('sidebarLogoutBtn'),
 
     // Mobile Navigation Drawer
     mobileMenuBtn: document.getElementById('mobileMenuBtn'),
@@ -57,6 +70,26 @@
     appWorkspace: document.getElementById('appWorkspace'),
     studioView: document.getElementById('studioView'),
     vaultView: document.getElementById('vaultView'),
+    profileView: document.getElementById('profileView'),
+
+    // Profile View Elements
+    profileAvatarLarge: document.getElementById('profileAvatarLarge'),
+    profileCardName: document.getElementById('profileCardName'),
+    profileCardEmail: document.getElementById('profileCardEmail'),
+    profilePhotoInput: document.getElementById('profilePhotoInput'),
+    profileUploadPhotoBtn: document.getElementById('profileUploadPhotoBtn'),
+    profileRemovePhotoBtn: document.getElementById('profileRemovePhotoBtn'),
+    profileInfoForm: document.getElementById('profileInfoForm'),
+    profileInfoAlert: document.getElementById('profileInfoAlert'),
+    profileNameInput: document.getElementById('profileNameInput'),
+    profileEmailInput: document.getElementById('profileEmailInput'),
+    profileSaveInfoBtn: document.getElementById('profileSaveInfoBtn'),
+    profilePasswordForm: document.getElementById('profilePasswordForm'),
+    profilePasswordAlert: document.getElementById('profilePasswordAlert'),
+    profileCurrentPasswordInput: document.getElementById('profileCurrentPasswordInput'),
+    profileNewPasswordInput: document.getElementById('profileNewPasswordInput'),
+    profileConfirmPasswordInput: document.getElementById('profileConfirmPasswordInput'),
+    profileSavePasswordBtn: document.getElementById('profileSavePasswordBtn'),
 
     // Landing CTAs
     heroGetStartedBtn: document.getElementById('heroGetStartedBtn'),
@@ -80,19 +113,30 @@
     regError: document.getElementById('regError'),
     switchToRegister: document.getElementById('switchToRegister'),
     switchToLogin: document.getElementById('switchToLogin'),
+    resetForm: document.getElementById('resetForm'),
+    resetEmail: document.getElementById('resetEmail'),
+    resetNewPassword: document.getElementById('resetNewPassword'),
+    resetError: document.getElementById('resetError'),
+    resetSuccess: document.getElementById('resetSuccess'),
+    switchToReset: document.getElementById('switchToReset'),
+    switchToLoginFromReset: document.getElementById('switchToLoginFromReset'),
 
     // Meeting Studio Controls
+    callConsoleCard: document.getElementById('callConsoleCard'),
     meetingTitleInput: document.getElementById('meetingTitleInput'),
     engineStatusText: document.getElementById('engineStatusText'),
     audioSource: document.getElementById('audioSource'),
     aiModel: document.getElementById('aiModel'),
 
+    guestNoticeBanner: document.getElementById('guestNoticeBanner'),
+    guestNoticeLoginBtn: document.getElementById('guestNoticeLoginBtn'),
     idleState: document.getElementById('idleState'),
     recordingState: document.getElementById('recordingState'),
     loadingState: document.getElementById('loadingState'),
     loadingText: document.getElementById('loadingText'),
 
     startBtn: document.getElementById('startBtn'),
+    startBtnLabel: document.getElementById('startBtnLabel'),
     stopBtn: document.getElementById('stopBtn'),
     audioFileInput: document.getElementById('audioFileInput'),
     meetingTimer: document.getElementById('meetingTimer'),
@@ -101,6 +145,7 @@
 
     // Studio Results
     resultsSection: document.getElementById('resultsSection'),
+    newMeetingStudioBtn: document.getElementById('newMeetingStudioBtn'),
     tabMoMBtn: document.getElementById('tabMoMBtn'),
     tabTranscriptBtn: document.getElementById('tabTranscriptBtn'),
     momPane: document.getElementById('momPane'),
@@ -223,10 +268,8 @@
       const res = await fetch('/api/config')
       if (res.ok) {
         const config = await res.json()
-        if (config.groqConfigured && config.geminiConfigured) {
-          el.engineStatusText.textContent = 'Groq & Gemini AI Ready'
-        } else if (config.groqConfigured) {
-          el.engineStatusText.textContent = 'Groq Llama 3.3 Ready'
+        if (el.engineStatusText) {
+          el.engineStatusText.textContent = 'AI Assistant Ready'
         }
         state.emailConfigured = Boolean(config.emailConfigured)
         state.emailProvider = config.emailProvider || null
@@ -250,6 +293,7 @@
     // Guest Auth Triggers
     el.openLoginBtn.addEventListener('click', () => openAuthModal('login'))
     el.openRegisterBtn.addEventListener('click', () => openAuthModal('register'))
+    if (el.guestNoticeLoginBtn) el.guestNoticeLoginBtn.addEventListener('click', () => openAuthModal('login'))
     if (el.heroGetStartedBtn) el.heroGetStartedBtn.addEventListener('click', () => openAuthModal('register'))
     if (el.mockupLaunchBtn) el.mockupLaunchBtn.addEventListener('click', () => openAuthModal('register'))
     if (el.pricingRegisterBtn) el.pricingRegisterBtn.addEventListener('click', () => openAuthModal('register'))
@@ -308,24 +352,60 @@
         switchAuthTab('login')
       })
     }
+    if (el.switchToReset) {
+      el.switchToReset.addEventListener('click', (e) => {
+        e.preventDefault()
+        switchAuthTab('reset')
+      })
+    }
+    if (el.switchToLoginFromReset) {
+      el.switchToLoginFromReset.addEventListener('click', (e) => {
+        e.preventDefault()
+        switchAuthTab('login')
+      })
+    }
 
     el.loginForm.addEventListener('submit', handleLogin)
     el.registerForm.addEventListener('submit', handleRegister)
+    if (el.resetForm) el.resetForm.addEventListener('submit', handleResetPassword)
     el.logoutBtn.addEventListener('click', handleLogout)
 
-    // Workspace Navigation Tabs
-    el.navStudioBtn.addEventListener('click', () => switchWorkspaceTab('studio'))
-    el.navVaultBtn.addEventListener('click', () => switchWorkspaceTab('vault'))
+    // Workspace Navigation Tabs & Sidebar
+    if (el.navStudioBtn) el.navStudioBtn.addEventListener('click', () => switchWorkspaceTab('studio'))
+    if (el.navVaultBtn) el.navVaultBtn.addEventListener('click', () => switchWorkspaceTab('vault'))
+    if (el.navProfileBtn) el.navProfileBtn.addEventListener('click', () => switchWorkspaceTab('profile'))
+    if (el.topUserPill) el.topUserPill.addEventListener('click', () => switchWorkspaceTab('profile'))
+
+    // Left-Side Workspace Navigation Menu
+    if (el.sidebarNavStudio) el.sidebarNavStudio.addEventListener('click', () => switchWorkspaceTab('studio'))
+    if (el.sidebarNavVault) el.sidebarNavVault.addEventListener('click', () => switchWorkspaceTab('vault'))
+    if (el.sidebarNavProfile) el.sidebarNavProfile.addEventListener('click', () => switchWorkspaceTab('profile'))
+    if (el.sidebarUserCard) el.sidebarUserCard.addEventListener('click', () => switchWorkspaceTab('profile'))
+    if (el.sidebarLogoutBtn) el.sidebarLogoutBtn.addEventListener('click', handleLogout)
+
+    // User Profile Actions
+    if (el.profileUploadPhotoBtn) el.profileUploadPhotoBtn.addEventListener('click', () => el.profilePhotoInput.click())
+    if (el.profilePhotoInput) el.profilePhotoInput.addEventListener('change', handleProfilePhotoUpload)
+    if (el.profileRemovePhotoBtn) el.profileRemovePhotoBtn.addEventListener('click', handleProfilePhotoRemove)
+    if (el.profileInfoForm) el.profileInfoForm.addEventListener('submit', handleProfileInfoSubmit)
+    if (el.profilePasswordForm) el.profilePasswordForm.addEventListener('submit', handleProfilePasswordSubmit)
+
+    document.querySelectorAll('.preset-avatar-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const preset = btn.getAttribute('data-preset')
+        handlePresetAvatarSelect(preset)
+      })
+    })
     if (el.vaultNewMeetingBtn) {
       el.vaultNewMeetingBtn.addEventListener('click', () => {
         switchWorkspaceTab('studio')
-        el.meetingTitleInput.focus()
+        resetStudioForNewMeeting()
       })
     }
     if (el.emptyStartBtn) {
       el.emptyStartBtn.addEventListener('click', () => {
         switchWorkspaceTab('studio')
-        el.meetingTitleInput.focus()
+        resetStudioForNewMeeting()
       })
     }
 
@@ -344,6 +424,9 @@
     el.tabTranscriptBtn.addEventListener('click', () => switchStudioResultTab('transcript'))
     el.copyBtn.addEventListener('click', () => copyActiveContent(state.currentMoMRaw, state.currentTranscript, state.activeStudioResultTab))
     el.downloadBtn.addEventListener('click', () => downloadMarkdown(state.currentMoMRaw, state.currentTranscript, el.meetingTitleInput.value))
+    if (el.newMeetingStudioBtn) {
+      el.newMeetingStudioBtn.addEventListener('click', resetStudioForNewMeeting)
+    }
     if (el.emailMoMBtn) {
       el.emailMoMBtn.addEventListener('click', () => {
         if (!state.currentMoMRaw && !state.currentTranscript) {
@@ -432,42 +515,92 @@
     renderViewState(false)
   }
 
+  window.meetagentOpenAuth = () => openAuthModal('login')
+
   function renderViewState(isAuthenticated) {
     closeMobileMenu()
+
+    const breadcrumb = document.getElementById('workspaceBreadcrumb')
+    const engineBadge = document.getElementById('engineStatusBadge')
 
     if (isAuthenticated && state.user) {
       document.documentElement.classList.add('has-auth-session')
 
-      // Show Authenticated Workspace
-      el.landingView.classList.add('hidden')
-      el.appWorkspace.classList.remove('hidden')
+      // Show Workspace, Hide Landing Page
+      if (el.landingView) el.landingView.classList.add('hidden')
+      if (el.appWorkspace) el.appWorkspace.classList.remove('hidden')
+      if (el.workspaceNav) el.workspaceNav.classList.remove('hidden')
 
-      // Switch Navbars
-      el.marketingNav.classList.add('hidden')
-      el.guestNav.classList.add('hidden')
-      el.workspaceNav.classList.remove('hidden')
-      el.userNav.classList.remove('hidden')
+      if (el.marketingNav) el.marketingNav.classList.add('hidden')
+      if (el.guestNav) el.guestNav.classList.add('hidden')
+      if (el.userNav) el.userNav.classList.remove('hidden')
       if (el.mobileMenuBtn) el.mobileMenuBtn.classList.add('hidden')
+      if (breadcrumb) breadcrumb.classList.remove('hidden')
+      if (engineBadge) engineBadge.classList.remove('hidden')
+
+      // Check if local avatar backup exists
+      if (state.user && state.user.id) {
+        const localAvatar = localStorage.getItem('meetagent_avatar_' + state.user.id)
+        if (localAvatar && !state.user.avatar) {
+          state.user.avatar = localAvatar
+        }
+      }
+
+      renderUserAvatars(state.user)
 
       const name = state.user.name || (state.user.email ? state.user.email.split('@')[0] : 'User')
-      el.userName.textContent = name
-      el.userAvatar.textContent = (name[0] || 'U').toUpperCase()
+      const email = state.user.email || ''
 
-      switchWorkspaceTab('studio')
+      if (el.userName) el.userName.textContent = name
+      if (el.sidebarUserName) el.sidebarUserName.textContent = name
+      if (el.sidebarUserEmail) el.sidebarUserEmail.textContent = email
+      if (el.profileCardName) el.profileCardName.textContent = name
+      if (el.profileCardEmail) el.profileCardEmail.textContent = email
+
+      if (el.profileNameInput) el.profileNameInput.value = state.user.name || ''
+      if (el.profileEmailInput) el.profileEmailInput.value = state.user.email || ''
+
+      switchWorkspaceTab(state.activeWorkspaceTab || 'studio')
+      loadUserMeetings()
     } else {
       document.documentElement.classList.remove('has-auth-session')
 
-      // Show Public Marketing Website
-      el.landingView.classList.remove('hidden')
-      el.appWorkspace.classList.add('hidden')
+      // Show Landing Page, Hide Workspace
+      if (el.landingView) el.landingView.classList.remove('hidden')
+      if (el.appWorkspace) el.appWorkspace.classList.add('hidden')
+      if (el.workspaceNav) el.workspaceNav.classList.add('hidden')
 
-      // Switch Navbars
-      el.marketingNav.classList.remove('hidden')
-      el.guestNav.classList.remove('hidden')
-      el.workspaceNav.classList.add('hidden')
-      el.userNav.classList.add('hidden')
+      if (el.marketingNav) el.marketingNav.classList.remove('hidden')
+      if (el.guestNav) el.guestNav.classList.remove('hidden')
+      if (el.userNav) el.userNav.classList.add('hidden')
       if (el.mobileMenuBtn) el.mobileMenuBtn.classList.remove('hidden')
+      if (breadcrumb) breadcrumb.classList.add('hidden')
+      if (engineBadge) engineBadge.classList.add('hidden')
     }
+  }
+
+  function renderUserAvatars(user) {
+    if (!user) return
+    const name = user.name || (user.email ? user.email.split('@')[0] : 'User')
+    const initial = (name[0] || 'U').toUpperCase()
+    const avatar = user.avatar || localStorage.getItem('meetagent_avatar_' + user.id)
+
+    const applyToElement = (elem) => {
+      if (!elem) return
+      if (avatar) {
+        if (avatar.startsWith('data:image') || avatar.startsWith('http')) {
+          elem.innerHTML = `<img src="${avatar}" class="avatar-image-render" alt="${name}">`
+        } else {
+          elem.textContent = avatar
+        }
+      } else {
+        elem.textContent = initial
+      }
+    }
+
+    applyToElement(el.userAvatar)
+    applyToElement(el.sidebarUserAvatar)
+    applyToElement(el.profileAvatarLarge)
   }
 
   function toggleMobileMenu() {
@@ -499,8 +632,10 @@
   }
 
   function openAuthModal(defaultTab = 'login') {
-    el.loginError.classList.add('hidden')
-    el.regError.classList.add('hidden')
+    if (el.loginError) el.loginError.classList.add('hidden')
+    if (el.regError) el.regError.classList.add('hidden')
+    if (el.resetError) el.resetError.classList.add('hidden')
+    if (el.resetSuccess) el.resetSuccess.classList.add('hidden')
     el.authModal.classList.remove('hidden')
     switchAuthTab(defaultTab)
   }
@@ -515,13 +650,81 @@
       el.authTabRegister.classList.remove('active')
       el.loginForm.classList.remove('hidden')
       el.registerForm.classList.add('hidden')
+      if (el.resetForm) el.resetForm.classList.add('hidden')
       el.loginEmail.focus()
-    } else {
+    } else if (tab === 'register') {
       el.authTabRegister.classList.add('active')
       el.authTabLogin.classList.remove('active')
       el.registerForm.classList.remove('hidden')
       el.loginForm.classList.add('hidden')
+      if (el.resetForm) el.resetForm.classList.add('hidden')
       el.regName.focus()
+    } else if (tab === 'reset') {
+      el.authTabLogin.classList.remove('active')
+      el.authTabRegister.classList.remove('active')
+      el.loginForm.classList.add('hidden')
+      el.registerForm.classList.add('hidden')
+      if (el.resetForm) el.resetForm.classList.remove('hidden')
+      if (el.resetError) el.resetError.classList.add('hidden')
+      if (el.resetSuccess) el.resetSuccess.classList.add('hidden')
+      if (el.resetEmail) {
+        if (el.loginEmail && el.loginEmail.value) el.resetEmail.value = el.loginEmail.value.trim()
+        el.resetEmail.focus()
+      }
+    }
+  }
+
+  async function handleResetPassword(e) {
+    e.preventDefault()
+    if (el.resetError) el.resetError.classList.add('hidden')
+    if (el.resetSuccess) el.resetSuccess.classList.add('hidden')
+
+    const email = el.resetEmail.value.trim()
+    const newPassword = el.resetNewPassword.value
+
+    if (!email || !newPassword) return
+
+    try {
+      const res = await fetch('/api/auth/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, newPassword }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error || 'Password reset failed')
+      }
+
+      if (el.resetSuccess) {
+        el.resetSuccess.textContent = data.message || 'Password reset successfully!'
+        el.resetSuccess.classList.remove('hidden')
+      }
+
+      if (data.user && data.token) {
+        state.token = data.token
+        state.user = data.user
+        localStorage.setItem('meetagent_token', data.token)
+        localStorage.setItem('meetagent_user', JSON.stringify(data.user))
+        document.documentElement.classList.add('has-auth-session')
+        setTimeout(() => {
+          renderViewState(true)
+          closeAuthModal()
+          showToast(`Welcome back, ${data.user.name || 'User'}! Password reset.`)
+          loadUserMeetings()
+        }, 600)
+      } else {
+        setTimeout(() => {
+          switchAuthTab('login')
+          if (el.loginEmail) el.loginEmail.value = email
+          if (el.loginPassword) el.loginPassword.value = newPassword
+          showToast('Password updated! You can now sign in.')
+        }, 800)
+      }
+    } catch (err) {
+      if (el.resetError) {
+        el.resetError.textContent = err.message
+        el.resetError.classList.remove('hidden')
+      }
     }
   }
 
@@ -617,22 +820,59 @@
   }
 
   // ==========================================================================
-  // Workspace Navigation (Studio vs Vault)
+  // Workspace Navigation (Studio vs Vault vs Profile)
   // ==========================================================================
   function switchWorkspaceTab(tab) {
     state.activeWorkspaceTab = tab
 
+    // Reset top nav tab buttons
+    if (el.navStudioBtn) el.navStudioBtn.classList.remove('active')
+    if (el.navVaultBtn) el.navVaultBtn.classList.remove('active')
+    if (el.navProfileBtn) el.navProfileBtn.classList.remove('active')
+
+    // Reset left sidebar navigation items
+    if (el.sidebarNavStudio) el.sidebarNavStudio.classList.remove('active')
+    if (el.sidebarNavVault) el.sidebarNavVault.classList.remove('active')
+    if (el.sidebarNavProfile) el.sidebarNavProfile.classList.remove('active')
+
+    // Reset view visibility
+    if (el.studioView) el.studioView.classList.add('hidden')
+    if (el.vaultView) el.vaultView.classList.add('hidden')
+    if (el.profileView) el.profileView.classList.add('hidden')
+
     if (tab === 'studio') {
-      el.navStudioBtn.classList.add('active')
-      el.navVaultBtn.classList.remove('active')
-      el.studioView.classList.remove('hidden')
-      el.vaultView.classList.add('hidden')
-    } else {
-      el.navVaultBtn.classList.add('active')
-      el.navStudioBtn.classList.remove('active')
-      el.vaultView.classList.remove('hidden')
-      el.studioView.classList.add('hidden')
-      renderVaultGrid(state.meetings)
+      if (el.navStudioBtn) el.navStudioBtn.classList.add('active')
+      if (el.sidebarNavStudio) el.sidebarNavStudio.classList.add('active')
+      if (el.studioView) el.studioView.classList.remove('hidden')
+      if (el.callConsoleCard && el.callConsoleCard.classList.contains('hidden') && (!state.mediaRecorder || state.mediaRecorder.state === 'inactive')) {
+        resetStudioForNewMeeting()
+      }
+    } else if (tab === 'vault') {
+      if (el.navVaultBtn) el.navVaultBtn.classList.add('active')
+      if (el.sidebarNavVault) el.sidebarNavVault.classList.add('active')
+      if (el.vaultView) el.vaultView.classList.remove('hidden')
+
+      if (!state.user) {
+        el.vaultMeetingsGrid.innerHTML = `
+          <div class="vault-empty">
+            <div class="empty-icon">🔒</div>
+            <h3>Cloud Vault Access</h3>
+            <p>Sign in or create a free account to access your saved meetings, transcripts, and action items in your Cloud Vault.</p>
+            <button class="btn btn-primary" onclick="window.meetagentOpenAuth()">Sign In to Cloud Vault</button>
+          </div>`
+      } else {
+        renderVaultGrid(state.meetings)
+      }
+    } else if (tab === 'profile') {
+      if (el.navProfileBtn) el.navProfileBtn.classList.add('active')
+      if (el.sidebarNavProfile) el.sidebarNavProfile.classList.add('active')
+      if (el.profileView) el.profileView.classList.remove('hidden')
+
+      if (state.user) {
+        if (el.profileNameInput) el.profileNameInput.value = state.user.name || ''
+        if (el.profileEmailInput) el.profileEmailInput.value = state.user.email || ''
+        renderUserAvatars(state.user)
+      }
     }
   }
 
@@ -649,11 +889,229 @@
       if (res.ok) {
         const data = await res.json()
         state.meetings = data.meetings || []
-        el.vaultCountBadge.textContent = state.meetings.length
+        if (el.vaultCountBadge) el.vaultCountBadge.textContent = state.meetings.length
+        if (el.sidebarVaultCountBadge) el.sidebarVaultCountBadge.textContent = state.meetings.length
+        const totalCountEl = document.getElementById('vaultTotalMeetingsCount')
+        if (totalCountEl) totalCountEl.textContent = state.meetings.length
         renderVaultGrid(state.meetings)
       }
     } catch (err) {
       console.warn('Failed to load meetings:', err)
+    }
+  }
+
+  // ==========================================================================
+  // User Profile & Settings Operations
+  // ==========================================================================
+  async function updateProfileOnServer(payload) {
+    if (!state.token) throw new Error('Not authenticated')
+    const res = await fetch('/api/auth/profile', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${state.token}`,
+      },
+      body: JSON.stringify(payload),
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to update profile')
+    }
+    return data.user
+  }
+
+  function resizeImageToDataUrl(file, maxWidth = 256, maxHeight = 256) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const img = new Image()
+        img.onload = () => {
+          let { width, height } = img
+          if (width > height) {
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width)
+              width = maxWidth
+            }
+          } else {
+            if (height > maxHeight) {
+              width = Math.round((width * maxHeight) / height)
+              height = maxHeight
+            }
+          }
+          const canvas = document.createElement('canvas')
+          canvas.width = width
+          canvas.height = height
+          const ctx = canvas.getContext('2d')
+          ctx.drawImage(img, 0, 0, width, height)
+          resolve(canvas.toDataURL('image/jpeg', 0.85))
+        }
+        img.onerror = () => reject(new Error('Failed to load image file'))
+        img.src = event.target.result
+      }
+      reader.onerror = () => reject(new Error('Failed to read image file'))
+      reader.readAsDataURL(file)
+    })
+  }
+
+  async function handleProfilePhotoUpload(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      showToast('Please select a valid image file (PNG, JPG, WebP).')
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('Image file exceeds 5MB limit. Please choose a smaller photo.')
+      return
+    }
+
+    try {
+      showToast('Optimizing and uploading profile photo...')
+      const dataUrl = await resizeImageToDataUrl(file, 256, 256)
+      await updateProfileOnServer({ avatar: dataUrl })
+      state.user.avatar = dataUrl
+      localStorage.setItem('meetagent_avatar_' + state.user.id, dataUrl)
+      localStorage.setItem('meetagent_user', JSON.stringify(state.user))
+      renderUserAvatars(state.user)
+      showToast('Profile photo updated successfully!')
+    } catch (err) {
+      showToast(`Error updating photo: ${err.message}`)
+    } finally {
+      e.target.value = ''
+    }
+  }
+
+  async function handleProfilePhotoRemove() {
+    if (!state.user) return
+
+    try {
+      await updateProfileOnServer({ avatar: null })
+      state.user.avatar = null
+      localStorage.removeItem('meetagent_avatar_' + state.user.id)
+      localStorage.setItem('meetagent_user', JSON.stringify(state.user))
+      renderUserAvatars(state.user)
+      showToast('Profile photo removed.')
+    } catch (err) {
+      showToast(`Error: ${err.message}`)
+    }
+  }
+
+  async function handlePresetAvatarSelect(preset) {
+    if (!state.user) return
+    try {
+      await updateProfileOnServer({ avatar: preset })
+      state.user.avatar = preset
+      localStorage.setItem('meetagent_avatar_' + state.user.id, preset)
+      localStorage.setItem('meetagent_user', JSON.stringify(state.user))
+      renderUserAvatars(state.user)
+      showToast(`Avatar updated to ${preset}!`)
+    } catch (err) {
+      showToast(`Error: ${err.message}`)
+    }
+  }
+
+  async function handleProfileInfoSubmit(e) {
+    e.preventDefault()
+    if (!state.user || !state.token) return
+
+    const name = el.profileNameInput.value.trim()
+    const email = el.profileEmailInput.value.trim()
+    const alertEl = el.profileInfoAlert
+    alertEl.classList.add('hidden')
+
+    if (!name || !email) {
+      alertEl.className = 'status-banner banner-error'
+      alertEl.textContent = 'Name and email address are required.'
+      alertEl.classList.remove('hidden')
+      return
+    }
+
+    const origBtnHtml = el.profileSaveInfoBtn.innerHTML
+    el.profileSaveInfoBtn.disabled = true
+    el.profileSaveInfoBtn.innerHTML = '<span>Saving...</span>'
+
+    try {
+      const updated = await updateProfileOnServer({ name, email })
+      state.user.name = updated.name || name
+      state.user.email = updated.email || email
+      localStorage.setItem('meetagent_user', JSON.stringify(state.user))
+
+      if (el.userName) el.userName.textContent = state.user.name
+      if (el.sidebarUserName) el.sidebarUserName.textContent = state.user.name
+      if (el.sidebarUserEmail) el.sidebarUserEmail.textContent = state.user.email
+      if (el.profileCardName) el.profileCardName.textContent = state.user.name
+      if (el.profileCardEmail) el.profileCardEmail.textContent = state.user.email
+
+      renderUserAvatars(state.user)
+
+      alertEl.className = 'status-banner banner-success'
+      alertEl.textContent = 'Profile information saved successfully.'
+      alertEl.classList.remove('hidden')
+      showToast('Profile information updated!')
+    } catch (err) {
+      alertEl.className = 'status-banner banner-error'
+      alertEl.textContent = err.message
+      alertEl.classList.remove('hidden')
+    } finally {
+      el.profileSaveInfoBtn.disabled = false
+      el.profileSaveInfoBtn.innerHTML = origBtnHtml
+    }
+  }
+
+  async function handleProfilePasswordSubmit(e) {
+    e.preventDefault()
+    if (!state.user || !state.token) return
+
+    const currentPassword = el.profileCurrentPasswordInput.value
+    const newPassword = el.profileNewPasswordInput.value
+    const confirmPassword = el.profileConfirmPasswordInput.value
+    const alertEl = el.profilePasswordAlert
+    alertEl.classList.add('hidden')
+
+    if (!currentPassword) {
+      alertEl.className = 'status-banner banner-error'
+      alertEl.textContent = 'Please enter your current password to confirm changes.'
+      alertEl.classList.remove('hidden')
+      return
+    }
+
+    if (newPassword.length < 6) {
+      alertEl.className = 'status-banner banner-error'
+      alertEl.textContent = 'New password must be at least 6 characters long.'
+      alertEl.classList.remove('hidden')
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      alertEl.className = 'status-banner banner-error'
+      alertEl.textContent = 'New passwords do not match. Please verify and retry.'
+      alertEl.classList.remove('hidden')
+      return
+    }
+
+    const origBtnHtml = el.profileSavePasswordBtn.innerHTML
+    el.profileSavePasswordBtn.disabled = true
+    el.profileSavePasswordBtn.innerHTML = '<span>Updating...</span>'
+
+    try {
+      await updateProfileOnServer({ currentPassword, newPassword })
+      el.profileCurrentPasswordInput.value = ''
+      el.profileNewPasswordInput.value = ''
+      el.profileConfirmPasswordInput.value = ''
+
+      alertEl.className = 'status-banner banner-success'
+      alertEl.textContent = 'Password has been updated successfully.'
+      alertEl.classList.remove('hidden')
+      showToast('Password updated successfully!')
+    } catch (err) {
+      alertEl.className = 'status-banner banner-error'
+      alertEl.textContent = err.message
+      alertEl.classList.remove('hidden')
+    } finally {
+      el.profileSavePasswordBtn.disabled = false
+      el.profileSavePasswordBtn.innerHTML = origBtnHtml
     }
   }
 
@@ -677,18 +1135,23 @@
   function renderVaultGrid(meetings) {
     if (!meetings || meetings.length === 0) {
       el.vaultMeetingsGrid.innerHTML = `
-        <div class="vault-empty">
-          <div class="empty-icon">📁</div>
-          <h3>No meetings recorded yet</h3>
-          <p>Launch your studio to record a call or upload audio. Your transcription and structured MoM will be preserved in Supabase automatically.</p>
-          <button id="emptyStartMeetingBtn" class="btn btn-brand">Launch Meeting Studio</button>
+        <div class="vault-empty-card">
+          <div class="empty-icon-wrap">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/>
+              <path d="M6 6h10M6 10h10"/>
+            </svg>
+          </div>
+          <h3>No meetings in your vault yet</h3>
+          <p>Record your first meeting in the Studio or upload an audio file. Your transcript and executive minutes will be archived here automatically.</p>
+          <button id="emptyStartMeetingBtn" class="btn btn-primary">Launch Meeting Studio</button>
         </div>`
 
       const emptyBtn = document.getElementById('emptyStartMeetingBtn')
       if (emptyBtn) {
         emptyBtn.addEventListener('click', () => {
           switchWorkspaceTab('studio')
-          el.meetingTitleInput.focus()
+          resetStudioForNewMeeting()
         })
       }
       return
@@ -708,33 +1171,71 @@
 
       return `
         <div class="vault-card" data-id="${m.id}">
-          <div class="v-card-header">
-            <h4 class="v-card-title">${escapeHtml(m.title)}</h4>
-            <span class="v-badge-model">${(m.ai_model || 'GROQ').toUpperCase()}</span>
+          <div class="v-card-top-row">
+            <div class="v-card-icon-pill">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+              </svg>
+            </div>
+            <div class="v-card-title-group">
+              <h4 class="v-card-title">${escapeHtml(m.title)}</h4>
+              <div class="v-card-meta-chips">
+                <span class="v-meta-chip">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" x2="21" y1="10" y2="10"/>
+                  </svg>
+                  <span>${dateStr}</span>
+                </span>
+                <span class="v-meta-chip">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                  <span>${duration}</span>
+                </span>
+                <span class="v-meta-chip">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/>
+                  </svg>
+                  <span>${m.word_count || 0} words</span>
+                </span>
+              </div>
+            </div>
+            <span class="v-status-badge">
+              <span class="v-status-dot"></span>
+              <span>MoM Ready</span>
+            </span>
           </div>
-          <div class="v-card-meta">
-            <span>📅 ${dateStr}</span>
-            <span>• ⏱️ ${duration}</span>
-            <span>• 📝 ${m.word_count || 0} words</span>
+
+          <div class="v-card-summary-box">
+            <p class="v-card-summary">${escapeHtml(summaryPreview)}</p>
           </div>
-          <p class="v-card-summary">${escapeHtml(summaryPreview)}</p>
+
           <div class="v-card-footer">
             <button class="btn btn-sm btn-secondary btn-open-call" data-open-id="${m.id}">
               <span>View Executive MoM</span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <path d="M5 12h14M12 5l7 7-7 7"/>
               </svg>
             </button>
             <div class="v-card-footer-right">
-              <button class="btn-email-call" data-email-id="${m.id}" title="Email Minutes of Meeting">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <button class="btn btn-sm btn-ghost btn-email-call" data-email-id="${m.id}" title="Email Minutes of Meeting">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <rect width="20" height="16" x="2" y="4" rx="2"/>
                   <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
                 </svg>
                 <span>Email</span>
               </button>
-              <button class="btn-delete-meeting" data-delete-id="${m.id}" title="Delete meeting from vault">
-                🗑️ Delete
+              <button class="btn btn-sm btn-ghost btn-delete-meeting text-danger" data-delete-id="${m.id}" title="Delete meeting from vault">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+                <span>Delete</span>
               </button>
             </div>
           </div>
@@ -783,7 +1284,7 @@
       btn.addEventListener('click', async (e) => {
         e.stopPropagation()
         const id = btn.dataset.deleteId
-        if (confirm('Are you sure you want to permanently delete this meeting from your Supabase vault?')) {
+        if (confirm('Are you sure you want to permanently delete this meeting from your cloud vault?')) {
           await deletePastMeeting(id)
         }
       })
@@ -809,7 +1310,7 @@
         hour: '2-digit',
         minute: '2-digit',
       })
-      el.modalMeetingMeta.textContent = `${date} • ${m.duration_sec ? Math.round(m.duration_sec) + 's' : ''} • Engine: ${(m.ai_model || 'GROQ').toUpperCase()}`
+      el.modalMeetingMeta.textContent = `${date} • ${m.duration_sec ? Math.round(m.duration_sec) + 's' : ''} • Summary: ${m.ai_model === 'gemini' ? 'Detailed' : 'Fast'}`
 
       renderParsedMoMToContainer(
         m.mom_raw,
@@ -818,7 +1319,7 @@
         el.modalActionsList
       )
 
-      el.modalTranscriptMeta.textContent = `${m.word_count || 0} words • Stored in Supabase Vault`
+      el.modalTranscriptMeta.textContent = `${m.word_count || 0} words • Stored in Cloud Vault`
       el.modalTranscriptText.value = m.transcript
 
       switchModalTab('mom')
@@ -876,7 +1377,7 @@
         headers: { Authorization: `Bearer ${state.token}` },
       })
       if (res.ok) {
-        showToast('Meeting deleted from Supabase vault.')
+        showToast('Meeting deleted from cloud vault.')
         await loadUserMeetings()
       }
     } catch (err) {
@@ -1132,7 +1633,10 @@
   }
 
   async function autoSaveMeetingToDb(meetingData) {
-    if (!state.token) return
+    if (!state.token) {
+      showToast('Meeting minutes generated! Sign in to save to your Cloud Vault.', 4000)
+      return
+    }
     try {
       const res = await fetch('/api/meetings', {
         method: 'POST',
@@ -1143,7 +1647,7 @@
         body: JSON.stringify(meetingData),
       })
       if (res.ok) {
-        showToast('Saved to Supabase Cloud Vault!')
+        showToast('Saved to Cloud Vault!')
         await loadUserMeetings()
       }
     } catch (err) {
@@ -1154,18 +1658,62 @@
   // ==========================================================================
   // Meeting Studio Recording Controller
   // ==========================================================================
+  function resetStudioForNewMeeting() {
+    if (el.resultsSection) el.resultsSection.classList.add('hidden')
+    if (el.callConsoleCard) el.callConsoleCard.classList.remove('hidden')
+    if (el.idleState) el.idleState.classList.remove('hidden')
+    if (el.recordingState) el.recordingState.classList.add('hidden')
+    if (el.loadingState) el.loadingState.classList.add('hidden')
+
+    setDefaultMeetingTitle()
+    state.currentMoMRaw = ''
+    state.currentTranscript = ''
+    state.liveFinalText = ''
+    state.audioChunks = []
+
+    if (el.liveStreamText) {
+      el.liveStreamText.textContent = 'Listening... Start speaking, and your words will appear here live in real-time.'
+    }
+    if (el.transcriptText) {
+      el.transcriptText.value = ''
+    }
+    if (el.meetingTimer) {
+      el.meetingTimer.textContent = '00:00'
+    }
+    if (el.statWords) el.statWords.textContent = '0 words'
+    if (el.statDuration) el.statDuration.textContent = '0s duration'
+    if (el.statSpeed) el.statSpeed.textContent = ''
+
+    if (el.summaryContent) {
+      el.summaryContent.textContent = 'Executive minutes will appear here automatically after the meeting ends.'
+    }
+    if (el.decisionsList) {
+      el.decisionsList.innerHTML = '<li>No decisions recorded.</li>'
+    }
+    if (el.actionsList) {
+      el.actionsList.innerHTML = '<div class="empty-task">No action items recorded.</div>'
+    }
+
+    if (el.meetingTitleInput) {
+      el.meetingTitleInput.focus()
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   async function startMeeting() {
     if (!state.user) {
       openAuthModal('login')
-      showToast('Please sign in to record meetings.')
+      showToast('Please sign in or create an account to record meetings.')
       return
     }
 
     try {
-      const source = el.audioSource.value
+      const source = (el.audioSource && el.audioSource.value) ? el.audioSource.value : 'mic'
       state.audioChunks = []
       state.liveFinalText = ''
-      el.liveStreamText.textContent = 'Listening... Start speaking, and your words will appear here live in real-time.'
+      if (el.liveStreamText) {
+        el.liveStreamText.textContent = 'Listening... Start speaking, and your words will appear here live in real-time.'
+      }
 
       if (source === 'display') {
         state.mediaStream = await navigator.mediaDevices.getDisplayMedia({
@@ -1208,19 +1756,25 @@
 
       startTimer()
 
-      el.idleState.classList.add('hidden')
-      el.recordingState.classList.remove('hidden')
-      el.resultsSection.classList.add('hidden')
+      if (el.callConsoleCard) el.callConsoleCard.classList.remove('hidden')
+      if (el.idleState) el.idleState.classList.add('hidden')
+      if (el.recordingState) el.recordingState.classList.remove('hidden')
+      if (el.loadingState) el.loadingState.classList.add('hidden')
+      if (el.resultsSection) el.resultsSection.classList.add('hidden')
     } catch (err) {
       console.error('Audio capture error:', err)
       alert(err.message || 'Could not access audio device.')
+      if (el.callConsoleCard) el.callConsoleCard.classList.remove('hidden')
+      if (el.idleState) el.idleState.classList.remove('hidden')
+      if (el.recordingState) el.recordingState.classList.add('hidden')
+      if (el.loadingState) el.loadingState.classList.add('hidden')
     }
   }
 
   function startLiveSpeechStream() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SpeechRecognition) {
-      el.liveStreamText.innerHTML = '<em>Real-time speech streaming active via Whisper STT buffer.</em>'
+      el.liveStreamText.innerHTML = '<em>Real-time speech recognition active.</em>'
       return
     }
 
@@ -1277,7 +1831,7 @@
 
     el.recordingState.classList.add('hidden')
     el.loadingState.classList.remove('hidden')
-    el.loadingText.textContent = 'Transcribing meeting speech with Groq Whisper...'
+    el.loadingText.textContent = 'Transcribing meeting speech...'
   }
 
   function cleanupStream() {
@@ -1304,7 +1858,7 @@
       const startTime = performance.now()
       const title = el.meetingTitleInput.value.trim() || 'Executive Sync'
 
-      // Step 1: STT
+      // Step 1: Speech to Text
       let transcript = ''
       try {
         const res = await fetch('/api/transcribe?filename=meeting.webm', {
@@ -1317,7 +1871,7 @@
           transcript = data.text || ''
         }
       } catch (err) {
-        console.warn('Backend STT failed, falling back to live transcript:', err)
+        console.warn('Backend transcription failed, falling back to live transcript:', err)
       }
 
       if (!transcript.trim()) {
@@ -1337,7 +1891,7 @@
 
       el.statWords.textContent = `${wordCount} words`
       el.statDuration.textContent = `${durationSec.toFixed(1)}s duration`
-      el.statSpeed.textContent = `STT speed: ${sttSpeed}s`
+      el.statSpeed.textContent = `Processing speed: ${sttSpeed}s`
 
       // Step 2: MoM Generation
       el.loadingText.textContent = 'Synthesizing Minutes of Meeting with AI...'
@@ -1345,8 +1899,9 @@
     } catch (err) {
       console.error(err)
       alert(err.message || 'Failed to process meeting.')
-      el.loadingState.classList.add('hidden')
-      el.idleState.classList.remove('hidden')
+      if (el.loadingState) el.loadingState.classList.add('hidden')
+      if (el.callConsoleCard) el.callConsoleCard.classList.remove('hidden')
+      if (el.idleState) el.idleState.classList.remove('hidden')
     }
   }
 
@@ -1355,15 +1910,18 @@
     if (!file) return
 
     if (!state.user) {
+      el.audioFileInput.value = ''
       openAuthModal('login')
-      showToast('Please sign in to upload meetings.')
+      showToast('Please sign in or create an account to upload meetings.')
       return
     }
 
     try {
-      el.idleState.classList.add('hidden')
-      el.loadingState.classList.remove('hidden')
-      el.loadingText.textContent = `Uploading "${file.name}" and transcribing...`
+      if (el.resultsSection) el.resultsSection.classList.add('hidden')
+      if (el.callConsoleCard) el.callConsoleCard.classList.remove('hidden')
+      if (el.idleState) el.idleState.classList.add('hidden')
+      if (el.loadingState) el.loadingState.classList.remove('hidden')
+      if (el.loadingText) el.loadingText.textContent = `Uploading "${file.name}" and transcribing...`
 
       const startTime = performance.now()
       const title = file.name.replace(/\.[^/.]+$/, '')
@@ -1393,21 +1951,22 @@
       const wordCount = transcript.trim().split(/\s+/).length
       el.statWords.textContent = `${wordCount} words`
       el.statDuration.textContent = 'Uploaded Audio'
-      el.statSpeed.textContent = `STT: ${sttSpeed}s`
+      el.statSpeed.textContent = `Processing: ${sttSpeed}s`
 
       el.loadingText.textContent = 'Generating Minutes of Meeting...'
       await generateMoM(transcript, 0, wordCount, title)
     } catch (err) {
       alert(err.message || 'File processing failed')
-      el.loadingState.classList.add('hidden')
-      el.idleState.classList.remove('hidden')
+      if (el.loadingState) el.loadingState.classList.add('hidden')
+      if (el.callConsoleCard) el.callConsoleCard.classList.remove('hidden')
+      if (el.idleState) el.idleState.classList.remove('hidden')
     } finally {
       el.audioFileInput.value = ''
     }
   }
 
   async function generateMoM(transcript, durationSec = 0, wordCount = 0, title = 'Executive Sync') {
-    const model = el.aiModel.value
+    const model = (el.aiModel && el.aiModel.value) ? el.aiModel.value : 'groq'
     try {
       const res = await fetch('/api/mom', {
         method: 'POST',
@@ -1430,14 +1989,18 @@
         el.actionsList
       )
 
-      el.loadingState.classList.add('hidden')
-      el.resultsSection.classList.remove('hidden')
-      el.idleState.classList.remove('hidden')
+      if (el.loadingState) el.loadingState.classList.add('hidden')
+      if (el.idleState) el.idleState.classList.remove('hidden')
+      if (el.callConsoleCard) el.callConsoleCard.classList.add('hidden')
+      if (el.resultsSection) {
+        el.resultsSection.classList.remove('hidden')
+        el.resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
       switchStudioResultTab('mom')
 
-      // Auto-save to Supabase Database
+      // Auto-save to Cloud Vault
       const meetingPayload = {
-        title: title || el.meetingTitleInput.value.trim() || 'Meeting Session',
+        title: title || (el.meetingTitleInput ? el.meetingTitleInput.value.trim() : 'Meeting Session'),
         transcript,
         momRaw: data.mom,
         summary: extractExecutiveSummary(data.mom),
@@ -1451,8 +2014,9 @@
       await autoSaveMeetingToDb(meetingPayload)
     } catch (err) {
       alert(err.message || 'Failed to synthesize MoM')
-      el.loadingState.classList.add('hidden')
-      el.idleState.classList.remove('hidden')
+      if (el.loadingState) el.loadingState.classList.add('hidden')
+      if (el.callConsoleCard) el.callConsoleCard.classList.remove('hidden')
+      if (el.idleState) el.idleState.classList.remove('hidden')
     }
   }
 
@@ -1611,7 +2175,7 @@
         state.animationId = requestAnimationFrame(draw)
         state.analyserNode.getByteFrequencyData(dataArray)
 
-        ctx.fillStyle = '#080d18'
+        ctx.fillStyle = '#f1f5f9'
         ctx.fillRect(0, 0, canvas.width, canvas.height)
 
         const barWidth = (canvas.width / bufferLength) * 1.5
@@ -1620,12 +2184,12 @@
         for (let i = 0; i < bufferLength; i++) {
           const barHeight = (dataArray[i] / 255) * canvas.height
           const grad = ctx.createLinearGradient(0, canvas.height, 0, 0)
-          grad.addColorStop(0, '#4338ca')
-          grad.addColorStop(0.5, '#6366f1')
-          grad.addColorStop(1, '#10b981')
+          grad.addColorStop(0, '#4f46e5')
+          grad.addColorStop(0.6, '#6366f1')
+          grad.addColorStop(1, '#059669')
           ctx.fillStyle = grad
           ctx.beginPath()
-          ctx.roundRect(x, canvas.height - barHeight, Math.max(barWidth - 2, 2), barHeight, [2, 2, 0, 0])
+          ctx.roundRect(x, canvas.height - barHeight, Math.max(barWidth - 2, 2), barHeight, [3, 3, 0, 0])
           ctx.fill()
           x += barWidth + 1
         }
@@ -1715,7 +2279,7 @@
           avatar: 'S',
           avatarBg: '#4338ca',
           time: '00:04',
-          text: 'Team, we need to finalize the migration of our meeting session tables to Supabase PostgreSQL before Friday.',
+          text: 'Team, we need to finalize the migration of our customer data vault to the secure cloud infrastructure before Friday.',
         },
         {
           atSec: 7,
@@ -1723,7 +2287,7 @@
           avatar: 'A',
           avatarBg: '#059669',
           time: '00:09',
-          text: 'Agreed. I have already implemented Row-Level Security policies so users can strictly query their own recordings.',
+          text: 'Agreed. I have already implemented strict role-based access control policies so teams can securely manage their recordings.',
         },
         {
           atSec: 13,
@@ -1731,7 +2295,7 @@
           avatar: 'M',
           avatarBg: '#d97706',
           time: '00:15',
-          text: 'On the client side, I will wire up the 1-click email modal with SMTP and Resend fallbacks today.',
+          text: 'On the client side, I will wire up the 1-click email briefing modal with enterprise delivery fallbacks today.',
         },
         {
           atSec: 18,
@@ -1743,14 +2307,14 @@
         },
       ],
       mom: {
-        summary: 'The engineering team confirmed the database migration to Supabase PostgreSQL with strict Row-Level Security (RLS). Frontend email sharing integrations are ready for final merge, targeting production domain rollout by Friday.',
+        summary: 'The engineering team confirmed the migration to encrypted cloud storage with role-based access control. Email summary sharing integrations are ready for final merge, targeting production domain rollout by Friday.',
         decisions: [
-          'Migrate meeting storage exclusively to Supabase PostgreSQL with RLS enabled.',
+          'Migrate meeting storage exclusively to secure enterprise cloud storage.',
           'Deploy production release to custom domain on Friday morning.',
         ],
         actions: [
-          { text: 'Finalize RLS database migration policies and verify tenant isolation', owner: 'Alex' },
-          { text: 'Wire 1-click email sharing modal with Resend & mailto fallbacks', owner: 'Maya' },
+          { text: 'Finalize cloud storage security policies and verify tenant isolation', owner: 'Alex' },
+          { text: 'Wire 1-click email sharing modal with enterprise mail fallbacks', owner: 'Maya' },
           { text: 'Review and approve pull requests before Friday morning release', owner: 'Sarah' },
         ],
       },
@@ -1773,7 +2337,7 @@
           avatar: 'R',
           avatarBg: '#059669',
           time: '00:11',
-          text: 'Our gross margins reached 84% thanks to Groq low-latency inference architecture reducing token costs.',
+          text: 'Our gross margins reached 84% thanks to automated meeting intelligence reducing operational overhead.',
         },
         {
           atSec: 13,
@@ -1793,10 +2357,10 @@
         },
       ],
       mom: {
-        summary: 'Executive leadership reviewed Q3 operational results showing 180% growth and 84% gross margins driven by Groq inference cost efficiency. The board authorized immediate expansion of the enterprise sales engineering team to service enterprise pilots.',
+        summary: 'Executive leadership reviewed Q3 operational results showing 180% growth and 84% gross margins driven by operational efficiency. The board authorized immediate expansion of the enterprise sales engineering team to service enterprise pilots.',
         decisions: [
           'Authorize 3 additional enterprise sales engineering roles for Q4.',
-          'Standardize on Groq Llama 3.3 for high-throughput speech summarization.',
+          'Standardize enterprise-wide on automated meeting intelligence.',
         ],
         actions: [
           { text: 'Fast-track 3 Fortune 500 private tenant POC contracts', owner: 'Liam' },
@@ -1941,7 +2505,7 @@
       el.demoStatusText.textContent = 'SIMULATING LIVE CALL'
     }
     if (el.demoStreamBadge) {
-      el.demoStreamBadge.textContent = 'Whisper Stream Active'
+      el.demoStreamBadge.textContent = 'Voice Stream Active'
     }
 
     // Remove placeholder message if starting from 0
@@ -1968,7 +2532,7 @@
       // Pre-MoM badge update
       if (demoState.simTime >= 21 && !demoState.momRendered) {
         if (el.demoMomBadge) {
-          el.demoMomBadge.textContent = 'Synthesizing with Groq...'
+          el.demoMomBadge.textContent = 'Synthesizing Minutes...'
           el.demoMomBadge.style.color = 'var(--brand-amber)'
           el.demoMomBadge.style.background = 'var(--brand-amber-light)'
         }
@@ -2031,7 +2595,7 @@
       el.demoStatusText.textContent = 'INTERACTIVE DEMO'
     }
     if (el.demoStreamBadge) {
-      el.demoStreamBadge.textContent = 'Whisper Stream Idle'
+      el.demoStreamBadge.textContent = 'Voice Stream Idle'
     }
     if (el.demoMomBadge) {
       el.demoMomBadge.textContent = 'Awaiting Audio'

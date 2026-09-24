@@ -7,12 +7,16 @@ import { fileURLToPath } from 'node:url'
 import {
   transcribeWithGroq,
   generateMoMWithGroq,
-  generateMoMWithGemini
+  generateMoMWithGemini,
+  generateMoMLocalFallback
 } from './services.mjs'
 import {
   registerUser,
   loginUser,
   getUserByToken,
+  updateUserProfile,
+  resetUserPassword,
+  createSession,
   invalidateSession,
   saveMeeting,
   getUserMeetings,
@@ -49,7 +53,7 @@ function sendJson(res, statusCode, data) {
   res.writeHead(statusCode, {
     'Content-Type': 'application/json; charset=utf-8',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   })
   res.end(JSON.stringify(data))
@@ -86,7 +90,7 @@ const server = createServer(async (req, res) => {
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     })
     res.end()
@@ -135,6 +139,18 @@ const server = createServer(async (req, res) => {
     }
   }
 
+  if (pathname === '/api/auth/reset' && req.method === 'POST') {
+    try {
+      const rawBody = await collectRequestBody(req)
+      const { email, password } = JSON.parse(rawBody.toString('utf-8') || '{}')
+      const user = await resetUserPassword(email, password)
+      const token = await createSession(user.id)
+      return sendJson(res, 200, { user, token })
+    } catch (err) {
+      return sendError(res, 400, err.message)
+    }
+  }
+
   if (pathname === '/api/auth/logout' && req.method === 'POST') {
     if (token) {
       try {
@@ -146,6 +162,18 @@ const server = createServer(async (req, res) => {
 
   if (pathname === '/api/auth/me' && req.method === 'GET') {
     return sendJson(res, 200, { user })
+  }
+
+  if (pathname === '/api/auth/profile' && (req.method === 'PUT' || req.method === 'PATCH')) {
+    if (!user || !user.id) return sendError(res, 401, 'Please sign in to update your profile')
+    try {
+      const rawBody = await collectRequestBody(req)
+      const { name, email, avatar, currentPassword, newPassword } = JSON.parse(rawBody.toString('utf-8') || '{}')
+      const updatedUser = await updateUserProfile(user.id, { name, email, avatar, currentPassword, newPassword })
+      return sendJson(res, 200, { user: updatedUser })
+    } catch (err) {
+      return sendError(res, 400, err.message)
+    }
   }
 
   // --- Meetings Database Routes ---
@@ -226,31 +254,51 @@ const server = createServer(async (req, res) => {
 
   // --- AI MoM Generation Route ---
   if (pathname === '/api/mom' && req.method === 'POST') {
+    let transcriptText = ''
     try {
       const rawBody = await collectRequestBody(req)
-      const { transcript, provider = 'groq' } = JSON.parse(rawBody.toString('utf-8') || '{}')
+      const body = JSON.parse(rawBody.toString('utf-8') || '{}')
+      transcriptText = body.transcript || ''
+      const requestedProvider = body.provider || body.model || 'groq'
 
-      if (!transcript || !transcript.trim()) {
+      if (!transcriptText || !transcriptText.trim()) {
         return sendError(res, 400, 'Transcript is required to generate MoM')
       }
 
       let result
-      if (provider === 'gemini') {
-        result = await generateMoMWithGemini(transcript)
-      } else if (provider === 'groq') {
-        result = await generateMoMWithGroq(transcript)
-      } else {
-        return sendError(res, 400, `Unsupported provider "${provider}". Use "groq" or "gemini".`)
+      try {
+        if (requestedProvider === 'gemini') {
+          result = await generateMoMWithGemini(transcriptText)
+        } else {
+          result = await generateMoMWithGroq(transcriptText)
+        }
+      } catch (primaryErr) {
+        console.warn(`Primary provider (${requestedProvider}) failed, attempting alternate provider:`, primaryErr.message)
+        try {
+          if (requestedProvider === 'gemini') {
+            result = await generateMoMWithGroq(transcriptText)
+          } else {
+            result = await generateMoMWithGemini(transcriptText)
+          }
+        } catch (secondaryErr) {
+          console.warn('Both cloud providers failed, activating smart local synthesis:', secondaryErr.message)
+          result = generateMoMLocalFallback(transcriptText)
+        }
       }
 
       return sendJson(res, 200, {
         mom: result.text,
-        latencyMs: result.latencyMs,
-        provider,
+        latencyMs: result.latencyMs || 0,
+        provider: result.model || requestedProvider,
       })
     } catch (err) {
       console.error('MoM generation error:', err)
-      return sendError(res, 500, err.message || 'Failed to generate MoM')
+      const fallback = generateMoMLocalFallback(transcriptText || 'General Discussion')
+      return sendJson(res, 200, {
+        mom: fallback.text,
+        latencyMs: fallback.latencyMs,
+        provider: fallback.model,
+      })
     }
   }
 
@@ -323,7 +371,9 @@ const server = createServer(async (req, res) => {
         res.writeHead(200, {
           'Content-Type': mime,
           'Content-Length': content.length,
-          'Cache-Control': 'no-cache',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0',
         })
         if (req.method === 'HEAD') {
           res.end()
