@@ -159,6 +159,21 @@
     emailOpenMailtoBtn: document.getElementById('emailOpenMailtoBtn'),
     sendEmailSubmitBtn: document.getElementById('sendEmailSubmitBtn'),
 
+    // Landing Demo & FAQ
+    heroDemoScrollBtn: document.getElementById('heroDemoScrollBtn'),
+    demoPlayBtn: document.getElementById('demoPlayBtn'),
+    demoPlayIcon: document.getElementById('demoPlayIcon'),
+    demoPlayLabel: document.getElementById('demoPlayLabel'),
+    demoResetBtn: document.getElementById('demoResetBtn'),
+    demoTimer: document.getElementById('demoTimer'),
+    demoProgressBar: document.getElementById('demoProgressBar'),
+    demoEqualizer: document.getElementById('demoEqualizer'),
+    demoChatStream: document.getElementById('demoChatStream'),
+    demoMomCards: document.getElementById('demoMomCards'),
+    demoStreamBadge: document.getElementById('demoStreamBadge'),
+    demoMomBadge: document.getElementById('demoMomBadge'),
+    demoStatusText: document.getElementById('demoStatusText'),
+
     toast: document.getElementById('toast'),
   }
 
@@ -168,8 +183,29 @@
   async function init() {
     setupEventListeners()
     setDefaultMeetingTitle()
-    await checkEngineHealth()
-    await checkAuthStatus()
+    setupLandingHeroDemo()
+    setupFAQAccordion()
+
+    // Immediate Zero-FOUC optimistic session restoration
+    if (state.token) {
+      document.documentElement.classList.add('has-auth-session')
+      try {
+        const cachedUser = localStorage.getItem('meetagent_user')
+        if (cachedUser) {
+          state.user = JSON.parse(cachedUser)
+        }
+      } catch {}
+      renderViewState(true)
+    } else {
+      document.documentElement.classList.remove('has-auth-session')
+      renderViewState(false)
+    }
+
+    // Verify authentication and engine in background without blocking UI
+    Promise.all([
+      checkAuthStatus(),
+      checkEngineHealth(),
+    ]).catch(() => {})
   }
 
   function setDefaultMeetingTitle() {
@@ -365,6 +401,7 @@
   // ==========================================================================
   async function checkAuthStatus() {
     if (!state.token) {
+      document.documentElement.classList.remove('has-auth-session')
       renderViewState(false)
       return
     }
@@ -377,6 +414,8 @@
         const data = await res.json()
         if (data.user) {
           state.user = data.user
+          localStorage.setItem('meetagent_user', JSON.stringify(data.user))
+          document.documentElement.classList.add('has-auth-session')
           renderViewState(true)
           await loadUserMeetings()
           return
@@ -386,6 +425,8 @@
 
     // Invalid or expired token
     localStorage.removeItem('meetagent_token')
+    localStorage.removeItem('meetagent_user')
+    document.documentElement.classList.remove('has-auth-session')
     state.token = null
     state.user = null
     renderViewState(false)
@@ -395,6 +436,8 @@
     closeMobileMenu()
 
     if (isAuthenticated && state.user) {
+      document.documentElement.classList.add('has-auth-session')
+
       // Show Authenticated Workspace
       el.landingView.classList.add('hidden')
       el.appWorkspace.classList.remove('hidden')
@@ -412,6 +455,8 @@
 
       switchWorkspaceTab('studio')
     } else {
+      document.documentElement.classList.remove('has-auth-session')
+
       // Show Public Marketing Website
       el.landingView.classList.remove('hidden')
       el.appWorkspace.classList.add('hidden')
@@ -502,6 +547,8 @@
       state.token = data.token
       state.user = data.user
       localStorage.setItem('meetagent_token', data.token)
+      localStorage.setItem('meetagent_user', JSON.stringify(data.user))
+      document.documentElement.classList.add('has-auth-session')
 
       renderViewState(true)
       closeAuthModal()
@@ -536,6 +583,8 @@
       state.token = data.token
       state.user = data.user
       localStorage.setItem('meetagent_token', data.token)
+      localStorage.setItem('meetagent_user', JSON.stringify(data.user))
+      document.documentElement.classList.add('has-auth-session')
 
       renderViewState(true)
       closeAuthModal()
@@ -558,6 +607,8 @@
     } catch {}
 
     localStorage.removeItem('meetagent_token')
+    localStorage.removeItem('meetagent_user')
+    document.documentElement.classList.remove('has-auth-session')
     state.token = null
     state.user = null
     state.meetings = []
@@ -1644,6 +1695,487 @@
     setTimeout(() => {
       el.toast.classList.add('hidden')
     }, 3200)
+  }
+
+  // ==========================================================================
+  // Interactive Landing Simulator & FAQ Accordion
+  // ==========================================================================
+  const DEMO_PRESETS = {
+    sprint: {
+      title: '🚀 Sprint Architecture Sync',
+      durationSec: 24,
+      messages: [
+        {
+          atSec: 2,
+          name: 'Sarah Jenkins',
+          avatar: 'S',
+          avatarBg: '#4338ca',
+          time: '00:04',
+          text: 'Team, we need to finalize the migration of our meeting session tables to Supabase PostgreSQL before Friday.',
+        },
+        {
+          atSec: 7,
+          name: 'Alex Rivera',
+          avatar: 'A',
+          avatarBg: '#059669',
+          time: '00:09',
+          text: 'Agreed. I have already implemented Row-Level Security policies so users can strictly query their own recordings.',
+        },
+        {
+          atSec: 13,
+          name: 'Maya Lin',
+          avatar: 'M',
+          avatarBg: '#d97706',
+          time: '00:15',
+          text: 'On the client side, I will wire up the 1-click email modal with SMTP and Resend fallbacks today.',
+        },
+        {
+          atSec: 18,
+          name: 'Sarah Jenkins',
+          avatar: 'S',
+          avatarBg: '#4338ca',
+          time: '00:21',
+          text: 'Perfect. Let us merge the PRs tomorrow morning and push the production release to our custom domain.',
+        },
+      ],
+      mom: {
+        summary: 'The engineering team confirmed the database migration to Supabase PostgreSQL with strict Row-Level Security (RLS). Frontend email sharing integrations are ready for final merge, targeting production domain rollout by Friday.',
+        decisions: [
+          'Migrate meeting storage exclusively to Supabase PostgreSQL with RLS enabled.',
+          'Deploy production release to custom domain on Friday morning.',
+        ],
+        actions: [
+          { text: 'Finalize RLS database migration policies and verify tenant isolation', owner: 'Alex' },
+          { text: 'Wire 1-click email sharing modal with Resend & mailto fallbacks', owner: 'Maya' },
+          { text: 'Review and approve pull requests before Friday morning release', owner: 'Sarah' },
+        ],
+      },
+    },
+    board: {
+      title: '📊 Executive Board Review',
+      durationSec: 24,
+      messages: [
+        {
+          atSec: 2,
+          name: 'David Sterling',
+          avatar: 'D',
+          avatarBg: '#4338ca',
+          time: '00:05',
+          text: 'Let us review Q3 performance. MeetAgent enterprise adoption grew 180% quarter-over-quarter.',
+        },
+        {
+          atSec: 7,
+          name: 'Rachel Vance',
+          avatar: 'R',
+          avatarBg: '#059669',
+          time: '00:11',
+          text: 'Our gross margins reached 84% thanks to Groq low-latency inference architecture reducing token costs.',
+        },
+        {
+          atSec: 13,
+          name: 'Liam O’Connor',
+          avatar: 'L',
+          avatarBg: '#0284c7',
+          time: '00:17',
+          text: 'Three Fortune 500 pilots requested private tenant database deployment this week.',
+        },
+        {
+          atSec: 18,
+          name: 'David Sterling',
+          avatar: 'D',
+          avatarBg: '#4338ca',
+          time: '00:22',
+          text: 'Approved. Expand enterprise sales engineering capacity by three heads immediately.',
+        },
+      ],
+      mom: {
+        summary: 'Executive leadership reviewed Q3 operational results showing 180% growth and 84% gross margins driven by Groq inference cost efficiency. The board authorized immediate expansion of the enterprise sales engineering team to service enterprise pilots.',
+        decisions: [
+          'Authorize 3 additional enterprise sales engineering roles for Q4.',
+          'Standardize on Groq Llama 3.3 for high-throughput speech summarization.',
+        ],
+        actions: [
+          { text: 'Fast-track 3 Fortune 500 private tenant POC contracts', owner: 'Liam' },
+          { text: 'Allocate Q4 budget for 3 sales engineering headcounts', owner: 'Rachel' },
+          { text: 'Circulate signed board minutes to institutional investors', owner: 'David' },
+        ],
+      },
+    },
+    client: {
+      title: '🤝 Client Discovery & Closing',
+      durationSec: 24,
+      messages: [
+        {
+          atSec: 2,
+          name: 'Johnathan Vance',
+          avatar: 'J',
+          avatarBg: '#4338ca',
+          time: '00:05',
+          text: 'Our compliance team cannot have external bots joining sensitive customer calls.',
+        },
+        {
+          atSec: 7,
+          name: 'Marcus Vance',
+          avatar: 'M',
+          avatarBg: '#059669',
+          time: '00:11',
+          text: 'Understood. MeetAgent records directly from your browser tab or mic—no third-party bot ever enters the room.',
+        },
+        {
+          atSec: 13,
+          name: 'Johnathan Vance',
+          avatar: 'J',
+          avatarBg: '#4338ca',
+          time: '00:17',
+          text: 'That solves our infosec barrier. Can we automatically email meeting minutes right after hanging up?',
+        },
+        {
+          atSec: 18,
+          name: 'Marcus Vance',
+          avatar: 'M',
+          avatarBg: '#059669',
+          time: '00:22',
+          text: 'Yes, you can 1-click dispatch HTML summaries via Resend, SMTP, or native desktop email clients.',
+        },
+      ],
+      mom: {
+        summary: 'Client discovery confirmed zero-bot architecture satisfies enterprise infosec and compliance requirements. Client verified need for instant automated post-meeting email distribution and agreed to proceed with pilot SOW.',
+        decisions: [
+          'Confirmed MeetAgent satisfies internal infosec policy with 0-bot browser capture.',
+          'Proceed with 50-seat enterprise pilot starting next Monday.',
+        ],
+        actions: [
+          { text: 'Send customized Master Service Agreement and SOW by 5 PM today', owner: 'Marcus' },
+          { text: 'Route SOW to legal counsel for expedited signature', owner: 'Johnathan' },
+          { text: 'Schedule onboarding session for enterprise pilot users', owner: 'Marcus' },
+        ],
+      },
+    },
+  }
+
+  let demoState = {
+    currentPreset: 'sprint',
+    isPlaying: false,
+    simTime: 0,
+    timerId: null,
+    renderedIndex: -1,
+    momRendered: false,
+  }
+
+  function setupLandingHeroDemo() {
+    if (!el.demoPlayBtn) return
+
+    // Preset selector buttons
+    const presetBtns = document.querySelectorAll('.demo-preset-btn')
+    presetBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const presetKey = btn.dataset.preset
+        if (!presetKey || !DEMO_PRESETS[presetKey]) return
+        presetBtns.forEach((b) => b.classList.remove('active'))
+        btn.classList.add('active')
+        switchDemoPreset(presetKey)
+      })
+    })
+
+    // Play / Pause simulation button
+    el.demoPlayBtn.addEventListener('click', toggleDemoPlay)
+
+    // Reset button
+    if (el.demoResetBtn) {
+      el.demoResetBtn.addEventListener('click', resetDemo)
+    }
+
+    // Hero demo scroll button
+    if (el.heroDemoScrollBtn) {
+      el.heroDemoScrollBtn.addEventListener('click', () => {
+        const demoTarget = document.getElementById('demo')
+        if (demoTarget) {
+          demoTarget.scrollIntoView({ behavior: 'smooth' })
+          setTimeout(() => {
+            if (!demoState.isPlaying) {
+              startDemoPlay()
+            }
+          }, 600)
+        }
+      })
+    }
+
+    // Initialize initial display for sprint preset
+    resetDemo()
+  }
+
+  function switchDemoPreset(presetKey) {
+    stopDemoTimer()
+    demoState.currentPreset = presetKey
+    resetDemo()
+    startDemoPlay()
+  }
+
+  function toggleDemoPlay() {
+    if (demoState.isPlaying) {
+      pauseDemoPlay()
+    } else {
+      if (demoState.simTime >= 24) {
+        resetDemo()
+      }
+      startDemoPlay()
+    }
+  }
+
+  function startDemoPlay() {
+    demoState.isPlaying = true
+    if (el.demoPlayIcon) {
+      el.demoPlayIcon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>'
+    }
+    if (el.demoPlayLabel) {
+      el.demoPlayLabel.textContent = 'Pause'
+    }
+    if (el.demoEqualizer) {
+      el.demoEqualizer.classList.add('animating')
+    }
+    if (el.demoStatusText) {
+      el.demoStatusText.textContent = 'SIMULATING LIVE CALL'
+    }
+    if (el.demoStreamBadge) {
+      el.demoStreamBadge.textContent = 'Whisper Stream Active'
+    }
+
+    // Remove placeholder message if starting from 0
+    if (demoState.simTime === 0 && el.demoChatStream) {
+      el.demoChatStream.innerHTML = ''
+    }
+
+    demoState.timerId = setInterval(() => {
+      demoState.simTime += 0.25
+      updateDemoProgress()
+
+      const currentPreset = DEMO_PRESETS[demoState.currentPreset]
+      if (!currentPreset) return
+
+      // Render chat messages sequentially
+      for (let i = 0; i < currentPreset.messages.length; i++) {
+        const msg = currentPreset.messages[i]
+        if (demoState.simTime >= msg.atSec && i > demoState.renderedIndex) {
+          demoState.renderedIndex = i
+          renderDemoSpeechBubble(msg)
+        }
+      }
+
+      // Pre-MoM badge update
+      if (demoState.simTime >= 21 && !demoState.momRendered) {
+        if (el.demoMomBadge) {
+          el.demoMomBadge.textContent = 'Synthesizing with Groq...'
+          el.demoMomBadge.style.color = 'var(--brand-amber)'
+          el.demoMomBadge.style.background = 'var(--brand-amber-light)'
+        }
+      }
+
+      // Finish simulation
+      if (demoState.simTime >= currentPreset.durationSec) {
+        completeDemoSimulation(currentPreset)
+      }
+    }, 250)
+  }
+
+  function pauseDemoPlay() {
+    stopDemoTimer()
+    demoState.isPlaying = false
+    if (el.demoPlayIcon) {
+      el.demoPlayIcon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>'
+    }
+    if (el.demoPlayLabel) {
+      el.demoPlayLabel.textContent = 'Resume'
+    }
+    if (el.demoEqualizer) {
+      el.demoEqualizer.classList.remove('animating')
+    }
+    if (el.demoStatusText) {
+      el.demoStatusText.textContent = 'SIMULATION PAUSED'
+    }
+  }
+
+  function stopDemoTimer() {
+    if (demoState.timerId) {
+      clearInterval(demoState.timerId)
+      demoState.timerId = null
+    }
+  }
+
+  function resetDemo() {
+    stopDemoTimer()
+    demoState.isPlaying = false
+    demoState.simTime = 0
+    demoState.renderedIndex = -1
+    demoState.momRendered = false
+
+    if (el.demoPlayIcon) {
+      el.demoPlayIcon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>'
+    }
+    if (el.demoPlayLabel) {
+      el.demoPlayLabel.textContent = 'Play Simulation'
+    }
+    if (el.demoTimer) {
+      el.demoTimer.textContent = '00:00 / 00:24'
+    }
+    if (el.demoProgressBar) {
+      el.demoProgressBar.style.width = '0%'
+    }
+    if (el.demoEqualizer) {
+      el.demoEqualizer.classList.remove('animating')
+    }
+    if (el.demoStatusText) {
+      el.demoStatusText.textContent = 'INTERACTIVE DEMO'
+    }
+    if (el.demoStreamBadge) {
+      el.demoStreamBadge.textContent = 'Whisper Stream Idle'
+    }
+    if (el.demoMomBadge) {
+      el.demoMomBadge.textContent = 'Awaiting Audio'
+      el.demoMomBadge.style.color = 'var(--text-muted)'
+      el.demoMomBadge.style.background = '#f1f5f9'
+    }
+
+    // Render initial preview state
+    if (el.demoChatStream) {
+      el.demoChatStream.innerHTML = `
+        <div class="mock-speech-bubble" style="opacity:0.85; text-align:center; padding:1.75rem 1rem; border-style:dashed;">
+          <p style="color:var(--text-secondary); font-size:0.82rem; margin:0 0 0.5rem 0; font-weight:600;">
+            🎙️ Live Audio Stream Waiting
+          </p>
+          <p style="color:var(--text-muted); font-size:0.75rem; margin:0;">
+            Click <strong>Play Simulation</strong> above to watch real-time speech transcription and sub-second MoM generation.
+          </p>
+        </div>`
+    }
+
+    if (el.demoMomCards) {
+      el.demoMomCards.innerHTML = `
+        <div class="mock-card" style="opacity:0.85; text-align:center; padding:2rem 1rem; border-style:dashed;">
+          <p style="color:var(--text-secondary); font-size:0.82rem; margin:0 0 0.5rem 0; font-weight:600;">
+            ⚡ Instant MoM Ready in 1.1s
+          </p>
+          <p style="color:var(--text-muted); font-size:0.75rem; margin:0;">
+            Executive summaries, key decisions, and prioritized deliverables will materialize here upon speech completion.
+          </p>
+        </div>`
+    }
+  }
+
+  function updateDemoProgress() {
+    const curSec = Math.min(Math.floor(demoState.simTime), 24)
+    const formatted = `00:${String(curSec).padStart(2, '0')} / 00:24`
+    if (el.demoTimer) {
+      el.demoTimer.textContent = formatted
+    }
+    if (el.demoProgressBar) {
+      const pct = Math.min((demoState.simTime / 24) * 100, 100)
+      el.demoProgressBar.style.width = `${pct}%`
+    }
+  }
+
+  function renderDemoSpeechBubble(msg) {
+    if (!el.demoChatStream) return
+    // Remove active yellow highlight from previous bubbles
+    el.demoChatStream.querySelectorAll('.live-active-bubble').forEach((b) => b.classList.remove('live-active-bubble'))
+
+    const bubble = document.createElement('div')
+    bubble.className = 'mock-speech-bubble live-active-bubble'
+    bubble.innerHTML = `
+      <div class="speaker-tag">
+        <span class="speaker-avatar" style="background:${msg.avatarBg};">${escapeHtml(msg.avatar)}</span>
+        <span class="speaker-name">${escapeHtml(msg.name)}</span>
+        <span class="speech-time">${escapeHtml(msg.time)}</span>
+      </div>
+      <div class="speech-text">
+        ${escapeHtml(msg.text)}
+      </div>`
+    
+    el.demoChatStream.appendChild(bubble)
+    el.demoChatStream.scrollTop = el.demoChatStream.scrollHeight
+  }
+
+  function completeDemoSimulation(preset) {
+    stopDemoTimer()
+    demoState.isPlaying = false
+    demoState.simTime = preset.durationSec
+    updateDemoProgress()
+
+    if (el.demoPlayIcon) {
+      el.demoPlayIcon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>'
+    }
+    if (el.demoPlayLabel) {
+      el.demoPlayLabel.textContent = 'Replay'
+    }
+    if (el.demoEqualizer) {
+      el.demoEqualizer.classList.remove('animating')
+    }
+    if (el.demoStatusText) {
+      el.demoStatusText.textContent = 'COMPLETED (1.1s)'
+    }
+    if (el.demoStreamBadge) {
+      el.demoStreamBadge.textContent = 'Speech Transcribed'
+    }
+    if (el.demoMomBadge) {
+      el.demoMomBadge.textContent = 'Generated in 1.1s'
+      el.demoMomBadge.style.color = 'var(--brand-emerald)'
+      el.demoMomBadge.style.background = 'var(--brand-emerald-light)'
+    }
+
+    // Render generated MoM Cards
+    renderDemoMoMCards(preset.mom)
+  }
+
+  function renderDemoMoMCards(mom) {
+    if (!el.demoMomCards) return
+    demoState.momRendered = true
+
+    const decisionsHtml = mom.decisions.map((d) => `
+      <li>
+        <span class="check-icon">✓</span>
+        <span>${escapeHtml(d)}</span>
+      </li>`).join('')
+
+    const actionsHtml = mom.actions.map((a) => `
+      <div class="mock-task">
+        <span class="check-icon">✓</span>
+        <span>${escapeHtml(a.text)}</span>
+        <span class="task-badge">${escapeHtml(a.owner)}</span>
+      </div>`).join('')
+
+    el.demoMomCards.innerHTML = `
+      <div class="mock-card">
+        <span class="mock-card-tag tag-indigo">Executive Summary</span>
+        <p>${escapeHtml(mom.summary)}</p>
+      </div>
+
+      <div class="mock-card">
+        <span class="mock-card-tag tag-emerald">Decisions Made</span>
+        <ul class="mock-list">
+          ${decisionsHtml}
+        </ul>
+      </div>
+
+      <div class="mock-card">
+        <span class="mock-card-tag tag-amber">Action Items & Deliverables</span>
+        <div class="mock-tasks">
+          ${actionsHtml}
+        </div>
+      </div>`
+  }
+
+  function setupFAQAccordion() {
+    const faqItems = document.querySelectorAll('.faq-item')
+    faqItems.forEach((item) => {
+      const btn = item.querySelector('.faq-question')
+      if (!btn) return
+      btn.addEventListener('click', () => {
+        const wasActive = item.classList.contains('active')
+        faqItems.forEach((i) => i.classList.remove('active'))
+        if (!wasActive) {
+          item.classList.add('active')
+        }
+      })
+    })
   }
 
   function escapeHtml(str) {
