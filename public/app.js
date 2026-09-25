@@ -1688,14 +1688,19 @@
     if (state.emailConfigured) {
       if (el.emailServiceBadge) el.emailServiceBadge.textContent = state.emailProvider || 'Direct SMTP Delivery'
       if (el.emailStatusBanner) {
-        el.emailStatusBanner.className = 'email-status-banner banner-success'
-        el.emailStatusBanner.innerHTML = `<strong>● Cloud Email Ready:</strong> Connected to ${escapeHtml(state.emailProvider || 'SMTP')}. Recipients will receive a styled executive HTML briefing.`
+        if (state.emailProvider === 'Resend') {
+          el.emailStatusBanner.className = 'status-banner banner-info'
+          el.emailStatusBanner.innerHTML = `<strong>● Cloud Email (${escapeHtml(state.emailProvider)}):</strong> Connected. <em>Note: Free Resend test keys only deliver to the account owner (<strong>sanjaybhati1295@gmail.com</strong>). To email other team members, click <strong>"Open in Mail App"</strong> below.</em>`
+        } else {
+          el.emailStatusBanner.className = 'status-banner banner-success'
+          el.emailStatusBanner.innerHTML = `<strong>● Cloud Email Ready:</strong> Connected to ${escapeHtml(state.emailProvider || 'SMTP')}. Recipients will receive a styled executive HTML briefing.`
+        }
         el.emailStatusBanner.classList.remove('hidden')
       }
     } else {
       if (el.emailServiceBadge) el.emailServiceBadge.textContent = 'Mail App / SMTP'
       if (el.emailStatusBanner) {
-        el.emailStatusBanner.className = 'email-status-banner banner-info'
+        el.emailStatusBanner.className = 'status-banner banner-info'
         el.emailStatusBanner.innerHTML = `<strong>💡 Tip:</strong> Direct server SMTP is not configured in <code>.env</code>. You can click <em>"Open in Mail App"</em> to draft immediately in your Gmail, Outlook, or Apple Mail!`
         el.emailStatusBanner.classList.remove('hidden')
       }
@@ -1738,9 +1743,15 @@
       return
     }
 
+    if (!state.user && state.emailConfigured) {
+      openAuthModal('login')
+      showToast('Please sign in or use "Open in Mail App" to send meeting minutes.')
+      return
+    }
+
     if (state.emailConfigured) {
       setButtonLoading(el.sendEmailSubmitBtn, true, 'Sending Email...')
-      showGlobalSpinner()
+      showGlobalSpinner('Dispatching meeting minutes via email...')
 
       try {
         const res = await fetch('/api/email/send', {
@@ -1768,9 +1779,20 @@
         closeEmailModal()
       } catch (err) {
         console.error('Failed to send email:', err)
-        el.emailStatusBanner.className = 'email-status-banner banner-error'
-        el.emailStatusBanner.innerHTML = `<strong>Error sending:</strong> ${escapeHtml(err.message)}<br><span style="font-size:0.75rem;">Click "Open in Mail App" below to draft using your local email client.</span>`
+        el.emailStatusBanner.className = 'status-banner banner-error'
+        el.emailStatusBanner.innerHTML = `
+          <strong>Delivery Notice:</strong> ${escapeHtml(err.message)}
+          <div style="margin-top: 10px;">
+            <button type="button" id="emailStatusMailtoBtn" class="btn btn-sm btn-secondary" style="background:#ffffff; color:#dc2626; border:1px solid #fca5a5; font-weight:600;">
+              🚀 Open in Mail App to Send Immediately
+            </button>
+          </div>
+        `
         el.emailStatusBanner.classList.remove('hidden')
+        const mailtoBtn = document.getElementById('emailStatusMailtoBtn')
+        if (mailtoBtn) {
+          mailtoBtn.addEventListener('click', () => handleMailtoFallback())
+        }
       } finally {
         setButtonLoading(el.sendEmailSubmitBtn, false)
         hideGlobalSpinner()

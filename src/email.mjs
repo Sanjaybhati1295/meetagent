@@ -334,33 +334,47 @@ export async function sendMeetingEmail({
 
   // 1. Try Resend API first if configured
   if (process.env.RESEND_API_KEY) {
-    const resendFrom = process.env.RESEND_FROM || 'MeetAgent <onboarding@resend.dev>'
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: resendFrom,
-        to: recipients,
-        subject: finalSubject,
-        html,
-        text,
-      }),
-    })
+    try {
+      const resendFrom = process.env.RESEND_FROM || 'MeetAgent <onboarding@resend.dev>'
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: resendFrom,
+          to: recipients,
+          subject: finalSubject,
+          html,
+          text,
+        }),
+      })
 
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}))
-      throw new Error(errData.message || `Resend API failed with status ${res.status}`)
-    }
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        const rawMsg = errData.message || `Resend API failed with status ${res.status}`
+        if (res.status === 403 && rawMsg.includes('only send testing emails')) {
+          throw new Error(
+            `Resend Sandbox Mode: Test domain "onboarding@resend.dev" can only send to the registered account owner (sanjaybhati1295@gmail.com). To send to other recipients, click "Open in Mail App" below, verify a custom domain at resend.com, or configure SMTP in .env.`
+          )
+        }
+        throw new Error(rawMsg)
+      }
 
-    const data = await res.json()
-    return {
-      success: true,
-      provider: 'Resend',
-      id: data.id,
-      recipients,
+      const data = await res.json()
+      return {
+        success: true,
+        provider: 'Resend',
+        id: data.id,
+        recipients,
+      }
+    } catch (err) {
+      if (process.env.SMTP_HOST) {
+        console.warn('Resend dispatch failed, falling back to SMTP:', err.message)
+      } else {
+        throw err
+      }
     }
   }
 
