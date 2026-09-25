@@ -2102,6 +2102,32 @@
     } catch {}
   }
 
+  function detectClientSideLanguage(text) {
+    const clean = (text || '').trim()
+    if (!clean) return 'English'
+    if (/[\u0900-\u097F]/.test(clean)) return 'Hindi'
+    if (/[\u0B80-\u0BFF]/.test(clean)) return 'Tamil'
+    if (/[\u0C00-\u0C7F]/.test(clean)) return 'Telugu'
+    if (/[\u0980-\u09FF]/.test(clean)) return 'Bengali'
+    if (/[\u0A80-\u0AFF]/.test(clean)) return 'Gujarati'
+    if (/[\u0C80-\u0CFF]/.test(clean)) return 'Kannada'
+    if (/[\u0D00-\u0D7F]/.test(clean)) return 'Malayalam'
+    if (/[\u0A00-\u0A7F]/.test(clean)) return 'Punjabi'
+    if (/[\u0600-\u06FF]/.test(clean)) return 'Urdu'
+
+    const lower = clean.toLowerCase()
+    const hinglishKeywords = [
+      'aaj', 'kal', 'karenge', 'karna', 'hoga', 'hai', 'hain', 'mein', 'hum', 'aap', 'kya',
+      'theek', 'shuru', 'karo', 'chalo', 'baat', 'faisla', 'sahmati', 'bhi', 'nahi', 'kuch',
+      'karte', 'kar rahe', 'dekh', 'rahe', 'hoga', 'pe', 'se', 'ko', 'aur', 'par'
+    ]
+    const words = lower.split(/[\s,.;:!?]+/)
+    const matches = words.filter(w => hinglishKeywords.includes(w)).length
+    if (matches >= 2) return 'Hinglish'
+
+    return 'English'
+  }
+
   function stopMeeting() {
     stopTimer()
     if (state.recognition) {
@@ -2116,9 +2142,15 @@
       state.mediaRecorder.onstop = async () => {
         cleanupStream()
         setButtonLoading(el.stopBtn, false)
-        const audioBlob = new Blob(state.audioChunks, { type: 'audio/webm' })
+        const mimeType = (state.mediaRecorder && state.mediaRecorder.mimeType) || 'audio/webm'
+        const audioBlob = new Blob(state.audioChunks, { type: mimeType })
         await processMeetingAudio(audioBlob)
       }
+      try {
+        if (state.mediaRecorder.state === 'recording') {
+          state.mediaRecorder.requestData()
+        }
+      } catch {}
       state.mediaRecorder.stop()
     } else {
       cleanupStream()
@@ -2151,7 +2183,7 @@
   }
 
   async function processMeetingAudio(audioBlob) {
-    showGlobalSpinner('Transcribing meeting speech...')
+    showGlobalSpinner('Transcribing meeting speech with multilingual AI...')
     try {
       const startTime = performance.now()
       const title = el.meetingTitleInput.value.trim() || 'Executive Sync'
@@ -2159,26 +2191,36 @@
       // Step 1: Speech to Text (auto-detects spoken language: Hindi, Hinglish, Tamil, Telugu, and all Indian & global languages)
       let transcript = ''
       try {
+        if (!audioBlob || audioBlob.size === 0) {
+          throw new Error('No audio buffer captured from microphone.')
+        }
+
         const res = await fetch('/api/transcribe?filename=meeting.webm&language=auto', {
           method: 'POST',
           headers: { 'Content-Type': audioBlob.type || 'audio/webm' },
           body: audioBlob,
         })
-        if (res.ok) {
-          const data = await res.json()
-          transcript = data.text || ''
-          state.detectedLanguage = data.language || 'English'
+        if (!res.ok) {
+          const errText = await res.text().catch(() => '')
+          console.warn('Backend transcription API returned error:', res.status, errText)
+          throw new Error(`AI transcription error (${res.status}): ${errText}`)
         }
+        const data = await res.json()
+        transcript = data.text || ''
+        state.detectedLanguage = data.language || detectClientSideLanguage(transcript) || 'English'
       } catch (err) {
-        console.warn('Backend transcription failed, falling back to live transcript:', err)
+        console.warn('Backend transcription failed, checking live captions:', err.message)
       }
 
       if (!transcript.trim()) {
         transcript = state.liveFinalText.trim()
+        if (transcript.trim() && !state.detectedLanguage) {
+          state.detectedLanguage = detectClientSideLanguage(transcript)
+        }
       }
 
       if (!transcript.trim()) {
-        throw new Error('No speech detected in this meeting recording.')
+        throw new Error('No speech detected in this meeting recording. Please speak clearly into your microphone.')
       }
 
       const sttSpeed = ((performance.now() - startTime) / 1000).toFixed(1)
@@ -2254,7 +2296,7 @@
 
       const data = await res.json()
       const transcript = data.text || ''
-      state.detectedLanguage = data.language || 'English'
+      state.detectedLanguage = data.language || detectClientSideLanguage(transcript) || 'English'
 
       if (!transcript.trim()) {
         throw new Error('No speech detected in audio file.')

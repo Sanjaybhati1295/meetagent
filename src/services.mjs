@@ -25,6 +25,44 @@ Output format (each section on its own line starting with the exact marker shown
 
 ${transcript}`
 
+export function detectLanguageFromTranscriptAndMetadata(text, whisperLang) {
+  const clean = (text || '').trim()
+  if (!clean) {
+    return whisperLang ? (whisperLang.charAt(0).toUpperCase() + whisperLang.slice(1)) : 'English'
+  }
+
+  // 1. Unicode Script checks for native Indian scripts
+  if (/[\u0900-\u097F]/.test(clean)) return 'Hindi'
+  if (/[\u0B80-\u0BFF]/.test(clean)) return 'Tamil'
+  if (/[\u0C00-\u0C7F]/.test(clean)) return 'Telugu'
+  if (/[\u0980-\u09FF]/.test(clean)) return 'Bengali'
+  if (/[\u0A80-\u0AFF]/.test(clean)) return 'Gujarati'
+  if (/[\u0C80-\u0CFF]/.test(clean)) return 'Kannada'
+  if (/[\u0D00-\u0D7F]/.test(clean)) return 'Malayalam'
+  if (/[\u0A00-\u0A7F]/.test(clean)) return 'Punjabi'
+  if (/[\u0600-\u06FF]/.test(clean)) return 'Urdu'
+
+  // 2. Hinglish / Code-switching check (Latin script with Hindi / Indian keywords)
+  const lower = clean.toLowerCase()
+  const hinglishKeywords = [
+    'aaj', 'kal', 'karenge', 'karna', 'hoga', 'hai', 'hain', 'mein', 'hum', 'aap', 'kya',
+    'theek', 'shuru', 'karo', 'chalo', 'baat', 'faisla', 'sahmati', 'bhi', 'nahi', 'kuch',
+    'karte', 'kar rahe', 'dekh', 'rahe', 'hoga', 'pe', 'se', 'ko', 'aur', 'par'
+  ]
+  const words = lower.split(/[\s,.;:!?]+/)
+  const hinglishMatches = words.filter(w => hinglishKeywords.includes(w)).length
+  if (hinglishMatches >= 2) {
+    return 'Hinglish'
+  }
+
+  // 3. Fallback to Whisper acoustic language identification
+  if (whisperLang && whisperLang.toLowerCase() !== 'english') {
+    return whisperLang.charAt(0).toUpperCase() + whisperLang.slice(1)
+  }
+
+  return whisperLang ? (whisperLang.charAt(0).toUpperCase() + whisperLang.slice(1)) : 'English'
+}
+
 export async function transcribeWithGroq(buffer, filename = 'recording.webm', language = 'auto') {
   const apiKey = process.env.GROQ_API_KEY
   if (!apiKey) throw new Error('Set GROQ_API_KEY in .env — get one free at console.groq.com')
@@ -44,13 +82,7 @@ export async function transcribeWithGroq(buffer, filename = 'recording.webm', la
   form.append('model', 'whisper-large-v3-turbo')
   form.append('response_format', 'verbose_json')
 
-  // Prompt to prime Whisper for Indian languages, mixed Hinglish, and accents
-  form.append(
-    'prompt',
-    'Transcribe Indian meeting audio accurately: Hindi (हिन्दी), Hinglish, Tamil (தமிழ்), Telugu (తెలుగు), Bengali (বাংলা), Marathi (मराठी), Gujarati (ગુજરાતી), Kannada (ಕನ್ನಡ), Malayalam (മലയാളം), Punjabi (ਪੰਜਾਬੀ), Urdu (اردو), and Indian English accents.'
-  )
-
-  // Language parameter for Whisper (ISO-639-1) or auto-detect
+  // Explicit language only if specifically requested and not auto-detect
   if (language && language !== 'auto' && language !== 'all') {
     const langCode = language.includes('-') ? language.split('-')[0] : language
     form.append('language', langCode)
@@ -69,8 +101,8 @@ export async function transcribeWithGroq(buffer, filename = 'recording.webm', la
   }
 
   const data = await res.json()
-  const rawLang = data.language || 'English'
-  const detectedLang = rawLang.charAt(0).toUpperCase() + rawLang.slice(1)
+  const detectedLang = detectLanguageFromTranscriptAndMetadata(data.text, data.language)
+
   return {
     text: data.text ?? '',
     language: detectedLang,
