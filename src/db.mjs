@@ -63,6 +63,9 @@ try {
   try {
     localDb.exec(`ALTER TABLE users ADD COLUMN avatar TEXT;`)
   } catch {}
+  try {
+    localDb.exec(`ALTER TABLE meetings ADD COLUMN detected_language TEXT DEFAULT 'English';`)
+  } catch {}
 } catch (err) {
   console.error('Failed to initialize local SQLite database:', err)
 }
@@ -559,6 +562,7 @@ export async function saveMeeting(userId, meeting) {
     decisions: typeof meeting.decisions === 'object' ? JSON.stringify(meeting.decisions) : String(meeting.decisions || ''),
     actions: typeof meeting.actions === 'object' ? JSON.stringify(meeting.actions) : String(meeting.actions || ''),
     ai_model: meeting.aiModel || 'groq',
+    detected_language: meeting.detectedLanguage || meeting.detected_language || meeting.language || 'English',
     created_at: now
   }
 
@@ -568,8 +572,8 @@ export async function saveMeeting(userId, meeting) {
       const stmt = localDb.prepare(`
         INSERT INTO meetings (
           id, user_id, title, audio_source, duration_sec, word_count,
-          transcript, mom_raw, summary, decisions, actions, ai_model, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          transcript, mom_raw, summary, decisions, actions, ai_model, detected_language, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `)
       stmt.run(
         payload.id,
@@ -584,6 +588,7 @@ export async function saveMeeting(userId, meeting) {
         payload.decisions,
         payload.actions,
         payload.ai_model,
+        payload.detected_language,
         payload.created_at
       )
     } catch (err) {
@@ -606,7 +611,7 @@ export async function getUserMeetings(userId) {
   if (localDb) {
     try {
       const stmt = localDb.prepare(`
-        SELECT id, title, audio_source, duration_sec, word_count, transcript, mom_raw, summary, decisions, actions, ai_model, created_at
+        SELECT id, title, audio_source, duration_sec, word_count, transcript, mom_raw, summary, decisions, actions, ai_model, detected_language, created_at
         FROM meetings
         WHERE user_id = ?
         ORDER BY created_at DESC
@@ -622,7 +627,7 @@ export async function getUserMeetings(userId) {
     try {
       const queryPromise = supabase
         .from('meetings')
-        .select('id, title, audio_source, duration_sec, word_count, transcript, mom_raw, summary, decisions, actions, ai_model, created_at')
+        .select('id, title, audio_source, duration_sec, word_count, transcript, mom_raw, summary, decisions, actions, ai_model, detected_language, created_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
       const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000))

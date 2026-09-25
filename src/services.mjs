@@ -69,9 +69,11 @@ export async function transcribeWithGroq(buffer, filename = 'recording.webm', la
   }
 
   const data = await res.json()
+  const rawLang = data.language || 'English'
+  const detectedLang = rawLang.charAt(0).toUpperCase() + rawLang.slice(1)
   return {
     text: data.text ?? '',
-    language: data.language,
+    language: detectedLang,
     durationSec: data.duration,
     latencyMs
   }
