@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agentmeet — AI Agents for Smarter Meetings</title>
   <meta name="description" content="AI Agents for Smarter Meetings. Real-time browser audio capture, autonomous speech intelligence, and instant structured minutes of meeting without uninvited bots.">
-  <link rel="stylesheet" href="/style.css?v=3.4">
+  <link rel="stylesheet" href="/style.css?v=3.5">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -64,6 +64,12 @@
 
   <!-- Floating Toast Notification -->
   <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+  <!-- Floating Spinner Indicator for Server & Background Processes -->
+  <div id="globalSpinnerBadge" class="global-spinner-badge hidden" role="status" aria-live="polite">
+    <span class="btn-spinner"></span>
+    <span id="globalSpinnerText">Processing...</span>
+  </div>
 
   <!-- ========================================================================= -->
   <!-- MODALS                                                                    -->
@@ -290,6 +296,29 @@
     </div>
   </div>
 
+  <!-- 4. Universal Interactive Dialog Modal (Alert / Confirm) -->
+  <div id="dialogModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
+    <div class="modal-card modal-dialog-card">
+      <div class="dialog-body">
+        <div id="dialogIconBox" class="dialog-icon-box icon-warning">
+          <svg id="dialogIconSvg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </div>
+        <div class="dialog-content">
+          <h3 id="dialogTitle" class="dialog-title">Notice</h3>
+          <p id="dialogMessage" class="dialog-message">Are you sure you want to proceed?</p>
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button type="button" id="dialogCancelBtn" class="btn btn-secondary">Cancel</button>
+        <button type="button" id="dialogConfirmBtn" class="btn btn-primary">Confirm</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ========================================================================= -->
   <!-- TOP APP HEADER                                                            -->
   <!-- ========================================================================= -->
@@ -319,8 +348,6 @@
 
       <!-- Right: Minimal Navigation (Features, Pricing, Login, Get Started) & User Profile -->
       <div class="header-right">
-        <!-- Live System Status (Visible only inside active workspace) -->
-        
         <!-- Guest Marketing & Auth Navigation -->
         <div id="guestNav" class="guest-nav-cluster">
           <nav id="marketingNav" class="header-marketing-nav">
@@ -1385,6 +1412,6 @@
 
   </main>
 
-  <script src="/app.js?v=3.4"></script>
+  <script src="/app.js?v=3.5"></script>
 </body>
 </html>

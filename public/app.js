@@ -220,6 +220,16 @@
     demoStatusText: document.getElementById('demoStatusText'),
 
     toast: document.getElementById('toast'),
+
+    // Universal Dialog Modal
+    dialogModal: document.getElementById('dialogModal'),
+    dialogTitle: document.getElementById('dialogTitle'),
+    dialogMessage: document.getElementById('dialogMessage'),
+    dialogIconBox: document.getElementById('dialogIconBox'),
+    dialogConfirmBtn: document.getElementById('dialogConfirmBtn'),
+    dialogCancelBtn: document.getElementById('dialogCancelBtn'),
+    globalSpinnerBadge: document.getElementById('globalSpinnerBadge'),
+    globalSpinnerText: document.getElementById('globalSpinnerText'),
   }
 
   // ==========================================================================
@@ -227,10 +237,17 @@
   // ==========================================================================
   let activeServerProcesses = 0
 
-  function showGlobalSpinner() {
+  function showGlobalSpinner(text = 'Processing...') {
     activeServerProcesses++
     const bar = document.getElementById('globalProgressBar')
     if (bar) bar.classList.add('active')
+
+    const badge = document.getElementById('globalSpinnerBadge')
+    const badgeText = document.getElementById('globalSpinnerText')
+    if (badge) {
+      if (badgeText && text) badgeText.textContent = text
+      badge.classList.remove('hidden')
+    }
   }
 
   function hideGlobalSpinner() {
@@ -238,7 +255,95 @@
     if (activeServerProcesses === 0) {
       const bar = document.getElementById('globalProgressBar')
       if (bar) bar.classList.remove('active')
+
+      const badge = document.getElementById('globalSpinnerBadge')
+      if (badge) badge.classList.add('hidden')
     }
+  }
+
+  // ==========================================================================
+  // Universal Modal Dialog System (Replacing alert & confirm)
+  // ==========================================================================
+  let dialogResolve = null
+
+  function getDialogIconSvg(type) {
+    switch (type) {
+      case 'danger':
+        return `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>`
+      case 'warning':
+        return `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>`
+      case 'success':
+        return `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="9 11 12 14 22 4"/>
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+        </svg>`
+      case 'info':
+      default:
+        return `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="16" x2="12" y2="12"/>
+          <line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>`
+    }
+  }
+
+  function openDialog({ title, message, type = 'info', confirmText = 'Confirm', cancelText = 'Cancel', isConfirm = true }) {
+    return new Promise((resolve) => {
+      dialogResolve = resolve
+
+      if (el.dialogTitle) el.dialogTitle.textContent = title || (isConfirm ? 'Confirm Action' : 'Notice')
+      if (el.dialogMessage) el.dialogMessage.textContent = message || ''
+
+      if (el.dialogIconBox) {
+        el.dialogIconBox.className = `dialog-icon-box icon-${type}`
+        el.dialogIconBox.innerHTML = getDialogIconSvg(type)
+      }
+
+      if (el.dialogConfirmBtn) {
+        el.dialogConfirmBtn.textContent = confirmText
+        el.dialogConfirmBtn.className = type === 'danger' ? 'btn btn-danger' : 'btn btn-primary'
+      }
+
+      if (el.dialogCancelBtn) {
+        el.dialogCancelBtn.textContent = cancelText
+        if (isConfirm) {
+          el.dialogCancelBtn.classList.remove('hidden')
+        } else {
+          el.dialogCancelBtn.classList.add('hidden')
+        }
+      }
+
+      if (el.dialogModal) {
+        el.dialogModal.classList.remove('hidden')
+        if (el.dialogConfirmBtn) el.dialogConfirmBtn.focus()
+      }
+    })
+  }
+
+  function closeDialog(result = false) {
+    if (el.dialogModal) el.dialogModal.classList.add('hidden')
+    if (dialogResolve) {
+      const res = dialogResolve
+      dialogResolve = null
+      res(result)
+    }
+  }
+
+  function showConfirmDialog(opts = {}) {
+    return openDialog({ ...opts, isConfirm: true })
+  }
+
+  function showAlertDialog(opts = {}) {
+    return openDialog({ ...opts, isConfirm: false, confirmText: opts.confirmText || 'Okay' })
   }
 
   function setButtonLoading(btn, isLoading, loadingText = '') {
@@ -519,6 +624,30 @@
     }
     if (el.emailForm) el.emailForm.addEventListener('submit', handleEmailSend)
     if (el.emailOpenMailtoBtn) el.emailOpenMailtoBtn.addEventListener('click', handleMailtoFallback)
+
+    if (el.saveVaultBtn) {
+      el.saveVaultBtn.addEventListener('click', () => {
+        switchWorkspaceTab('vault')
+      })
+    }
+
+    // Universal Dialog Modal Controls
+    if (el.dialogConfirmBtn) {
+      el.dialogConfirmBtn.addEventListener('click', () => closeDialog(true))
+    }
+    if (el.dialogCancelBtn) {
+      el.dialogCancelBtn.addEventListener('click', () => closeDialog(false))
+    }
+    if (el.dialogModal) {
+      el.dialogModal.addEventListener('click', (e) => {
+        if (e.target === el.dialogModal) closeDialog(false)
+      })
+    }
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && el.dialogModal && !el.dialogModal.classList.contains('hidden')) {
+        closeDialog(false)
+      }
+    })
   }
 
   // ==========================================================================
@@ -1367,14 +1496,29 @@
       btn.addEventListener('click', async (e) => {
         e.stopPropagation()
         const id = btn.dataset.deleteId
-        if (confirm('Are you sure you want to permanently delete this meeting from your cloud vault?')) {
-          await deletePastMeeting(id)
+        const confirmed = await showConfirmDialog({
+          title: 'Delete Meeting Record',
+          message: 'Are you sure you want to permanently delete this meeting from your cloud vault? This action cannot be undone.',
+          type: 'danger',
+          confirmText: 'Delete Meeting',
+          cancelText: 'Cancel',
+        })
+        if (confirmed) {
+          setButtonLoading(btn, true, '')
+          showGlobalSpinner('Deleting meeting from vault...')
+          try {
+            await deletePastMeeting(id)
+          } finally {
+            hideGlobalSpinner()
+            setButtonLoading(btn, false)
+          }
         }
       })
     })
   }
 
   async function openPastMeetingDetail(id) {
+    showGlobalSpinner('Retrieving meeting from vault...')
     try {
       const res = await fetch(`/api/meetings/${id}`, {
         headers: { Authorization: `Bearer ${state.token}` },
@@ -1408,7 +1552,13 @@
       switchModalTab('mom')
       el.meetingDetailModal.classList.remove('hidden')
     } catch (err) {
-      alert(err.message)
+      await showAlertDialog({
+        title: 'Unable to Open Meeting',
+        message: err.message || 'Could not load meeting details from the cloud vault.',
+        type: 'danger',
+      })
+    } finally {
+      hideGlobalSpinner()
     }
   }
 
@@ -1462,9 +1612,16 @@
       if (res.ok) {
         showToast('Meeting deleted from cloud vault.')
         await loadUserMeetings()
+      } else {
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.error || 'Failed to delete meeting.')
       }
     } catch (err) {
-      alert('Failed to delete meeting.')
+      await showAlertDialog({
+        title: 'Delete Failed',
+        message: err.message || 'Failed to delete meeting from cloud vault. Please check your connection and try again.',
+        type: 'danger',
+      })
     }
   }
 
@@ -1794,6 +1951,9 @@
       return
     }
 
+    setButtonLoading(el.startBtn, true, 'Connecting Audio...')
+    showGlobalSpinner('Connecting microphone & audio capture...')
+
     try {
       const source = (el.audioSource && el.audioSource.value) ? el.audioSource.value : 'mic'
       state.audioChunks = []
@@ -1850,11 +2010,18 @@
       if (el.resultsSection) el.resultsSection.classList.add('hidden')
     } catch (err) {
       console.error('Audio capture error:', err)
-      alert(err.message || 'Could not access audio device.')
+      await showAlertDialog({
+        title: 'Microphone Access Required',
+        message: err.message || 'Could not access audio device. Please verify your browser microphone or tab audio permissions.',
+        type: 'warning',
+      })
       if (el.callConsoleCard) el.callConsoleCard.classList.remove('hidden')
       if (el.idleState) el.idleState.classList.remove('hidden')
       if (el.recordingState) el.recordingState.classList.add('hidden')
       if (el.loadingState) el.loadingState.classList.add('hidden')
+    } finally {
+      setButtonLoading(el.startBtn, false)
+      hideGlobalSpinner()
     }
   }
 
@@ -1905,15 +2072,21 @@
       state.recognition = null
     }
 
+    setButtonLoading(el.stopBtn, true, 'Finalizing Call...')
+    showGlobalSpinner('Synthesizing audio recording...')
+
     if (state.mediaRecorder && state.mediaRecorder.state !== 'inactive') {
       state.mediaRecorder.onstop = async () => {
         cleanupStream()
+        setButtonLoading(el.stopBtn, false)
         const audioBlob = new Blob(state.audioChunks, { type: 'audio/webm' })
         await processMeetingAudio(audioBlob)
       }
       state.mediaRecorder.stop()
     } else {
       cleanupStream()
+      setButtonLoading(el.stopBtn, false)
+      hideGlobalSpinner()
     }
 
     el.recordingState.classList.add('hidden')
@@ -1941,7 +2114,7 @@
   }
 
   async function processMeetingAudio(audioBlob) {
-    showGlobalSpinner()
+    showGlobalSpinner('Transcribing meeting speech...')
     try {
       const startTime = performance.now()
       const title = el.meetingTitleInput.value.trim() || 'Executive Sync'
@@ -1983,10 +2156,15 @@
 
       // Step 2: MoM Generation
       el.loadingText.textContent = 'Synthesizing Minutes of Meeting with AI...'
+      showGlobalSpinner('Synthesizing Minutes of Meeting with AI...')
       await generateMoM(transcript, durationSec, wordCount, title)
     } catch (err) {
       console.error(err)
-      alert(err.message || 'Failed to process meeting.')
+      await showAlertDialog({
+        title: 'Meeting Processing Failed',
+        message: err.message || 'Failed to process meeting recording. Please try again.',
+        type: 'danger',
+      })
       if (el.loadingState) el.loadingState.classList.add('hidden')
       if (el.callConsoleCard) el.callConsoleCard.classList.remove('hidden')
       if (el.idleState) el.idleState.classList.remove('hidden')
@@ -2006,7 +2184,7 @@
       return
     }
 
-    showGlobalSpinner()
+    showGlobalSpinner(`Uploading "${file.name}" & transcribing...`)
     try {
       if (el.resultsSection) el.resultsSection.classList.add('hidden')
       if (el.callConsoleCard) el.callConsoleCard.classList.remove('hidden')
@@ -2045,9 +2223,14 @@
       el.statSpeed.textContent = `Processing: ${sttSpeed}s`
 
       el.loadingText.textContent = 'Generating Minutes of Meeting...'
+      showGlobalSpinner('Synthesizing Minutes of Meeting with AI...')
       await generateMoM(transcript, 0, wordCount, title)
     } catch (err) {
-      alert(err.message || 'File processing failed')
+      await showAlertDialog({
+        title: 'File Upload Error',
+        message: err.message || 'File processing failed. Please verify the audio file format.',
+        type: 'danger',
+      })
       if (el.loadingState) el.loadingState.classList.add('hidden')
       if (el.callConsoleCard) el.callConsoleCard.classList.remove('hidden')
       if (el.idleState) el.idleState.classList.remove('hidden')
@@ -2060,7 +2243,7 @@
   async function generateMoM(transcript, durationSec = 0, wordCount = 0, title = 'Executive Sync') {
     const model = (el.aiModel && el.aiModel.value) ? el.aiModel.value : 'groq'
     if (el.rerunMoMBtn) setButtonLoading(el.rerunMoMBtn, true, 'Synthesizing MoM...')
-    showGlobalSpinner()
+    showGlobalSpinner('Synthesizing Minutes of Meeting with AI...')
 
     try {
       const res = await fetch('/api/mom', {
@@ -2108,7 +2291,11 @@
 
       await autoSaveMeetingToDb(meetingPayload)
     } catch (err) {
-      alert(err.message || 'Failed to synthesize MoM')
+      await showAlertDialog({
+        title: 'AI Synthesis Error',
+        message: err.message || 'Failed to synthesize Minutes of Meeting. Please check your connection and try again.',
+        type: 'danger',
+      })
       if (el.loadingState) el.loadingState.classList.add('hidden')
       if (el.callConsoleCard) el.callConsoleCard.classList.remove('hidden')
       if (el.idleState) el.idleState.classList.remove('hidden')
