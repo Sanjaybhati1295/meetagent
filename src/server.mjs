@@ -234,6 +234,7 @@ const server = createServer(async (req, res) => {
 
       let audioBuffer = rawBody
       let filename = url.searchParams.get('filename') || 'audio.webm'
+      let language = url.searchParams.get('language') || 'auto'
 
       if (contentType.includes('application/json')) {
         const bodyJson = JSON.parse(rawBody.toString('utf-8'))
@@ -242,9 +243,10 @@ const server = createServer(async (req, res) => {
         }
         audioBuffer = Buffer.from(bodyJson.audio, 'base64')
         if (bodyJson.filename) filename = bodyJson.filename
+        if (bodyJson.language) language = bodyJson.language
       }
 
-      const result = await transcribeWithGroq(audioBuffer, filename)
+      const result = await transcribeWithGroq(audioBuffer, filename, language)
       return sendJson(res, 200, result)
     } catch (err) {
       console.error('Transcription error:', err)

@@ -124,6 +124,7 @@
     // Meeting Studio Controls
     callConsoleCard: document.getElementById('callConsoleCard'),
     meetingTitleInput: document.getElementById('meetingTitleInput'),
+    meetingLanguageSelect: document.getElementById('meetingLanguageSelect'),
     engineStatusText: document.getElementById('engineStatusText'),
     audioSource: document.getElementById('audioSource'),
     aiModel: document.getElementById('aiModel'),
@@ -562,6 +563,16 @@
     }
 
     // Meeting Studio Controls
+    if (el.meetingLanguageSelect) {
+      const savedLang = localStorage.getItem('meetagent_language') || 'auto'
+      el.meetingLanguageSelect.value = savedLang
+      el.meetingLanguageSelect.addEventListener('change', () => {
+        const val = el.meetingLanguageSelect.value
+        localStorage.setItem('meetagent_language', val)
+        const label = el.meetingLanguageSelect.options[el.meetingLanguageSelect.selectedIndex].text
+        showToast(`Speech language set to ${label}`)
+      })
+    }
     el.startBtn.addEventListener('click', startMeeting)
     el.stopBtn.addEventListener('click', stopMeeting)
     el.audioFileInput.addEventListener('change', handleFileUpload)
@@ -2047,6 +2058,22 @@
     }
   }
 
+  const INDIAN_LANG_MAP = {
+    auto: 'en-IN',
+    'en-IN': 'en-IN',
+    hi: 'hi-IN',
+    ta: 'ta-IN',
+    te: 'te-IN',
+    bn: 'bn-IN',
+    mr: 'mr-IN',
+    gu: 'gu-IN',
+    kn: 'kn-IN',
+    ml: 'ml-IN',
+    pa: 'pa-IN',
+    ur: 'ur-IN',
+    'en-US': 'en-US',
+  }
+
   function startLiveSpeechStream() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SpeechRecognition) {
@@ -2058,7 +2085,9 @@
       state.recognition = new SpeechRecognition()
       state.recognition.continuous = true
       state.recognition.interimResults = true
-      state.recognition.lang = 'en-US'
+
+      const selectedLang = (el.meetingLanguageSelect && el.meetingLanguageSelect.value) || 'auto'
+      state.recognition.lang = INDIAN_LANG_MAP[selectedLang] || 'en-IN'
 
       state.recognition.onresult = (event) => {
         let interimText = ''
@@ -2140,11 +2169,12 @@
     try {
       const startTime = performance.now()
       const title = el.meetingTitleInput.value.trim() || 'Executive Sync'
+      const selectedLang = (el.meetingLanguageSelect && el.meetingLanguageSelect.value) || 'auto'
 
-      // Step 1: Speech to Text
+      // Step 1: Speech to Text (supporting all Indian languages)
       let transcript = ''
       try {
-        const res = await fetch('/api/transcribe?filename=meeting.webm', {
+        const res = await fetch(`/api/transcribe?filename=meeting.webm&language=${encodeURIComponent(selectedLang)}`, {
           method: 'POST',
           headers: { 'Content-Type': audioBlob.type || 'audio/webm' },
           body: audioBlob,
@@ -2216,8 +2246,9 @@
 
       const startTime = performance.now()
       const title = file.name.replace(/\.[^/.]+$/, '')
+      const selectedLang = (el.meetingLanguageSelect && el.meetingLanguageSelect.value) || 'auto'
 
-      const res = await fetch(`/api/transcribe?filename=${encodeURIComponent(file.name)}`, {
+      const res = await fetch(`/api/transcribe?filename=${encodeURIComponent(file.name)}&language=${encodeURIComponent(selectedLang)}`, {
         method: 'POST',
         headers: { 'Content-Type': file.type || 'audio/webm' },
         body: file,

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agentmeet — AI Agents for Smarter Meetings</title>
   <meta name="description" content="AI Agents for Smarter Meetings. Real-time browser audio capture, autonomous speech intelligence, and instant structured minutes of meeting without uninvited bots.">
-  <link rel="stylesheet" href="/style.css?v=3.6">
+  <link rel="stylesheet" href="/style.css?v=3.7">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -426,6 +426,8 @@
 
         <div class="hero-trust-bullets">
           <span class="trust-item">✓ Zero bot installs required</span>
+          <span class="trust-sep">•</span>
+          <span class="trust-item">✓ Understands all Indian languages & Hinglish</span>
           <span class="trust-sep">•</span>
           <span class="trust-item">✓ Works natively in any browser</span>
           <span class="trust-sep">•</span>
@@ -948,9 +950,28 @@
               <input type="hidden" id="aiModel" value="groq">
 
               <div class="session-status-cluster">
+                <div class="lang-selector-group" title="Select or auto-detect speech language">
+                  <span class="lang-icon">🌐</span>
+                  <select id="meetingLanguageSelect" class="session-lang-select" aria-label="Spoken language">
+                    <option value="auto" selected>🇮🇳 All Indian Languages (Auto-Detect)</option>
+                    <option value="hi">🇮🇳 Hindi (हिन्दी)</option>
+                    <option value="en-IN">🇮🇳 Hinglish / Indian English</option>
+                    <option value="ta">🇮🇳 Tamil (தமிழ்)</option>
+                    <option value="te">🇮🇳 Telugu (తెలుగు)</option>
+                    <option value="bn">🇮🇳 Bengali (বাংলা)</option>
+                    <option value="mr">🇮🇳 Marathi (मराठी)</option>
+                    <option value="gu">🇮🇳 Gujarati (ગુજરાતી)</option>
+                    <option value="kn">🇮🇳 Kannada (ಕನ್ನಡ)</option>
+                    <option value="ml">🇮🇳 Malayalam (മലയാളം)</option>
+                    <option value="pa">🇮🇳 Punjabi (ਪੰਜਾਬੀ)</option>
+                    <option value="ur">🇮🇳 Urdu (اردو)</option>
+                    <option value="en-US">🌐 Global English (US / UK)</option>
+                  </select>
+                </div>
+
                 <div id="engineStatusPill" class="session-status-pill">
                   <span class="status-live-dot"></span>
-                  <span id="engineStatusPillText">AI Voice Assistant Ready</span>
+                  <span id="engineStatusPillText">Multilingual AI Voice Ready</span>
                 </div>
               </div>
             </div>
@@ -978,7 +999,7 @@
                       <span class="record-red-dot"></span>
                       <span id="startBtnLabel">Start Meeting</span>
                     </button>
-                    <p class="idle-hero-sub">Speak naturally in your room or call. High-fidelity voice transcription begins instantly.</p>
+                    <p class="idle-hero-sub">Speak naturally in Hindi, Hinglish, Tamil, Telugu, or any Indian language. Multilingual intelligence transcribes and structures your minutes instantly.</p>
                   </div>
 
                   <div class="or-separator">
@@ -1412,6 +1433,6 @@
 
   </main>
 
-  <script src="/app.js?v=3.6"></script>
+  <script src="/app.js?v=3.7"></script>
 </body>
 </html>

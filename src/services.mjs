@@ -1,24 +1,31 @@
 import 'dotenv/config'
 import { extname } from 'node:path'
 
-export const PROMPT_TEMPLATE = (transcript) => `You are taking minutes for a meeting. Below is the raw transcript.
-Produce a concise Minutes of Meeting with these sections, each on its own line
-starting with the exact marker shown:
+export const PROMPT_TEMPLATE = (transcript) => `You are an elite multilingual executive meeting intelligence agent with native fluency in all Indian languages (Hindi, Hinglish, Tamil, Telugu, Bengali, Marathi, Gujarati, Kannada, Malayalam, Punjabi, Odia, Urdu, and Indian English).
+
+Below is the raw meeting transcript. The participants may have spoken in an Indian language, mixed Hinglish (Hindi + English), regional Indian dialects, or code-switching.
+
+Your task:
+1. Accurately comprehend the spoken content, discussion, decisions, and nuance regardless of which Indian language or mixed dialect was used.
+2. Produce a clear, structured, and actionable Minutes of Meeting (MoM) in professional executive English (retaining key proper names, project titles, and relevant local cultural or technical terms).
+3. If specific deliverables or decisions were discussed in Hindi, Tamil, Telugu, etc., ensure they are translated and captured with 100% fidelity.
+
+Output format (each section on its own line starting with the exact marker shown):
 
 ===SUMMARY===
-(2-3 sentence overview of what the meeting was about)
+(2-3 sentence executive overview summarizing the primary goals, discussions, and outcomes)
 
 ===DECISIONS===
-(bullet list of decisions made, or "None recorded" if none)
+(bullet list of decisions approved or agreed upon, or "None recorded" if none)
 
 ===ACTION ITEMS===
-(bullet list, each as "- [owner if known]: task")
+(bullet list of actionable deliverables, each formatted as "- [Owner if known]: specific task and deadline")
 
 ===TRANSCRIPT===
 
 ${transcript}`
 
-export async function transcribeWithGroq(buffer, filename = 'recording.webm') {
+export async function transcribeWithGroq(buffer, filename = 'recording.webm', language = 'auto') {
   const apiKey = process.env.GROQ_API_KEY
   if (!apiKey) throw new Error('Set GROQ_API_KEY in .env — get one free at console.groq.com')
 
@@ -36,6 +43,18 @@ export async function transcribeWithGroq(buffer, filename = 'recording.webm') {
   form.append('file', new Blob([buffer], { type: mime }), filename)
   form.append('model', 'whisper-large-v3-turbo')
   form.append('response_format', 'verbose_json')
+
+  // Prompt to prime Whisper for Indian languages, mixed Hinglish, and accents
+  form.append(
+    'prompt',
+    'Transcribe Indian meeting audio accurately: Hindi (हिन्दी), Hinglish, Tamil (தமிழ்), Telugu (తెలుగు), Bengali (বাংলা), Marathi (मराठी), Gujarati (ગુજરાતી), Kannada (ಕನ್ನಡ), Malayalam (മലയാളം), Punjabi (ਪੰਜਾਬੀ), Urdu (اردو), and Indian English accents.'
+  )
+
+  // Language parameter for Whisper (ISO-639-1) or auto-detect
+  if (language && language !== 'auto' && language !== 'all') {
+    const langCode = language.includes('-') ? language.split('-')[0] : language
+    form.append('language', langCode)
+  }
 
   const started = Date.now()
   const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
@@ -62,8 +81,14 @@ export async function generateMoMWithGroq(transcript) {
   const apiKey = process.env.GROQ_API_KEY
   if (!apiKey) throw new Error('Set GROQ_API_KEY in .env — get one free at console.groq.com')
 
-  // Supported high-performance Groq models
-  const models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant']
+  // High-performance multilingual LLM models on Groq
+  const models = [
+    'openai/gpt-oss-120b',
+    'qwen/qwen3.8-27b',
+    'openai/gpt-oss-20b',
+    'llama-3.3-70b-versatile',
+    'llama-3.1-8b-instant'
+  ]
   let lastError = null
 
   for (const model of models) {
@@ -101,7 +126,14 @@ export async function generateMoMWithGemini(transcript) {
   if (!apiKey) throw new Error('Set GEMINI_API_KEY in .env — get one free at aistudio.google.com/app/apikey')
 
   // Supported Google Gemini models
-  const models = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro']
+  const models = [
+    'gemini-flash-latest',
+    'gemini-3.8-flash',
+    'gemini-3.5-flash',
+    'gemini-pro-latest',
+    'gemini-2.5-flash',
+    'gemini-1.5-flash'
+  ]
   let lastError = null
 
   for (const model of models) {
@@ -142,7 +174,10 @@ export function generateMoMLocalFallback(transcript) {
 
   const summarySentences = sentences.slice(0, 3).join(' ') || clean.slice(0, 250) + '...'
 
-  const decisionKeywords = ['decid', 'agree', 'approv', 'conclud', 'resolv', 'plan to', 'will go with', 'standardiz']
+  const decisionKeywords = [
+    'decid', 'agree', 'approv', 'conclud', 'resolv', 'plan to', 'will go with', 'standardiz',
+    'तय किया', 'फैसला', 'फाइनल', 'सहमति', 'முடிவு', 'తీర్మానం', 'తీసుకున్నాం', 'ನಿರ್ಧಾರ'
+  ]
   const decisionList = sentences.filter(s => decisionKeywords.some(k => s.toLowerCase().includes(k)))
   const decisions = decisionList.length > 0
     ? decisionList.slice(0, 4).map(d => `- ${d.trim()}`).join('\n')

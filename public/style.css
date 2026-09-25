@@ -1077,6 +1077,48 @@ button {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
+}
+
+.lang-selector-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-full);
+  padding: 5px 12px 5px 10px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: all var(--ease);
+}
+
+.lang-selector-group:hover,
+.lang-selector-group:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-subtle);
+}
+
+.lang-icon {
+  font-size: 0.95rem;
+  line-height: 1;
+  user-select: none;
+}
+
+.session-lang-select {
+  border: none;
+  background: transparent;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-heading);
+  outline: none;
+  cursor: pointer;
+  padding: 0;
+  max-width: 250px;
+}
+
+.session-lang-select option {
+  color: var(--text-heading);
+  background: #ffffff;
 }
 
 .session-status-pill {
