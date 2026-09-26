@@ -110,13 +110,6 @@ export function generateEmailHtml({
         .join('')
     : '<li style="color: #64748b; font-size: 14px; list-style: none;">No action items recorded.</li>'
 
-  const transcriptSection = transcriptText.trim()
-    ? `
-    <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e2e8f0;">
-      <h3 style="margin: 0 0 12px 0; font-size: 15px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.05em;">Appendix: Meeting Speech Transcript</h3>
-      <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace; font-size: 13px; color: #475569; line-height: 1.6; max-height: 280px; overflow-y: auto; white-space: pre-wrap;">${escapeHtml(transcriptText.trim())}</div>
-    </div>`
-    : ''
 
   return `<!DOCTYPE html>
 <html>
@@ -191,8 +184,6 @@ export function generateEmailHtml({
                   </ul>
                 </div>
               </div>
-
-              ${transcriptSection}
             </td>
           </tr>
 
@@ -264,12 +255,6 @@ export function generateEmailText({
     text += `  (No action items recorded)\n`
   }
   text += `\n`
-
-  if (transcriptText.trim()) {
-    text += `--------------------------------------------------\n`
-    text += `FULL TRANSCRIPT:\n\n`
-    text += `${transcriptText.trim()}\n\n`
-  }
 
   text += `==================================================\n`
   text += `Generated with MeetAgent — Executive Voice Intelligence\n`

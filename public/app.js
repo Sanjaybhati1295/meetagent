@@ -664,6 +664,20 @@
           if (el.startBtn && !el.startBtn.disabled) el.startBtn.click()
         }
       }
+
+      // View switching shortcuts: Alt+1 (Studio), Alt+2 (Vault), Alt+3 (Profile)
+      if (e.altKey && !isInputFocused) {
+        if (e.key === '1' || e.code === 'Digit1') {
+          e.preventDefault()
+          if (el.sidebarNavStudio) el.sidebarNavStudio.click()
+        } else if (e.key === '2' || e.code === 'Digit2') {
+          e.preventDefault()
+          if (el.sidebarNavVault) el.sidebarNavVault.click()
+        } else if (e.key === '3' || e.code === 'Digit3') {
+          e.preventDefault()
+          if (el.sidebarNavProfile) el.sidebarNavProfile.click()
+        }
+      }
     })
   }
 
@@ -1555,7 +1569,7 @@
         hour: '2-digit',
         minute: '2-digit',
       })
-      const langStr = m.detected_language ? ` • 🌐 Auto-Detected: ${m.detected_language}` : ''
+      const langStr = m.detected_language ? ` • Language: ${m.detected_language}` : ''
       el.modalMeetingMeta.textContent = `${date} • ${m.duration_sec ? Math.round(m.duration_sec) + 's' : 'Recorded Session'}${langStr}`
 
       renderParsedMoMToContainer(
@@ -1565,7 +1579,7 @@
         el.modalActionsList
       )
 
-      el.modalTranscriptMeta.textContent = `${m.word_count || 0} words${m.detected_language ? ` • 🌐 Auto-Detected: ${m.detected_language}` : ''} • Stored in Cloud Vault`
+      el.modalTranscriptMeta.textContent = `${m.word_count || 0} words${m.detected_language ? ` • ${m.detected_language}` : ''} • Cloud Vault`
       el.modalTranscriptText.value = m.transcript
 
       switchModalTab('mom')
@@ -2032,6 +2046,8 @@
             echoCancellation: true,
             noiseSuppression: true,
             autoGainControl: true,
+            channelCount: 1,
+            sampleRate: { ideal: 48000 },
           },
         })
       }
@@ -2041,9 +2057,12 @@
 
       const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
         ? 'audio/webm;codecs=opus'
-        : 'audio/webm'
+        : (MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : 'audio/webm')
 
-      state.mediaRecorder = new MediaRecorder(state.mediaStream, { mimeType })
+      state.mediaRecorder = new MediaRecorder(state.mediaStream, {
+        mimeType,
+        audioBitsPerSecond: 128000,
+      })
       state.mediaRecorder.ondataavailable = (e) => {
         if (e.data && e.data.size > 0) {
           state.audioChunks.push(e.data)
@@ -2249,12 +2268,13 @@
       el.statWords.textContent = `${wordCount} words`
       el.statDuration.textContent = `${durationSec.toFixed(1)}s duration`
       el.statSpeed.textContent = `Processing speed: ${sttSpeed}s`
+      const globeSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 4px;"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>`
       if (el.statLanguage) {
-        el.statLanguage.textContent = `🌐 Auto-Detected: ${state.detectedLanguage || 'English'}`
+        el.statLanguage.innerHTML = `${globeSvg}<span>Auto-Detected: ${escapeHtml(state.detectedLanguage || 'English')}</span>`
         el.statLanguage.classList.remove('hidden')
       }
       if (el.detectedLangPill) {
-        el.detectedLangPill.textContent = `🌐 Auto-Detected: ${state.detectedLanguage || 'English'}`
+        el.detectedLangPill.innerHTML = `${globeSvg}<span>Auto-Detected: ${escapeHtml(state.detectedLanguage || 'English')}</span>`
         el.detectedLangPill.classList.remove('hidden')
       }
 
@@ -2326,12 +2346,13 @@
       el.statWords.textContent = `${wordCount} words`
       el.statDuration.textContent = 'Uploaded Audio'
       el.statSpeed.textContent = `Processing: ${sttSpeed}s`
+      const globeSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 4px;"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>`
       if (el.statLanguage) {
-        el.statLanguage.textContent = `🌐 Auto-Detected: ${state.detectedLanguage || 'English'}`
+        el.statLanguage.innerHTML = `${globeSvg}<span>Auto-Detected: ${escapeHtml(state.detectedLanguage || 'English')}</span>`
         el.statLanguage.classList.remove('hidden')
       }
       if (el.detectedLangPill) {
-        el.detectedLangPill.textContent = `🌐 Auto-Detected: ${state.detectedLanguage || 'English'}`
+        el.detectedLangPill.innerHTML = `${globeSvg}<span>Auto-Detected: ${escapeHtml(state.detectedLanguage || 'English')}</span>`
         el.detectedLangPill.classList.remove('hidden')
       }
 
@@ -2444,14 +2465,38 @@
 
     if (actions.length > 0) {
       actionsEl.innerHTML = actions.map((a, idx) => {
-        const match = a.match(/^\[?([A-Za-z0-9\s._-]+)\]?:\s*(.+)$/)
-        const owner = match ? match[1].trim() : ''
-        const task = match ? match[2].trim() : a
+        let textToParse = a
+        let owner = ''
+        let deadline = ''
+        let priority = ''
+
+        // 1. Extract owner if present [Owner]:
+        const ownerMatch = textToParse.match(/^\[?([A-Za-z0-9\s._-]+)\]?:\s*(.+)$/)
+        if (ownerMatch) {
+          owner = ownerMatch[1].trim()
+          textToParse = ownerMatch[2].trim()
+        }
+
+        // 2. Extract priority if present | Priority: High
+        const priorityMatch = textToParse.match(/\|\s*Priority:\s*([A-Za-z]+)/i)
+        if (priorityMatch) {
+          priority = priorityMatch[1].trim()
+          textToParse = textToParse.replace(/\|\s*Priority:\s*([A-Za-z]+)/i, '').trim()
+        }
+
+        // 3. Extract deadline if present | Deadline: ...
+        const deadlineMatch = textToParse.match(/\|\s*(?:Deadline|Due Date|Due|By):\s*([^|]+)/i)
+        if (deadlineMatch) {
+          deadline = deadlineMatch[1].trim()
+          textToParse = textToParse.replace(/\|\s*(?:Deadline|Due Date|Due|By):\s*([^|]+)/i, '').trim()
+        }
+
+        const taskClean = textToParse.replace(/\|+$/, '').trim()
 
         return `
           <div class="action-task-item" data-task-idx="${idx}">
             <label class="task-checkbox-label">
-              <input type="checkbox" class="task-check-input" aria-label="Mark task done">
+              <input type="checkbox" class="task-check-input" aria-label="Mark task complete">
               <span class="task-custom-box">
                 <svg class="check-svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                   <polyline points="20 6 9 17 4 12"/>
@@ -2459,8 +2504,37 @@
               </span>
             </label>
             <div class="task-content-wrap">
-              ${owner ? `<span class="task-owner-pill">${escapeHtml(owner)}</span>` : ''}
-              <span class="task-text">${escapeHtml(task)}</span>
+              <div class="task-primary-row">
+                ${owner ? `
+                  <span class="task-owner-pill">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                      <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    <span>${escapeHtml(owner)}</span>
+                  </span>` : ''}
+                <span class="task-text">${escapeHtml(taskClean)}</span>
+              </div>
+              ${(deadline || priority) ? `
+                <div class="task-metadata-row">
+                  ${deadline ? `
+                    <span class="task-date-pill" title="Deadline / Due Date">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                      </svg>
+                      <span>${escapeHtml(deadline)}</span>
+                    </span>` : ''}
+                  ${priority ? `
+                    <span class="task-priority-pill priority-${escapeHtml(priority.toLowerCase())}" title="Priority level">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                      </svg>
+                      <span>${escapeHtml(priority)}</span>
+                    </span>` : ''}
+                </div>` : ''}
             </div>
           </div>`
       }).join('')

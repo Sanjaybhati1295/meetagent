@@ -1,25 +1,43 @@
 import 'dotenv/config'
 import { extname } from 'node:path'
 
-export const PROMPT_TEMPLATE = (transcript) => `You are an elite multilingual executive meeting intelligence agent with native fluency in all Indian languages (Hindi, Hinglish, Tamil, Telugu, Bengali, Marathi, Gujarati, Kannada, Malayalam, Punjabi, Odia, Urdu, and Indian English).
+export const PROMPT_TEMPLATE = (transcript) => `You are an elite, C-suite executive meeting intelligence agent and corporate secretary.
+Your task is to analyze the meeting transcript below and synthesize an authoritative, professional, and comprehensive Minutes of Meeting (MoM).
 
-Below is the raw meeting transcript. The participants may have spoken in an Indian language, mixed Hinglish (Hindi + English), regional Indian dialects, or code-switching.
+CRITICAL ACCURACY & COMPREHENSION DIRECTIVES:
+1. MULTILINGUAL & REGIONAL FLUENCY:
+   - Participants may speak in English, Hindi, Hinglish (mixed Hindi + English), Tamil, Telugu, Bengali, Marathi, Gujarati, Kannada, Malayalam, or code-switch naturally.
+   - Accurately comprehend all statements, intent, technical discussions, and colloquial nuances with 100% fidelity.
+   - Output the synthesized MoM in polished, boardroom-ready, executive English.
 
-Your task:
-1. Accurately comprehend the spoken content, discussion, decisions, and nuance regardless of which Indian language or mixed dialect was used.
-2. Produce a clear, structured, and actionable Minutes of Meeting (MoM) in professional executive English (retaining key proper names, project titles, and relevant local cultural or technical terms).
-3. If specific deliverables or decisions were discussed in Hindi, Tamil, Telugu, etc., ensure they are translated and captured with 100% fidelity.
+2. PRESERVE EVERY PERSON'S NAME, DATE & DEADLINE:
+   - You MUST identify and include EVERY person's name mentioned (e.g. Sanjay, Priya, Rahul, Amit, Vikram, etc.). Never substitute a named individual with generic terms like "someone" or "the team" if their name was stated in the conversation.
+   - You MUST identify and include EVERY date, day, timeline, or milestone mentioned (e.g. "by Friday 6 PM", "next Tuesday", "October 15th", "end of Q3", "by EOD tomorrow").
+   - If a specific metric, KPI, target, or technical specification was stated, retain it with exact fidelity.
 
-Output format (each section on its own line starting with the exact marker shown):
+3. THOROUGH PROFESSIONAL COVERAGE:
+   - Provide deep, substantive coverage of what was actually discussed.
+   - Clearly delineate context, decisions, trade-offs, and agreed next steps.
+   - Zero hallucination: do not invent facts, names, or dates not supported by the transcript.
+
+OUTPUT FORMAT REQUIREMENTS:
+You MUST follow this exact section structure with the precise section markers:
 
 ===SUMMARY===
-(2-3 sentence executive overview summarizing the primary goals, discussions, and outcomes)
+A comprehensive executive overview (3-5 sentences) summarizing the core business purpose of the meeting, key topics deliberated, high-level alignment reached, and overarching next steps.
 
 ===DECISIONS===
-(bullet list of decisions approved or agreed upon, or "None recorded" if none)
+A bulleted list of all explicit consensus items, approvals, architectural choices, or strategic agreements reached during the call.
+- Format each bullet as: "- [Decision]: [Clear statement of what was approved or agreed upon, including the rationale and who agreed]"
+(If none, output: "- No explicit formal decisions recorded.")
 
 ===ACTION ITEMS===
-(bullet list of actionable deliverables, each formatted as "- [Owner if known]: specific task and deadline")
+A comprehensive bulleted list of all actionable deliverables, commitments, and tasks.
+- You MUST format every single action item as:
+"- [Assignee Name]: [Specific actionable task description] | Deadline: [Exact Date/Day/Timeline mentioned or "TBD"] | Priority: [High/Medium/Normal]"
+- Example: "- [Priya]: Complete Salesforce webhook API validation and deploy schema updates to production | Deadline: Friday 6 PM IST | Priority: High"
+- Example: "- [Sanjay]: Run end-to-end CRM lead synchronization test suite | Deadline: Next Monday | Priority: High"
+(If none, output: "- No action items recorded.")
 
 ===TRANSCRIPT===
 
@@ -77,50 +95,69 @@ export async function transcribeWithGroq(buffer, filename = 'recording.webm', la
   const ext = extname(filename).toLowerCase() || '.webm'
   const mime = mimeByExt[ext] ?? 'audio/webm'
 
-  const form = new FormData()
-  form.append('file', new Blob([buffer], { type: mime }), filename)
-  form.append('model', 'whisper-large-v3-turbo')
-  form.append('response_format', 'verbose_json')
+  // Model cascade: whisper-large-v3 first for highest phonetic accuracy, fallback to whisper-large-v3-turbo
+  const whisperModels = ['whisper-large-v3', 'whisper-large-v3-turbo']
+  let lastError = null
 
-  // Explicit language only if specifically requested and not auto-detect
-  if (language && language !== 'auto' && language !== 'all') {
-    const langCode = language.includes('-') ? language.split('-')[0] : language
-    form.append('language', langCode)
+  for (const model of whisperModels) {
+    try {
+      const form = new FormData()
+      form.append('file', new Blob([buffer], { type: mime }), filename)
+      form.append('model', model)
+      form.append('response_format', 'verbose_json')
+      form.append('temperature', '0') // 0 for deterministic, clean transcription without hallucinations
+      form.append(
+        'prompt',
+        'Accurately transcribe meeting speech in English, Hindi, Hinglish, Tamil, Telugu, Kannada, Bengali, and other Indian languages. Precisely capture participant names (e.g., Sanjay, Priya, Rahul, Amit, Sneha, Vikram), exact dates, days, deadlines, numbers, metrics, and technical terms.'
+      )
+
+      // Explicit language only if specifically requested and not auto-detect
+      if (language && language !== 'auto' && language !== 'all') {
+        const langCode = language.includes('-') ? language.split('-')[0] : language
+        form.append('language', langCode)
+      }
+
+      const started = Date.now()
+      const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${apiKey}` },
+        body: form,
+      })
+      const latencyMs = Date.now() - started
+
+      if (!res.ok) {
+        throw new Error(`Groq Whisper error ${res.status}: ${await res.text()}`)
+      }
+
+      const data = await res.json()
+      const detectedLang = detectLanguageFromTranscriptAndMetadata(data.text, data.language)
+
+      return {
+        text: data.text ?? '',
+        language: detectedLang,
+        durationSec: data.duration,
+        latencyMs,
+        model
+      }
+    } catch (err) {
+      lastError = err
+      console.warn(`Groq Whisper model ${model} failed, trying next:`, err.message)
+    }
   }
 
-  const started = Date.now()
-  const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${apiKey}` },
-    body: form,
-  })
-  const latencyMs = Date.now() - started
-
-  if (!res.ok) {
-    throw new Error(`Groq API error ${res.status}: ${await res.text()}`)
-  }
-
-  const data = await res.json()
-  const detectedLang = detectLanguageFromTranscriptAndMetadata(data.text, data.language)
-
-  return {
-    text: data.text ?? '',
-    language: detectedLang,
-    durationSec: data.duration,
-    latencyMs
-  }
+  throw lastError || new Error('All Groq Whisper STT models failed')
 }
 
 export async function generateMoMWithGroq(transcript) {
   const apiKey = process.env.GROQ_API_KEY
   if (!apiKey) throw new Error('Set GROQ_API_KEY in .env — get one free at console.groq.com')
 
-  // High-performance multilingual LLM models on Groq
+  // Flagship high-performance multilingual LLM models on Groq
   const models = [
+    'llama-3.3-70b-versatile',
     'openai/gpt-oss-120b',
     'qwen/qwen3.8-27b',
     'openai/gpt-oss-20b',
-    'llama-3.3-70b-versatile',
     'llama-3.1-8b-instant'
   ]
   let lastError = null
@@ -134,7 +171,7 @@ export async function generateMoMWithGroq(transcript) {
         body: JSON.stringify({
           model,
           messages: [{ role: 'user', content: PROMPT_TEMPLATE(transcript) }],
-          temperature: 0.2,
+          temperature: 0.1,
         }),
       })
       const latencyMs = Date.now() - started
