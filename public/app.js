@@ -2720,11 +2720,11 @@
 
         const centerY = logicalHeight / 2
 
-        // Draw 3 harmonic glowing sine waves with gradient blending
+        // Draw 3 harmonic warm organic sine waves with gradient blending
         const waves = [
-          { freq: 0.016, speed: 1.0, color1: '#818cf8', color2: '#4f46e5', amp: 22 * energy, alpha: 0.9, lineWidth: 2.5 },
-          { freq: 0.022, speed: -1.3, color1: '#38bdf8', color2: '#06b6d4', amp: 16 * energy, alpha: 0.75, lineWidth: 2 },
-          { freq: 0.011, speed: 0.7, color1: '#34d399', color2: '#10b981', amp: 26 * energy, alpha: 0.65, lineWidth: 2 },
+          { freq: 0.016, speed: 1.0, color1: '#E87A58', color2: '#D96C4A', amp: 22 * energy, alpha: 0.9, lineWidth: 2.5 },
+          { freq: 0.022, speed: -1.3, color1: '#E29578', color2: '#C05C3D', amp: 16 * energy, alpha: 0.75, lineWidth: 2 },
+          { freq: 0.011, speed: 0.7, color1: '#DDA15E', color2: '#BC6C25', amp: 26 * energy, alpha: 0.65, lineWidth: 2 },
         ]
 
         waves.forEach((w) => {
@@ -2732,12 +2732,12 @@
           ctx.beginPath()
           ctx.lineWidth = w.lineWidth
           const grad = ctx.createLinearGradient(0, 0, logicalWidth, 0)
-          grad.addColorStop(0, 'rgba(99, 102, 241, 0)')
+          grad.addColorStop(0, 'rgba(217, 108, 74, 0)')
           grad.addColorStop(0.2, w.color1)
           grad.addColorStop(0.8, w.color2)
-          grad.addColorStop(1, 'rgba(6, 182, 212, 0)')
+          grad.addColorStop(1, 'rgba(188, 108, 37, 0)')
           ctx.strokeStyle = grad
-          ctx.shadowBlur = 12 * energy
+          ctx.shadowBlur = 10 * energy
           ctx.shadowColor = w.color1
 
           for (let x = 0; x <= logicalWidth; x += 4) {
@@ -3168,11 +3168,11 @@
     if (el.demoChatStream) {
       el.demoChatStream.innerHTML = `
         <div class="mock-speech-bubble" style="opacity:0.85; text-align:center; padding:1.75rem 1rem; border-style:dashed;">
-          <p style="color:var(--text-secondary); font-size:0.82rem; margin:0 0 0.5rem 0; font-weight:600;">
-            🎙️ Live Audio Stream Waiting
+          <p style="color:var(--text-secondary); font-size:0.84rem; margin:0 0 0.5rem 0; font-weight:600;">
+            Spoken Stream Notes Awaiting Audio
           </p>
           <p style="color:var(--text-muted); font-size:0.75rem; margin:0;">
-            Click <strong>Play Simulation</strong> above to watch real-time speech transcription and sub-second MoM generation.
+            Click <strong>Play Simulation</strong> above to watch real-time conversational notes and instant executive MoM synthesis.
           </p>
         </div>`
     }
@@ -3180,11 +3180,11 @@
     if (el.demoMomCards) {
       el.demoMomCards.innerHTML = `
         <div class="mock-card" style="opacity:0.85; text-align:center; padding:2rem 1rem; border-style:dashed;">
-          <p style="color:var(--text-secondary); font-size:0.82rem; margin:0 0 0.5rem 0; font-weight:600;">
-            ⚡ Instant MoM Ready in 1.1s
+          <p style="color:var(--text-secondary); font-size:0.84rem; margin:0 0 0.5rem 0; font-weight:600;">
+            Executive Memorandum Notes
           </p>
           <p style="color:var(--text-muted); font-size:0.75rem; margin:0;">
-            Executive summaries, key decisions, and prioritized deliverables will materialize here upon speech completion.
+            Executive overview, decisions, and deliverables will structure here like a clean Notion document upon speech completion.
           </p>
         </div>`
     }
