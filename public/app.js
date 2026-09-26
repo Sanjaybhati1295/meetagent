@@ -128,6 +128,8 @@
     statLanguage: document.getElementById('statLanguage'),
     engineStatusText: document.getElementById('engineStatusText'),
     audioSource: document.getElementById('audioSource'),
+    sourceMicBtn: document.getElementById('sourceMicBtn'),
+    sourceScreenBtn: document.getElementById('sourceScreenBtn'),
     aiModel: document.getElementById('aiModel'),
 
     guestNoticeBanner: document.getElementById('guestNoticeBanner'),
@@ -566,6 +568,13 @@
     el.startBtn.addEventListener('click', startMeeting)
     el.stopBtn.addEventListener('click', stopMeeting)
     el.audioFileInput.addEventListener('change', handleFileUpload)
+
+    if (el.sourceMicBtn) {
+      el.sourceMicBtn.addEventListener('click', () => setAudioSource('mic'))
+    }
+    if (el.sourceScreenBtn) {
+      el.sourceScreenBtn.addEventListener('click', () => setAudioSource('tab'))
+    }
 
     // Studio Results Tabs & Actions
     el.tabMoMBtn.addEventListener('click', () => switchStudioResultTab('mom'))
@@ -1385,9 +1394,9 @@
               <path d="M6 6h10M6 10h10"/>
             </svg>
           </div>
-          <h3>No meetings in your vault yet</h3>
-          <p>Record your first meeting in the Studio or upload an audio file. Your transcript and executive minutes will be archived here automatically.</p>
-          <button id="emptyStartMeetingBtn" class="btn btn-primary">Launch Meeting Studio</button>
+          <h3>No recorded sessions yet</h3>
+          <p>Start a new session in Studio or import audio to generate structured minutes and executive action items.</p>
+          <button id="emptyStartMeetingBtn" class="btn btn-primary">Start New Session</button>
         </div>`
 
       const emptyBtn = document.getElementById('emptyStartMeetingBtn')
@@ -1446,7 +1455,15 @@
                   </svg>
                   <span>${m.word_count || 0} words</span>
                 </span>
-                ${m.detected_language ? `<span class="v-meta-chip"><span>🌐 ${escapeHtml(m.detected_language)}</span></span>` : ''}
+                ${m.detected_language ? `
+                  <span class="v-meta-chip">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/>
+                      <path d="M2 12h20"/>
+                    </svg>
+                    <span>${escapeHtml(m.detected_language)}</span>
+                  </span>` : ''}
               </div>
             </div>
             <span class="v-status-badge">
@@ -1461,7 +1478,7 @@
 
           <div class="v-card-footer">
             <button class="btn btn-sm btn-secondary btn-open-call" data-open-id="${m.id}">
-              <span>View Executive MoM</span>
+              <span>View MoM</span>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <path d="M5 12h14M12 5l7 7-7 7"/>
               </svg>
@@ -2005,7 +2022,15 @@
     if (el.meetingTitleInput) {
       el.meetingTitleInput.focus()
     }
+    setAudioSource('mic')
     window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function setAudioSource(source) {
+    const val = (source === 'tab' || source === 'display') ? 'display' : 'mic'
+    if (el.audioSource) el.audioSource.value = val
+    if (el.sourceMicBtn) el.sourceMicBtn.classList.toggle('active', val === 'mic')
+    if (el.sourceScreenBtn) el.sourceScreenBtn.classList.toggle('active', val === 'display')
   }
 
   async function startMeeting() {
@@ -2023,10 +2048,10 @@
       state.audioChunks = []
       state.liveFinalText = ''
       if (el.liveStreamText) {
-        el.liveStreamText.textContent = 'Listening... Start speaking, and your words will appear here live in real-time.'
+        el.liveStreamText.textContent = 'Listening... Start speaking to view live speech transcription.'
       }
 
-      if (source === 'display') {
+      if (source === 'display' || source === 'tab') {
         state.mediaStream = await navigator.mediaDevices.getDisplayMedia({
           video: true,
           audio: {

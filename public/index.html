@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agentmeet — AI Agents for Smarter Meetings</title>
   <meta name="description" content="AI Agents for Smarter Meetings. Real-time browser audio capture, autonomous speech intelligence, and instant structured minutes of meeting without uninvited bots.">
-  <link rel="stylesheet" href="/style.css?v=4.1">
+  <link rel="stylesheet" href="/style.css?v=4.2">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -1047,8 +1047,7 @@
               </svg>
             </div>
             <div class="sidebar-nav-info">
-              <span class="sidebar-nav-title">Meeting Studio</span>
-              <span class="sidebar-nav-subtitle">Live voice & synthesis</span>
+              <span class="sidebar-nav-title">Studio</span>
             </div>
             <kbd class="sidebar-kbd">⌥1</kbd>
           </button>
@@ -1062,8 +1061,7 @@
               </svg>
             </div>
             <div class="sidebar-nav-info">
-              <span class="sidebar-nav-title">Cloud Vault</span>
-              <span class="sidebar-nav-subtitle">Meeting archive</span>
+              <span class="sidebar-nav-title">Vault</span>
             </div>
             <span id="sidebarVaultCountBadge" class="sidebar-badge">0</span>
             <kbd class="sidebar-kbd">⌥2</kbd>
@@ -1078,8 +1076,7 @@
               </svg>
             </div>
             <div class="sidebar-nav-info">
-              <span class="sidebar-nav-title">Preferences</span>
-              <span class="sidebar-nav-subtitle">Account & password</span>
+              <span class="sidebar-nav-title">Settings</span>
             </div>
             <kbd class="sidebar-kbd">⌥3</kbd>
           </button>
@@ -1161,42 +1158,61 @@
                       <line x1="12" x2="12" y1="19" y2="22"/>
                     </svg>
                   </span>
-                  <h3 id="consoleCardTitle">Meeting Studio Console</h3>
+                  <h3 id="consoleCardTitle">Audio Capture & Synthesizer</h3>
                 </div>
-                <span class="card-hint">Zero Bot Installs</span>
               </div>
 
               <div class="recorder-state-container">
                 
-                <!-- 1. Idle State: Clean Call Start & Audio Upload -->
+                <!-- 1. Idle State: Desktop Software Recording Deck -->
                 <div id="idleState" class="state-panel">
-                  <div class="idle-action-hero">
-                    <button id="startBtn" class="btn-record-hero">
-                      <span class="record-red-dot"></span>
-                      <span id="startBtnLabel">Start Meeting</span>
-                    </button>
-                    <p class="idle-hero-sub">Speak naturally in Hindi, Hinglish, Tamil, Telugu, or any Indian language. Multilingual intelligence transcribes and structures your minutes instantly.</p>
-                  </div>
+                  <div class="studio-deck-card">
+                    <div class="deck-primary-action">
+                      <button id="startBtn" class="btn-record-software" title="Start recording meeting (⌥R)">
+                        <span class="record-pulse-core"></span>
+                        <span id="startBtnLabel">Start Recording</span>
+                        <kbd class="kbd-record">⌥R</kbd>
+                      </button>
+                    </div>
 
-                  <div class="or-separator">
-                    <span>OR UPLOAD AUDIO FILE</span>
-                  </div>
+                    <div class="deck-divider-pipe"></div>
 
-                  <div class="audio-dropzone-wrapper">
-                    <label for="audioFileInput" class="audio-dropzone" id="audioDropzoneLabel">
-                      <div class="dropzone-icon">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <div class="deck-source-control">
+                      <span class="deck-control-label">Audio Source</span>
+                      <div class="source-toggle-group" role="radiogroup" aria-label="Audio Input Source">
+                        <button type="button" id="sourceMicBtn" class="source-chip active" data-source="mic" title="Record microphone input">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                            <line x1="12" x2="12" y1="19" y2="22"/>
+                          </svg>
+                          <span>Microphone</span>
+                        </button>
+                        <button type="button" id="sourceScreenBtn" class="source-chip" data-source="tab" title="Record system / browser tab audio (Google Meet, Zoom, Teams)">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect width="20" height="14" x="2" y="3" rx="2"/>
+                            <line x1="8" x2="16" y1="21" y2="21"/>
+                            <line x1="12" x2="12" y1="17" y2="21"/>
+                          </svg>
+                          <span>System / Tab</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div class="deck-divider-pipe"></div>
+
+                    <div class="deck-upload-wrap">
+                      <span class="deck-control-label">Pre-recorded</span>
+                      <label for="audioFileInput" class="deck-upload-btn" id="audioDropzoneLabel" title="Upload pre-recorded audio file (.mp3, .wav, .m4a, .webm)">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                           <polyline points="17 8 12 3 7 8"/>
                           <line x1="12" y1="3" x2="12" y2="15"/>
                         </svg>
-                      </div>
-                      <div class="dropzone-text">
-                        <span class="dropzone-primary">Click to select pre-recorded meeting audio</span>
-                        <span class="dropzone-formats">Audio files (.mp3, .wav, .m4a, .webm)</span>
-                      </div>
-                    </label>
-                    <input type="file" id="audioFileInput" accept="audio/*,.mp3,.wav,.webm,.m4a" class="hidden">
+                        <span>Import Audio</span>
+                      </label>
+                      <input type="file" id="audioFileInput" accept="audio/*,.mp3,.wav,.webm,.m4a" class="hidden">
+                    </div>
                   </div>
                 </div>
 
@@ -1205,7 +1221,7 @@
                   <div class="hud-banner">
                     <div class="hud-status-badge">
                       <span class="pulse-red-ring"></span>
-                      <span>MEETING IN PROGRESS</span>
+                      <span>RECORDING LIVE</span>
                     </div>
                     <div id="meetingTimer" class="hud-digital-clock">00:00</div>
                   </div>
@@ -1218,10 +1234,10 @@
                   <div class="recording-live-caption-box">
                     <div class="caption-header">
                       <span class="caption-dot"></span>
-                      <span>Live Speech Transcription</span>
+                      <span>Live Speech Stream</span>
                     </div>
                     <div id="liveStreamText" class="live-stream-box">
-                      Listening... Start speaking, and your words will appear here live in real-time.
+                      Listening... Start speaking to view live speech transcription.
                     </div>
                   </div>
 
@@ -1427,35 +1443,31 @@
     <!-- ===================================================================== -->
     <div id="vaultView" class="workspace-view hidden">
       
-      <!-- History Top Banner -->
-      <section class="workspace-header-banner">
-        <div class="workspace-header-text">
-          <div class="session-label-row">
-            <span class="session-eyebrow">Cloud Archive</span>
-            <span class="session-date-pill"><span id="vaultTotalMeetingsCount">0</span> Saved Meetings</span>
-          </div>
-          <h2 class="view-main-title">Meeting History</h2>
-          <p class="view-main-subtitle">Search, review transcripts, consensus decisions, and action items from all your previous calls.</p>
+      <!-- History Software Header -->
+      <div class="software-view-header">
+        <div class="software-header-left">
+          <h2 class="software-view-title">Meeting Vault</h2>
+          <span class="software-count-badge"><span id="vaultTotalMeetingsCount">0</span> sessions</span>
         </div>
-        <div class="workspace-header-actions">
-          <button id="vaultNewMeetingBtn" class="btn btn-primary">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <div class="software-header-right">
+          <button id="vaultNewMeetingBtn" class="btn btn-primary btn-sm">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <line x1="12" y1="5" x2="12" y2="19"/>
               <line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
-            <span>Record New Meeting</span>
+            <span>New Session</span>
           </button>
         </div>
-      </section>
+      </div>
 
       <!-- Search & Filters Toolbar -->
       <section class="vault-search-toolbar">
         <div class="vault-search-box">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="11" cy="11" r="8"/>
             <line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
-          <input type="text" id="vaultSearchInput" placeholder="Search past meetings by title, keyword, decision, or attendee...">
+          <input type="text" id="vaultSearchInput" placeholder="Filter meetings by title, keyword, or decision...">
         </div>
       </section>
 
@@ -1481,17 +1493,13 @@
     <!-- ===================================================================== -->
     <div id="profileView" class="workspace-view hidden">
       
-      <!-- Profile Header Banner -->
-      <section class="workspace-header-banner">
-        <div class="workspace-header-text">
-          <div class="session-label-row">
-            <span class="session-eyebrow">Account Settings</span>
-            <span class="session-date-pill">Profile & Security</span>
-          </div>
-          <h2 class="view-main-title">Profile Settings</h2>
-          <p class="view-main-subtitle">Manage your personal identity, avatar image, contact email, and secure credentials.</p>
+      <!-- Profile Software Header -->
+      <div class="software-view-header">
+        <div class="software-header-left">
+          <h2 class="software-view-title">Settings & Account</h2>
+          <span class="software-count-badge">Preferences</span>
         </div>
-      </section>
+      </div>
 
       <!-- Structured Profile Stack -->
       <div class="profile-structured-stack">
@@ -1638,6 +1646,6 @@
 
   </main>
 
-  <script src="/app.js?v=4.1"></script>
+  <script src="/app.js?v=4.2"></script>
 </body>
 </html>

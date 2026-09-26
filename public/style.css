@@ -548,16 +548,16 @@ button {
 .sidebar-nav-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
-  padding: 10px 12px;
-  border-radius: var(--radius-md);
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
   border: 1px solid transparent;
   background: transparent;
   color: var(--text-secondary);
   font-family: inherit;
-  font-size: 0.88rem;
-  font-weight: 600;
+  font-size: 0.86rem;
+  font-weight: 500;
   text-align: left;
   cursor: pointer;
   transition: all var(--duration) var(--ease);
@@ -572,16 +572,16 @@ button {
   background: var(--primary-subtle);
   color: var(--primary-text);
   border-color: var(--primary-border);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .sidebar-nav-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-sm);
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-xs);
   background: var(--bg-subtle);
   color: inherit;
   flex-shrink: 0;
@@ -1346,44 +1346,74 @@ button {
   width: 100%;
 }
 
-.idle-action-hero {
+/* Studio Software Control Deck (Native Desktop Feel) */
+.studio-deck-card {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 10px 0 6px;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  padding: 12px 18px;
+  background: #ffffff;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  flex-wrap: wrap;
 }
 
-.btn-record-hero {
+.deck-primary-action {
+  display: flex;
+  align-items: center;
+}
+
+.btn-record-software {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 14px 28px;
-  border-radius: var(--radius-full);
-  background: linear-gradient(135deg, #e11d48 0%, #f43f5e 100%);
+  gap: 9px;
+  padding: 9px 18px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
   color: #ffffff;
-  font-size: 1rem;
+  font-size: 0.88rem;
   font-weight: 600;
-  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  cursor: pointer;
   transition: all var(--duration) var(--ease);
 }
 
-.btn-record-hero:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(225, 29, 72, 0.38);
+.btn-record-software:hover {
+  background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.35);
 }
 
-.btn-record-hero:active {
+.btn-record-software:active {
   transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(225, 29, 72, 0.25);
 }
 
-.record-red-dot {
-  width: 10px;
-  height: 10px;
+.record-pulse-core {
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: #ffffff;
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
-  animation: pulse-dot 2s infinite ease-in-out;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.9);
+  animation: pulse-dot 1.8s infinite ease-in-out;
+}
+
+.kbd-record {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 0.7rem;
+  font-family: inherit;
+  font-weight: 600;
+  color: #ffffff;
+  margin-left: 2px;
 }
 
 @keyframes pulse-dot {
@@ -1392,110 +1422,83 @@ button {
   100% { transform: scale(0.9); opacity: 0.85; }
 }
 
-.idle-hero-sub {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  max-width: 380px;
-}
-
-.or-separator {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  margin: 18px 0 16px;
-}
-
-.or-separator::before, .or-separator::after {
-  content: '';
-  flex: 1;
-  height: 1px;
+.deck-divider-pipe {
+  width: 1px;
+  height: 28px;
   background: var(--border-light);
 }
 
-.or-separator span {
-  padding: 0 12px;
-  font-size: 0.7rem;
+.deck-source-control,
+.deck-upload-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.deck-control-label {
+  font-size: 0.68rem;
   font-weight: 700;
+  text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-muted);
 }
 
-.audio-dropzone-wrapper {
-  width: 100%;
-}
-
-.audio-dropzone {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 14px 18px;
+.source-toggle-group {
+  display: inline-flex;
   background: var(--bg-subtle);
-  border: 1.5px dashed var(--border-input);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  text-align: left;
-  transition: all var(--duration) var(--ease);
-}
-
-.audio-dropzone:hover {
-  border-color: var(--primary);
-  background: var(--primary-subtle);
-}
-
-.dropzone-icon {
-  width: 40px;
-  height: 40px;
+  padding: 3px;
   border-radius: var(--radius-sm);
-  background: #ffffff;
   border: 1px solid var(--border-light);
-  display: flex;
+  gap: 2px;
+}
+
+.source-chip {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  color: var(--primary);
-  flex-shrink: 0;
-}
-
-.dropzone-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.dropzone-primary {
-  font-size: 0.86rem;
-  font-weight: 600;
-  color: var(--text-heading);
-}
-
-.dropzone-formats {
-  font-size: 0.74rem;
-  color: var(--text-muted);
-}
-
-.tab-audio-tip {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  margin-top: 18px;
-  padding: 10px 14px;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
-  text-align: left;
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-}
-
-.tip-badge {
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  background: #ffffff;
-  border: 1px solid var(--border-input);
-  padding: 1px 6px;
+  gap: 6px;
+  padding: 5px 11px;
   border-radius: var(--radius-xs);
+  border: none;
+  background: transparent;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.source-chip:hover {
   color: var(--text-heading);
-  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.source-chip.active {
+  background: #ffffff;
+  color: var(--primary);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.deck-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 13px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-input);
+  background: #ffffff;
+  color: var(--text-body);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: var(--shadow-xs);
+}
+
+.deck-upload-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-subtle);
 }
 
 /* Recording State HUD */
@@ -2113,6 +2116,50 @@ button {
 
 .workspace-header-actions {
   flex-shrink: 0;
+}
+
+/* Compact Software View Headers (Linear / Desktop Software Aesthetic) */
+.software-view-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background: #ffffff;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.software-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.software-view-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-heading);
+  margin: 0;
+}
+
+.software-count-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--bg-subtle);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-light);
+}
+
+.software-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /* ==========================================================================
