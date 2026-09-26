@@ -645,8 +645,24 @@
       })
     }
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && el.dialogModal && !el.dialogModal.classList.contains('hidden')) {
-        closeDialog(false)
+      if (e.key === 'Escape') {
+        if (el.dialogModal && !el.dialogModal.classList.contains('hidden')) {
+          closeDialog(false)
+        }
+        if (el.meetingDetailModal && !el.meetingDetailModal.classList.contains('hidden')) {
+          closeDetailModal()
+        }
+      }
+
+      // Studio recording shortcut: Alt+R (when not typing in form inputs)
+      const isInputFocused = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)
+      if ((e.altKey && (e.key === 'r' || e.key === 'R' || e.code === 'KeyR')) && !isInputFocused) {
+        e.preventDefault()
+        if (state.isRecording) {
+          if (el.stopBtn && !el.stopBtn.disabled) el.stopBtn.click()
+        } else {
+          if (el.startBtn && !el.startBtn.disabled) el.startBtn.click()
+        }
       }
     })
   }
@@ -2427,24 +2443,41 @@
     }
 
     if (actions.length > 0) {
-      actionsEl.innerHTML = actions.map((a) => {
+      actionsEl.innerHTML = actions.map((a, idx) => {
         const match = a.match(/^\[?([A-Za-z0-9\s._-]+)\]?:\s*(.+)$/)
-        if (match) {
-          const owner = match[1].trim()
-          const task = match[2].trim()
-          return `
-            <div class="action-task-item">
-              <input type="checkbox">
-              <span class="task-owner-pill">${escapeHtml(owner)}</span>
-              <span>${escapeHtml(task)}</span>
-            </div>`
-        }
+        const owner = match ? match[1].trim() : ''
+        const task = match ? match[2].trim() : a
+
         return `
-          <div class="action-task-item">
-            <input type="checkbox">
-            <span>${escapeHtml(a)}</span>
+          <div class="action-task-item" data-task-idx="${idx}">
+            <label class="task-checkbox-label">
+              <input type="checkbox" class="task-check-input" aria-label="Mark task done">
+              <span class="task-custom-box">
+                <svg class="check-svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </span>
+            </label>
+            <div class="task-content-wrap">
+              ${owner ? `<span class="task-owner-pill">${escapeHtml(owner)}</span>` : ''}
+              <span class="task-text">${escapeHtml(task)}</span>
+            </div>
           </div>`
       }).join('')
+
+      actionsEl.querySelectorAll('.action-task-item').forEach((item) => {
+        const checkbox = item.querySelector('.task-check-input')
+        item.addEventListener('click', (e) => {
+          if (e.target !== checkbox) {
+            checkbox.checked = !checkbox.checked
+          }
+          if (checkbox.checked) {
+            item.classList.add('completed')
+          } else {
+            item.classList.remove('completed')
+          }
+        })
+      })
     } else {
       actionsEl.innerHTML = '<div class="empty-task">No action items recorded.</div>'
     }
@@ -2537,45 +2570,91 @@
       state.audioContext = new AudioCtx()
       const source = state.audioContext.createMediaStreamSource(stream)
       state.analyserNode = state.audioContext.createAnalyser()
-      state.analyserNode.fftSize = 64
+      state.analyserNode.fftSize = 128
+      state.analyserNode.smoothingTimeConstant = 0.8
       source.connect(state.analyserNode)
 
       const canvas = el.waveformCanvas
+      if (!canvas) return
       const ctx = canvas.getContext('2d')
       const bufferLength = state.analyserNode.frequencyBinCount
-      const dataArray = new Uint8Array(bufferLength)
+      const freqData = new Uint8Array(bufferLength)
+
+      let logicalWidth = 600
+      let logicalHeight = 64
 
       function syncCanvasDimensions() {
         if (canvas && canvas.parentElement) {
-          canvas.width = canvas.parentElement.clientWidth || 300
+          const rect = canvas.parentElement.getBoundingClientRect()
+          const dpr = window.devicePixelRatio || 1
+          logicalWidth = rect.width || 600
+          logicalHeight = 64
+          canvas.width = logicalWidth * dpr
+          canvas.height = logicalHeight * dpr
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+          canvas.style.width = `${logicalWidth}px`
+          canvas.style.height = `${logicalHeight}px`
         }
       }
       syncCanvasDimensions()
       state.visualizerResizeHandler = syncCanvasDimensions
       window.addEventListener('resize', syncCanvasDimensions)
 
+      let phase = 0
+
       function draw() {
         state.animationId = requestAnimationFrame(draw)
-        state.analyserNode.getByteFrequencyData(dataArray)
+        state.analyserNode.getByteFrequencyData(freqData)
 
-        ctx.fillStyle = '#f1f5f9'
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-        const barWidth = (canvas.width / bufferLength) * 1.5
-        let x = 0
-
+        // Compute average volume level (0 to 1)
+        let sum = 0
         for (let i = 0; i < bufferLength; i++) {
-          const barHeight = (dataArray[i] / 255) * canvas.height
-          const grad = ctx.createLinearGradient(0, canvas.height, 0, 0)
-          grad.addColorStop(0, '#4f46e5')
-          grad.addColorStop(0.6, '#6366f1')
-          grad.addColorStop(1, '#059669')
-          ctx.fillStyle = grad
-          ctx.beginPath()
-          ctx.roundRect(x, canvas.height - barHeight, Math.max(barWidth - 2, 2), barHeight, [3, 3, 0, 0])
-          ctx.fill()
-          x += barWidth + 1
+          sum += freqData[i]
         }
+        const avg = sum / bufferLength
+        const energy = Math.min(Math.max(avg / 110, 0.08), 1.0) // baseline gentle breathing
+
+        phase += 0.04 + energy * 0.06
+
+        // Clear canvas
+        ctx.clearRect(0, 0, logicalWidth, logicalHeight)
+
+        const centerY = logicalHeight / 2
+
+        // Draw 3 harmonic glowing sine waves with gradient blending
+        const waves = [
+          { freq: 0.016, speed: 1.0, color1: '#818cf8', color2: '#4f46e5', amp: 22 * energy, alpha: 0.9, lineWidth: 2.5 },
+          { freq: 0.022, speed: -1.3, color1: '#38bdf8', color2: '#06b6d4', amp: 16 * energy, alpha: 0.75, lineWidth: 2 },
+          { freq: 0.011, speed: 0.7, color1: '#34d399', color2: '#10b981', amp: 26 * energy, alpha: 0.65, lineWidth: 2 },
+        ]
+
+        waves.forEach((w) => {
+          ctx.save()
+          ctx.beginPath()
+          ctx.lineWidth = w.lineWidth
+          const grad = ctx.createLinearGradient(0, 0, logicalWidth, 0)
+          grad.addColorStop(0, 'rgba(99, 102, 241, 0)')
+          grad.addColorStop(0.2, w.color1)
+          grad.addColorStop(0.8, w.color2)
+          grad.addColorStop(1, 'rgba(6, 182, 212, 0)')
+          ctx.strokeStyle = grad
+          ctx.shadowBlur = 12 * energy
+          ctx.shadowColor = w.color1
+
+          for (let x = 0; x <= logicalWidth; x += 4) {
+            // Smooth bell-curve envelope: edges taper to center
+            const normX = (x / logicalWidth) * 2 - 1
+            const envelope = Math.max(0, 1 - normX * normX)
+            const y = centerY + Math.sin(x * w.freq + phase * w.speed) * w.amp * envelope
+            if (x === 0) {
+              ctx.moveTo(x, y)
+            } else {
+              ctx.lineTo(x, y)
+            }
+          }
+          ctx.stroke()
+          ctx.restore()
+        })
       }
 
       draw()
