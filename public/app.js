@@ -448,21 +448,23 @@
   // ==========================================================================
   function setupEventListeners() {
     // Brand Logo Click
-    el.brandLogo.addEventListener('click', () => {
-      if (state.user) {
-        openStudioWorkstation()
-      } else {
-        if (el.landingView) el.landingView.classList.remove('hidden')
-        if (el.appWorkspace) el.appWorkspace.classList.add('hidden')
-        updateMobileBottomBar('demo')
-        updateTopNavActive('demo')
-        window.scrollTo({ top: 0, behavior: 'smooth' })
-      }
-    })
+    if (el.brandLogo) {
+      el.brandLogo.addEventListener('click', () => {
+        if (state.user) {
+          openStudioWorkstation()
+        } else {
+          if (el.landingView) el.landingView.classList.remove('hidden')
+          if (el.appWorkspace) el.appWorkspace.classList.add('hidden')
+          updateMobileBottomBar('demo')
+          updateTopNavActive('demo')
+          window.scrollTo({ top: 0, behavior: 'smooth' })
+        }
+      })
+    }
 
     // Guest Auth Triggers
-    el.openLoginBtn.addEventListener('click', () => openAuthModal('login'))
-    el.openRegisterBtn.addEventListener('click', () => openAuthModal('register'))
+    if (el.openLoginBtn) el.openLoginBtn.addEventListener('click', () => openAuthModal('login'))
+    if (el.openRegisterBtn) el.openRegisterBtn.addEventListener('click', () => openAuthModal('register'))
     if (el.guestNoticeLoginBtn) el.guestNoticeLoginBtn.addEventListener('click', () => openAuthModal('login'))
 
     // Direct App Navigation
