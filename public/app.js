@@ -164,6 +164,7 @@
 
     // Studio Results
     resultsSection: document.getElementById('resultsSection'),
+    resultsDetectedTitle: document.getElementById('resultsDetectedTitle'),
     newMeetingStudioBtn: document.getElementById('newMeetingStudioBtn'),
     tabMoMBtn: document.getElementById('tabMoMBtn'),
     tabTranscriptBtn: document.getElementById('tabTranscriptBtn'),
@@ -1792,21 +1793,28 @@
 
   function copyModalContent() {
     if (!state.selectedPastMeeting) return
-    const text = state.selectedPastMeeting.mom_raw || state.selectedPastMeeting.transcript
-    navigator.clipboard.writeText(text).then(() => {
-      showToast('Copied to clipboard!')
+    const m = state.selectedPastMeeting
+    if (el.modalTabTranscriptBtn && el.modalTabTranscriptBtn.classList.contains('active')) {
+      navigator.clipboard.writeText(m.transcript || '').then(() => {
+        showToast('Transcript copied to clipboard!')
+      })
+      return
+    }
+    const formatted = formatCleanMoM(m.title, m.mom_raw)
+    navigator.clipboard.writeText(formatted).then(() => {
+      showToast('MoM copied to clipboard!')
     })
   }
 
   function downloadModalContent() {
     if (!state.selectedPastMeeting) return
     const m = state.selectedPastMeeting
-    const content = `# ${m.title}\n\n## Minutes of Meeting\n\n${m.mom_raw}\n\n---\n\n## Full Transcript\n\n${m.transcript}`
-    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' })
+    const formatted = formatCleanMoM(m.title, m.mom_raw)
+    const blob = new Blob([formatted], { type: 'text/markdown;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${m.title.replace(/[^a-z0-9_-]/gi, '_')}.md`
+    a.download = `${(m.title || 'Meeting').replace(/[^a-z0-9_-]/gi, '_')}.md`
     a.click()
     URL.revokeObjectURL(url)
     showToast('Markdown downloaded!')
@@ -1881,13 +1889,9 @@
         }
       }
 
-      let previewHtml = `<div class="email-preview-summary">${escapeHtml(summary || 'No summary text available.')}</div>`
-      if (decisions.length) {
-        previewHtml += `<div style="font-weight:700;color:#065f46;margin-top:8px;font-size:0.75rem;text-transform:uppercase;">Decisions Made:</div><ul class="email-preview-decisions">` +
-          decisions.map((d) => `<li>✓ ${escapeHtml(d)}</li>`).join('') + `</ul>`
-      }
+      let previewHtml = `<div class="email-preview-summary"><strong>Summary:</strong><p style="margin:4px 0 0;">${escapeHtml(summary || 'No summary text available.')}</p></div>`
       if (actions.length) {
-        previewHtml += `<div style="font-weight:700;color:#92400e;margin-top:8px;font-size:0.75rem;text-transform:uppercase;">Action Items:</div><ul class="email-preview-actions">` +
+        previewHtml += `<div style="font-weight:700;color:var(--text-main);margin-top:12px;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;">Action Items (Point-to-Point Details):</div><ul class="email-preview-actions" style="margin-top:6px;">` +
           actions.map((a) => `<li>→ ${escapeHtml(a)}</li>`).join('') + `</ul>`
       }
       el.emailPreviewContent.innerHTML = previewHtml
@@ -2022,8 +2026,6 @@
       title: state.activeEmailTarget.title,
       note,
       mom: state.activeEmailTarget.mom,
-      transcript: state.activeEmailTarget.transcript,
-      decisions: state.activeEmailTarget.decisions,
       actions: state.activeEmailTarget.actions,
     })
 
@@ -2034,19 +2036,8 @@
     closeEmailModal()
   }
 
-  function buildPlainTextMoM({ title, note, mom, transcript, decisions: directDecisions, actions: directActions }) {
+  function buildPlainTextMoM({ title, note, mom, actions: directActions }) {
     const summary = extractExecutiveSummary(mom)
-    let decisions = extractDecisions(mom)
-    if (!decisions.length && directDecisions) {
-      try {
-        const parsed = typeof directDecisions === 'string' ? JSON.parse(directDecisions) : directDecisions
-        if (Array.isArray(parsed)) decisions = parsed
-        else if (typeof directDecisions === 'string') decisions = extractListLines(directDecisions)
-      } catch {
-        decisions = extractListLines(String(directDecisions))
-      }
-    }
-
     let actions = extractActions(mom)
     if (!actions.length && directActions) {
       try {
@@ -2073,30 +2064,16 @@
       out += `--------------------------------------------------\n\n`
     }
 
-    out += `EXECUTIVE SUMMARY:\n`
+    out += `SUMMARY:\n`
     out += `${summary || 'No summary available.'}\n\n`
 
-    out += `KEY DECISIONS MADE:\n`
-    if (decisions.length) {
-      decisions.forEach((d) => { out += `  [✓] ${d}\n` })
-    } else {
-      out += `  (No decisions recorded)\n`
-    }
-    out += `\n`
-
-    out += `ACTION ITEMS & DELIVERABLES:\n`
+    out += `ACTION ITEMS (POINT-TO-POINT DETAILS):\n`
     if (actions.length) {
       actions.forEach((a) => { out += `  [→] ${a}\n` })
     } else {
       out += `  (No action items recorded)\n`
     }
     out += `\n`
-
-    if (transcript && transcript.trim()) {
-      out += `--------------------------------------------------\n`
-      out += `SPEECH TRANSCRIPT:\n\n`
-      out += `${transcript.trim()}\n\n`
-    }
 
     out += `==================================================\n`
     out += `Generated with MeetAgent — Executive Meeting Intelligence\n`
@@ -2168,11 +2145,14 @@
     }
     state.detectedLanguage = ''
 
+    if (el.resultsDetectedTitle) {
+      el.resultsDetectedTitle.textContent = 'Auto-Detecting from Transcript...'
+    }
     if (el.summaryContent) {
       el.summaryContent.textContent = 'Executive minutes will appear here automatically after the meeting ends.'
     }
     if (el.decisionsList) {
-      el.decisionsList.innerHTML = '<li>No decisions recorded.</li>'
+      el.decisionsList.innerHTML = ''
     }
     if (el.actionsList) {
       el.actionsList.innerHTML = '<div class="empty-task">No action items recorded.</div>'
@@ -2578,6 +2558,18 @@
       const data = await res.json()
       state.currentMoMRaw = data.mom
 
+      // Auto-detect meeting title from LLM or transcript
+      const detectedTitle = (data.title && data.title.trim())
+        ? data.title.trim()
+        : (extractMeetingTitle(data.mom) || title || (el.meetingTitleInput ? el.meetingTitleInput.value.trim() : '') || 'Executive Meeting Session')
+
+      if (el.meetingTitleInput) {
+        el.meetingTitleInput.value = detectedTitle
+      }
+      if (el.resultsDetectedTitle) {
+        el.resultsDetectedTitle.textContent = detectedTitle
+      }
+
       renderParsedMoMToContainer(
         data.mom,
         el.summaryContent,
@@ -2594,9 +2586,9 @@
       }
       switchStudioResultTab('mom')
 
-      // Auto-save to Cloud Vault
+      // Auto-save to Cloud Vault / Meeting History
       const meetingPayload = {
-        title: title || (el.meetingTitleInput ? el.meetingTitleInput.value.trim() : 'Meeting Session'),
+        title: detectedTitle,
         transcript,
         momRaw: data.mom,
         summary: extractExecutiveSummary(data.mom),
@@ -2629,25 +2621,24 @@
   // ==========================================================================
   function renderParsedMoMToContainer(rawMarkdown, summaryEl, decisionsEl, actionsEl) {
     if (!rawMarkdown) {
-      summaryEl.textContent = 'No summary available.'
-      decisionsEl.innerHTML = '<li>No decisions recorded.</li>'
-      actionsEl.innerHTML = '<div class="empty-task">No action items recorded.</div>'
+      if (summaryEl) summaryEl.textContent = 'No summary available.'
+      if (decisionsEl) decisionsEl.innerHTML = ''
+      if (actionsEl) actionsEl.innerHTML = '<div class="empty-task">No action items recorded.</div>'
       return
     }
 
     const summary = extractExecutiveSummary(rawMarkdown)
-    const decisions = extractDecisions(rawMarkdown)
     const actions = extractActions(rawMarkdown)
 
-    summaryEl.innerHTML = `<p>${escapeHtml(summary || 'Meeting overview completed.')}</p>`
-
-    if (decisions.length > 0) {
-      decisionsEl.innerHTML = decisions.map((d) => `<li>${escapeHtml(d)}</li>`).join('')
-    } else {
-      decisionsEl.innerHTML = '<li>No explicit decisions recorded.</li>'
+    if (summaryEl) {
+      summaryEl.innerHTML = `<p>${escapeHtml(summary || 'Meeting overview completed.')}</p>`
     }
 
-    if (actions.length > 0) {
+    if (decisionsEl) {
+      decisionsEl.innerHTML = ''
+    }
+
+    if (actionsEl) {
       actionsEl.innerHTML = actions.map((a, idx) => {
         let textToParse = a
         let owner = ''
@@ -2757,32 +2748,66 @@
       .filter((l) => l.length > 2 && !/^none(\s*recorded|\s*explicitly)?\.?$/i.test(l))
   }
 
+  function extractMeetingTitle(md) {
+    if (!md) return ''
+    // 1. Tag format: ===TITLE=== ... ===SUMMARY===
+    const tagMatch = md.match(/===\s*TITLE\s*===([\s\S]*?)(?====\s*SUMMARY|===\s*ACTION|$)/i)
+    if (tagMatch && tagMatch[1].trim()) {
+      return tagMatch[1].trim().replace(/^["']|["']$/g, '').split('\n')[0].trim()
+    }
+    // 2. Markdown Header format: # Title or Meeting Title:
+    const headerMatch = md.match(/^(?:#|\*\*)\s*(?:Meeting Title:\s*)?([^\n*#]+)/m)
+    if (headerMatch && headerMatch[1].trim()) {
+      return headerMatch[1].trim().replace(/^["']|["']$/g, '').trim()
+    }
+    return ''
+  }
+
+  function formatCleanMoM(title, rawMarkdown) {
+    if (!rawMarkdown) return ''
+    const detectedTitle = title || extractMeetingTitle(rawMarkdown) || 'Executive Meeting'
+    const summary = extractExecutiveSummary(rawMarkdown)
+    const actions = extractActions(rawMarkdown)
+    let out = `# ${detectedTitle}\n\n`
+    out += `## Summary\n${summary || 'No summary available.'}\n\n`
+    out += `## Action Items (Point-to-Point Details)\n`
+    if (actions.length > 0) {
+      actions.forEach((a) => {
+        out += `- ${a}\n`
+      })
+    } else {
+      out += `No action items recorded.\n`
+    }
+    return out.trim()
+  }
+
   function extractSummary(md) {
     return extractExecutiveSummary(md)
   }
 
   function extractExecutiveSummary(md) {
     if (!md) return ''
-    // 1. Tag format: ===SUMMARY=== ... ===DECISIONS===
-    const tagMatch = md.match(/===\s*SUMMARY\s*===([\s\S]*?)(?====\s*DECISIONS|===\s*ACTION|===\s*TRANSCRIPT|$)/i)
+    // 1. Tag format: ===SUMMARY=== ... ===ACTION ITEMS===
+    const tagMatch = md.match(/===\s*SUMMARY\s*===([\s\S]*?)(?====\s*ACTION|===\s*DECISIONS|===\s*TRANSCRIPT|$)/i)
     if (tagMatch && tagMatch[1].trim()) {
       return cleanParagraph(tagMatch[1])
     }
 
-    // 2. Markdown Header format: ### Executive Summary ... ### Key Decisions
-    const headerMatch = md.match(/(?:###?|\*\*)\s*(?:Executive\s+)?Summary:?\s*\**([\s\S]*?)(?=(?:###?|\*\*)\s*(?:Key\s+)?Decisions|(?:###?|\*\*)\s*Action\s+Items|$)/i)
+    // 2. Markdown Header format: ### Executive Summary ... ### Action Items
+    const headerMatch = md.match(/(?:###?|\*\*)\s*(?:Executive\s+)?Summary:?\s*\**([\s\S]*?)(?=(?:###?|\*\*)\s*Action\s+Items|(?:###?|\*\*)\s*(?:Key\s+)?Decisions|$)/i)
     if (headerMatch && headerMatch[1].trim()) {
       return cleanParagraph(headerMatch[1])
     }
 
-    // 3. Fallback: Take everything before the first decisions or action items heading
-    const beforeSectionMatch = md.match(/^([\s\S]*?)(?=(?:###?|\*\*|===)\s*(?:Key\s+)?Decisions|(?:###?|\*\*|===)\s*Action\s+Items)/i)
+    // 3. Fallback: Take everything before the first action items heading (or legacy decisions)
+    const beforeSectionMatch = md.match(/^([\s\S]*?)(?=(?:###?|\*\*|===)\s*Action\s+Items|(?:###?|\*\*|===)\s*(?:Key\s+)?Decisions)/i)
     if (beforeSectionMatch && beforeSectionMatch[1].trim()) {
-      return cleanParagraph(beforeSectionMatch[1])
+      const cleaned = beforeSectionMatch[1].replace(/===\s*TITLE\s*===[\s\S]*?(?====\s*SUMMARY|$)/i, '').trim()
+      if (cleaned) return cleanParagraph(cleaned)
     }
 
     const firstPara = md.split(/\n\s*\n/)[0] || md.slice(0, 300)
-    return cleanParagraph(firstPara)
+    return cleanParagraph(firstPara.replace(/===\s*TITLE\s*===[\s\S]*?(?====\s*SUMMARY|$)/i, ''))
   }
 
   function extractDecisions(md) {
@@ -2958,16 +2983,24 @@
   }
 
   function copyActiveContent(momRaw, transcript, activeTab) {
-    const textToCopy = activeTab === 'mom' ? momRaw : transcript
-    if (!textToCopy) return
-    navigator.clipboard.writeText(textToCopy).then(() => {
-      showToast('Copied to clipboard!')
+    if (activeTab === 'transcript') {
+      if (!transcript) return
+      navigator.clipboard.writeText(transcript).then(() => {
+        showToast('Transcript copied to clipboard!')
+      })
+      return
+    }
+    const title = (el.meetingTitleInput ? el.meetingTitleInput.value.trim() : '') || 'Executive Meeting'
+    const formatted = formatCleanMoM(title, momRaw)
+    if (!formatted) return
+    navigator.clipboard.writeText(formatted).then(() => {
+      showToast('MoM copied to clipboard!')
     })
   }
 
   function downloadMarkdown(momRaw, transcript, title = 'Meeting_MoM') {
-    const content = `# ${title}\n\n## Minutes of Meeting\n\n${momRaw}\n\n---\n\n## Full Transcript\n\n${transcript}`
-    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' })
+    const formatted = formatCleanMoM(title, momRaw)
+    const blob = new Blob([formatted], { type: 'text/markdown;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -3772,160 +3805,55 @@
     if (!el.demoMomCards) return
     demoState.momRendered = true
 
+    let tasksHtml = ''
     if (preset.momType === 'technical') {
-      const specsHtml = preset.mom.specs.map((s) => `
-        <div class="mock-spec-item">
-          <span>${escapeHtml(s.label)}:</span>
-          <strong>${escapeHtml(s.value)}</strong>
-        </div>`).join('')
-
-      const decisionsHtml = preset.mom.decisions.map((d) => `
-        <li>
-          <span class="check-icon">✓</span>
-          <span>${escapeHtml(d)}</span>
-        </li>`).join('')
-
-      const tasksHtml = preset.mom.tasks.map((t) => `
+      tasksHtml = preset.mom.tasks.map((t) => `
         <div class="mock-task">
           <span class="mock-jira-key">${escapeHtml(t.key)}</span>
           <span style="font-weight:500;">${escapeHtml(t.title)}</span>
           <span class="task-badge">${escapeHtml(t.owner)}</span>
           <span class="mock-due-tag">${escapeHtml(t.due)}</span>
         </div>`).join('')
-
-      el.demoMomCards.innerHTML = `
-        <div class="mock-card">
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
-            <span class="mock-card-tag tag-indigo">Technical Architecture Summary</span>
-            <span class="badge-tag-indigo">PostgreSQL / RLS</span>
-          </div>
-          <p>${escapeHtml(preset.mom.summary)}</p>
-          <div class="mock-spec-box">
-            ${specsHtml}
-          </div>
-        </div>
-
-        <div class="mock-card">
-          <span class="mock-card-tag tag-emerald">Architecture Decisions & Security Safeguards</span>
-          <ul class="mock-list">
-            ${decisionsHtml}
-          </ul>
-        </div>
-
-        <div class="mock-card">
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
-            <span class="mock-card-tag tag-amber">Sprint Deliverables & PR Backlog</span>
-            <span style="font-size:0.7rem; font-weight:600; color:var(--text-muted);">Release: Friday 9 AM</span>
-          </div>
-          <div class="mock-tasks">
-            ${tasksHtml}
-          </div>
-        </div>`
     } else if (preset.momType === 'executive') {
-      const kpisHtml = preset.mom.kpis.map((k) => `
-        <div class="demo-kpi-card">
-          <span class="demo-kpi-label">${escapeHtml(k.label)}</span>
-          <div class="demo-kpi-val-row">
-            <span class="demo-kpi-val">${escapeHtml(k.val)}</span>
-            <span class="demo-kpi-sub">${escapeHtml(k.sub)}</span>
-          </div>
-        </div>`).join('')
-
-      const resolutionsHtml = preset.mom.resolutions.map((r) => `
-        <li>
-          <span class="check-icon">✓</span>
-          <span><strong>${escapeHtml(r.split(':')[0])}:</strong> ${escapeHtml(r.split(':').slice(1).join(':'))}</span>
-        </li>`).join('')
-
-      const actionsHtml = preset.mom.actions.map((a) => `
+      tasksHtml = preset.mom.actions.map((a) => `
         <div class="mock-task">
-          <span class="check-icon">✓</span>
+          <span class="check-icon" style="color:#047857;">✓</span>
           <span style="font-weight:500;">${escapeHtml(a.title)}</span>
           <span class="task-badge" style="background:#ECFDF5; color:#047857; border-color:#A7F3D0;">${escapeHtml(a.owner)}</span>
           <span class="mock-due-tag">${escapeHtml(a.due)}</span>
         </div>`).join('')
-
-      el.demoMomCards.innerHTML = `
-        <div class="mock-card">
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
-            <span class="mock-card-tag tag-emerald">Executive Board Statement</span>
-            <span class="badge-tag-emerald">Q3 Audited</span>
-          </div>
-          <p>${escapeHtml(preset.mom.summary)}</p>
-          <div class="demo-kpi-grid">
-            ${kpisHtml}
-          </div>
-        </div>
-
-        <div class="mock-card">
-          <span class="mock-card-tag tag-emerald">Formal Board Resolutions Approved</span>
-          <ul class="mock-list">
-            ${resolutionsHtml}
-          </ul>
-        </div>
-
-        <div class="mock-card">
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
-            <span class="mock-card-tag tag-amber">Corporate Governance Deliverables</span>
-            <span style="font-size:0.7rem; font-weight:600; color:var(--text-muted);">Quarterly Filing</span>
-          </div>
-          <div class="mock-tasks">
-            ${actionsHtml}
-          </div>
-        </div>`
     } else if (preset.momType === 'sales') {
-      const dealsHtml = preset.mom.dealTerms.map((d) => `
-        <div class="demo-kpi-card">
-          <span class="demo-kpi-label">${escapeHtml(d.label)}</span>
-          <div class="demo-kpi-val-row">
-            <span class="demo-kpi-val" style="color:var(--primary); font-size:1.05rem;">${escapeHtml(d.val)}</span>
-            <span class="demo-kpi-sub" style="color:var(--text-muted);">${escapeHtml(d.sub)}</span>
-          </div>
-        </div>`).join('')
-
-      const complianceHtml = preset.mom.complianceChecks.map((c) => `
-        <li>
-          <span class="check-icon" style="color:var(--primary);">✓</span>
-          <span>${escapeHtml(c)}</span>
-        </li>`).join('')
-
-      const nextStepsHtml = preset.mom.nextSteps.map((s) => `
+      tasksHtml = preset.mom.nextSteps.map((s) => `
         <div class="mock-task">
           <span class="mock-deal-badge">SOW</span>
           <span style="font-weight:500;">${escapeHtml(s.title)}</span>
           <span class="task-badge" style="background:#FFFBEB; color:#B45309; border-color:#FDE68A;">${escapeHtml(s.owner)}</span>
           <span class="mock-due-tag">${escapeHtml(s.due)}</span>
         </div>`).join('')
-
-      el.demoMomCards.innerHTML = `
-        <div class="mock-card">
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
-            <span class="mock-card-tag tag-amber">Enterprise Opportunity & Terms</span>
-            <span class="badge-tag-amber">Tier-1 Pilot</span>
-          </div>
-          <p>${escapeHtml(preset.mom.summary)}</p>
-          <div class="demo-kpi-grid">
-            ${dealsHtml}
-          </div>
-        </div>
-
-        <div class="mock-card">
-          <span class="mock-card-tag tag-emerald">Infosec & Compliance Verification</span>
-          <ul class="mock-list">
-            ${complianceHtml}
-          </ul>
-        </div>
-
-        <div class="mock-card">
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
-            <span class="mock-card-tag tag-amber">Procurement & Pilot Closing Milestones</span>
-            <span style="font-size:0.7rem; font-weight:600; color:var(--text-muted);">Target: Next Monday</span>
-          </div>
-          <div class="mock-tasks">
-            ${nextStepsHtml}
-          </div>
-        </div>`
     }
+
+    el.demoMomCards.innerHTML = `
+      <div class="mom-title-banner" style="margin-bottom:14px; padding:12px 16px; border-radius:8px;">
+        <div class="mom-title-eyebrow">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+          <span>Auto-Detected Meeting Title</span>
+        </div>
+        <h3 class="mom-detected-title" style="font-size:1.05rem; margin:2px 0 0;">${escapeHtml(preset.title)}</h3>
+      </div>
+
+      <div class="mock-card">
+        <div class="section-tag tag-indigo" style="margin-bottom:8px;">Summary</div>
+        <p style="margin:0; line-height:1.65; font-size:0.88rem; color:var(--text-main);">${escapeHtml(preset.mom.summary)}</p>
+      </div>
+
+      <div class="mock-card" style="margin-top:12px;">
+        <div class="section-tag tag-amber" style="margin-bottom:8px;">Action Items (Point-to-Point Details)</div>
+        <div class="mock-tasks">
+          ${tasksHtml}
+        </div>
+      </div>`
   }
 
   function setupFAQAccordion() {

@@ -2,42 +2,45 @@ import 'dotenv/config'
 import { extname } from 'node:path'
 
 export const PROMPT_TEMPLATE = (transcript) => `You are an elite, C-suite executive meeting intelligence agent and corporate secretary.
-Your task is to analyze the meeting transcript below and synthesize an authoritative, professional, and comprehensive Minutes of Meeting (MoM).
+Your task is to analyze the meeting transcript below and synthesize an authoritative, professional Minutes of Meeting (MoM).
 
-CRITICAL ACCURACY & COMPREHENSION DIRECTIVES:
-1. MULTILINGUAL & REGIONAL FLUENCY:
+CRITICAL DIRECTIVES:
+1. AUTO-DETECT MEETING TITLE:
+   - Carefully inspect the discussion topic, agenda, and participants' intent from the transcript.
+   - Synthesize a concise, highly specific, and professional meeting title (4-8 words max).
+   - Examples of great titles: "Supabase Cloud Migration & Security Review", "Q4 Enterprise Budget & Sales Capacity Sync", "Salesforce CRM Webhook Integration & Data Sync", "Client Infosec Discovery & Pilot Agreement".
+   - Do NOT output generic placeholders like "Team Meeting" or "Discussion".
+
+2. MULTILINGUAL & REGIONAL FLUENCY:
    - Participants may speak in English, Hindi, Hinglish (mixed Hindi + English), Tamil, Telugu, Bengali, Marathi, Gujarati, Kannada, Malayalam, or code-switch naturally.
    - Accurately comprehend all statements, intent, technical discussions, and colloquial nuances with 100% fidelity.
    - Output the synthesized MoM in polished, boardroom-ready, executive English.
 
-2. PRESERVE EVERY PERSON'S NAME, DATE & DEADLINE:
-   - You MUST identify and include EVERY person's name mentioned (e.g. Sanjay, Priya, Rahul, Amit, Vikram, etc.). Never substitute a named individual with generic terms like "someone" or "the team" if their name was stated in the conversation.
+3. PRESERVE EVERY PERSON'S NAME, DATE & DEADLINE:
+   - You MUST identify and include EVERY person's name mentioned (e.g. Sanjay, Priya, Rahul, Amit, Vikram, Alex, etc.). Never substitute a named individual with generic terms if their name was stated in the conversation.
    - You MUST identify and include EVERY date, day, timeline, or milestone mentioned (e.g. "by Friday 6 PM", "next Tuesday", "October 15th", "end of Q3", "by EOD tomorrow").
    - If a specific metric, KPI, target, or technical specification was stated, retain it with exact fidelity.
 
-3. THOROUGH PROFESSIONAL COVERAGE:
-   - Provide deep, substantive coverage of what was actually discussed.
-   - Clearly delineate context, decisions, trade-offs, and agreed next steps.
-   - Zero hallucination: do not invent facts, names, or dates not supported by the transcript.
-
-OUTPUT FORMAT REQUIREMENTS:
+4. OUTPUT FORMAT REQUIREMENTS (SUMMARY & ACTION ITEMS ONLY):
 You MUST follow this exact section structure with the precise section markers:
 
-===SUMMARY===
-A comprehensive executive overview (3-5 sentences) summarizing the core business purpose of the meeting, key topics deliberated, high-level alignment reached, and overarching next steps.
+===TITLE===
+[Auto-detected specific meeting title, 4-8 words max, no quotes]
 
-===DECISIONS===
-A bulleted list of all explicit consensus items, approvals, architectural choices, or strategic agreements reached during the call.
-- Format each bullet as: "- [Decision]: [Clear statement of what was approved or agreed upon, including the rationale and who agreed]"
-(If none, output: "- No explicit formal decisions recorded.")
+===SUMMARY===
+A clear, comprehensive executive summary (3-5 sentences) summarizing the core business purpose of the meeting, the key issues discussed, consensus reached, and overarching direction.
 
 ===ACTION ITEMS===
-A comprehensive bulleted list of all actionable deliverables, commitments, and tasks.
-- You MUST format every single action item as:
-"- [Assignee Name]: [Specific actionable task description] | Deadline: [Exact Date/Day/Timeline mentioned or "TBD"] | Priority: [High/Medium/Normal]"
-- Example: "- [Priya]: Complete Salesforce webhook API validation and deploy schema updates to production | Deadline: Friday 6 PM IST | Priority: High"
-- Example: "- [Sanjay]: Run end-to-end CRM lead synchronization test suite | Deadline: Next Monday | Priority: High"
-(If none, output: "- No action items recorded.")
+A comprehensive, point-to-point detailed list of all action items, deliverables, commitments, and next steps discussed.
+For EVERY action item, provide point-to-point details in this exact format:
+- [Assignee/Owner]: [Specific Action Description with point-to-point details, deliverables, and context] | Deadline: [Exact Date/Day/Timeline mentioned or "TBD"] | Priority: [High/Medium/Normal]
+
+Examples:
+- [Priya]: Complete Salesforce webhook API validation and deploy schema updates to production | Deadline: Friday 6 PM IST | Priority: High
+- [Sanjay]: Run end-to-end CRM lead synchronization test suite and verify error handling | Deadline: Next Monday | Priority: High
+- [Alex]: Configure PostgreSQL Row-Level Security policies and test tenant isolation | Deadline: Thursday 4 PM | Priority: High
+
+(If no action items were discussed, output: "- [Team]: Review meeting notes and follow up on discussed points | Deadline: TBD | Priority: Normal")
 
 ===TRANSCRIPT===
 
@@ -243,28 +246,35 @@ export function generateMoMLocalFallback(transcript) {
   const clean = (transcript || '').trim()
   const sentences = clean.split(/(?<=[.?!])\s+/).filter(Boolean)
 
+  // Auto-detect title from transcript keywords or content
+  let detectedTitle = 'Executive Sync & Planning'
+  const lower = clean.toLowerCase()
+  if (lower.includes('supabase') || lower.includes('database') || lower.includes('migration') || lower.includes('architecture')) {
+    detectedTitle = 'Architecture Sync & Cloud Migration'
+  } else if (lower.includes('revenue') || lower.includes('arr') || lower.includes('board') || lower.includes('margin') || lower.includes('growth')) {
+    detectedTitle = 'Executive Financial Review & Growth Strategy'
+  } else if (lower.includes('client') || lower.includes('infosec') || lower.includes('pilot') || lower.includes('security') || lower.includes('bot')) {
+    detectedTitle = 'Enterprise Client Discovery & Security Clearance'
+  } else if (lower.includes('crm') || lower.includes('salesforce') || lower.includes('integration') || lower.includes('webhook')) {
+    detectedTitle = 'CRM Integration & API Sync'
+  } else if (sentences.length > 0) {
+    const firstWords = sentences[0].replace(/[^a-zA-Z0-9\s]/g, '').split(/\s+/).slice(0, 6).join(' ')
+    if (firstWords.length > 8) detectedTitle = firstWords
+  }
+
   const summarySentences = sentences.slice(0, 3).join(' ') || clean.slice(0, 250) + '...'
 
-  const decisionKeywords = [
-    'decid', 'agree', 'approv', 'conclud', 'resolv', 'plan to', 'will go with', 'standardiz',
-    'तय किया', 'फैसला', 'फाइनल', 'सहमति', 'முடிவு', 'తీర్మానం', 'తీసుకున్నాం', 'ನಿರ್ಧಾರ'
-  ]
-  const decisionList = sentences.filter(s => decisionKeywords.some(k => s.toLowerCase().includes(k)))
-  const decisions = decisionList.length > 0
-    ? decisionList.slice(0, 4).map(d => `- ${d.trim()}`).join('\n')
-    : '- Aligned on core discussion milestones and approved subsequent execution steps.\n- Consensus reached on timeline and ownership.'
-
-  const actionKeywords = ['will', 'need to', 'must', 'action', 'task', 'should', 'assign', 'follow up', 'send', 'review', 'prepare']
+  const actionKeywords = ['will', 'need to', 'must', 'action', 'task', 'should', 'assign', 'follow up', 'send', 'review', 'prepare', 'deploy', 'finalize', 'merge']
   const actionList = sentences.filter(s => actionKeywords.some(k => s.toLowerCase().includes(k)))
   const actions = actionList.length > 0
-    ? actionList.slice(0, 5).map((a) => `- [Team]: ${a.trim()}`).join('\n')
-    : '- [Owner]: Review meeting notes and distribute synthesized minutes.\n- [Team]: Execute on deliverables identified during sync.'
+    ? actionList.slice(0, 5).map((a) => `- [Team]: ${a.trim()} | Deadline: Upcoming Sprint | Priority: High`).join('\n')
+    : '- [Team]: Follow up on core action items identified during the sync | Deadline: End of Week | Priority: Normal\n- [Lead]: Review implementation timeline and allocate technical resources | Deadline: Friday 5 PM | Priority: High'
 
-  const momText = `===SUMMARY===
+  const momText = `===TITLE===
+${detectedTitle}
+
+===SUMMARY===
 ${summarySentences}
-
-===DECISIONS===
-${decisions}
 
 ===ACTION ITEMS===
 ${actions}
@@ -274,6 +284,7 @@ ${clean}`
 
   return {
     text: momText,
+    title: detectedTitle,
     latencyMs: 15,
     model: 'Autonomous MoM Synthesis'
   }

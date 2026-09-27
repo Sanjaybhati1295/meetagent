@@ -22,18 +22,25 @@ export function getEmailProviderName() {
  * Extracts sections from markdown MoM text.
  */
 export function parseMoMSections(md = '') {
+  let title = ''
   let summary = ''
   let decisions = []
   let actions = []
 
-  if (!md) return { summary, decisions, actions }
+  if (!md) return { title, summary, decisions, actions }
 
-  // 1. Summary
-  const summaryTag = md.match(/===\s*SUMMARY\s*===([\s\S]*?)(?====\s*DECISIONS|===\s*ACTION|===\s*TRANSCRIPT|$)/i)
+  // 1. Title
+  const titleTag = md.match(/===\s*TITLE\s*===([\s\S]*?)(?====\s*SUMMARY|===\s*ACTION|===\s*TRANSCRIPT|$)/i)
+  if (titleTag && titleTag[1].trim()) {
+    title = titleTag[1].trim().replace(/^["']|["']$/g, '').split('\n')[0].trim()
+  }
+
+  // 2. Summary
+  const summaryTag = md.match(/===\s*SUMMARY\s*===([\s\S]*?)(?====\s*ACTION|===\s*DECISIONS|===\s*TRANSCRIPT|$)/i)
   if (summaryTag && summaryTag[1].trim()) {
     summary = summaryTag[1].trim()
   } else {
-    const summaryHeader = md.match(/(?:###?|\*\*)\s*(?:Executive\s+)?Summary:?\s*\**([\s\S]*?)(?=(?:###?|\*\*)\s*(?:Key\s+)?Decisions|(?:###?|\*\*)\s*Action\s+Items|$)/i)
+    const summaryHeader = md.match(/(?:###?|\*\*)\s*(?:Executive\s+)?Summary:?\s*\**([\s\S]*?)(?=(?:###?|\*\*)\s*Action\s+Items|$)/i)
     if (summaryHeader && summaryHeader[1].trim()) {
       summary = summaryHeader[1].trim()
     } else {
@@ -42,20 +49,9 @@ export function parseMoMSections(md = '') {
     }
   }
 
-  // 2. Decisions
-  const decisionsTag = md.match(/===\s*DECISIONS\s*===([\s\S]*?)(?====\s*ACTION|===\s*TRANSCRIPT|===\s*SUMMARY|$)/i)
-  const decisionsHeader = md.match(/(?:###?|\*\*)\s*(?:Key\s+)?Decisions:?\s*\**([\s\S]*?)(?=(?:###?|\*\*)\s*Action\s+Items|(?:###?|\*\*)\s*(?:Executive\s+)?Summary|$)/i)
-  const decisionsRaw = (decisionsTag && decisionsTag[1]) || (decisionsHeader && decisionsHeader[1]) || ''
-  if (decisionsRaw.trim()) {
-    decisions = decisionsRaw
-      .split('\n')
-      .map((l) => l.replace(/^[-*•\d.]\s*/, '').replace(/^\[[ x]\]\s*/i, '').trim())
-      .filter((l) => l.length > 2 && !l.startsWith('===') && !l.startsWith('###'))
-  }
-
-  // 3. Action Items
-  const actionsTag = md.match(/===\s*ACTION\s*ITEMS?\s*===([\s\S]*?)(?====\s*TRANSCRIPT|===\s*SUMMARY|===\s*DECISIONS|$)/i)
-  const actionsHeader = md.match(/(?:###?|\*\*)\s*Action\s*Items?:?\s*\**([\s\S]*?)(?=(?:###?|\*\*)\s*(?:Key\s+)?Decisions|(?:###?|\*\*)\s*(?:Executive\s+)?Summary|$)/i)
+  // 3. Action Items (Point-to-point details)
+  const actionsTag = md.match(/===\s*ACTION\s*ITEMS?\s*===([\s\S]*?)(?====\s*TRANSCRIPT|===\s*SUMMARY|$)/i)
+  const actionsHeader = md.match(/(?:###?|\*\*)\s*Action\s*Items?:?\s*\**([\s\S]*?)(?=(?:###?|\*\*)\s*(?:Executive\s+)?Summary|$)/i)
   const actionsRaw = (actionsTag && actionsTag[1]) || (actionsHeader && actionsHeader[1]) || ''
   if (actionsRaw.trim()) {
     actions = actionsRaw
@@ -64,7 +60,7 @@ export function parseMoMSections(md = '') {
       .filter((l) => l.length > 2 && !l.startsWith('===') && !l.startsWith('###'))
   }
 
-  return { summary, decisions, actions }
+  return { title, summary, decisions, actions }
 }
 
 /**
@@ -74,11 +70,16 @@ export function generateEmailHtml({
   meetingTitle,
   dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
   note = '',
+  mom = '',
   momText = '',
   transcriptText = '',
   senderName = 'A Team Member',
 }) {
-  const { summary, decisions, actions } = parseMoMSections(momText)
+  const rawMoM = momText || mom || ''
+  const { title: parsedTitle, summary, actions } = parseMoMSections(rawMoM)
+  const effectiveTitle = (meetingTitle && meetingTitle !== 'Executive Meeting Sync' && meetingTitle !== 'Strategy & Architecture Sync')
+    ? meetingTitle
+    : (parsedTitle || meetingTitle || 'Executive Meeting Sync')
 
   const noteBlock = note.trim()
     ? `
@@ -88,35 +89,23 @@ export function generateEmailHtml({
     </div>`
     : ''
 
-  const decisionsHtml = decisions.length
-    ? decisions
-        .map(
-          (d) => `
-        <li style="margin-bottom: 8px; color: #065f46; font-size: 14px; line-height: 1.5;">
-          <strong style="color: #059669;">✓</strong> ${escapeHtml(d)}
-        </li>`
-        )
-        .join('')
-    : '<li style="color: #64748b; font-size: 14px; list-style: none;">No explicit decisions recorded.</li>'
-
   const actionsHtml = actions.length
     ? actions
         .map(
           (a) => `
-        <li style="margin-bottom: 8px; color: #92400e; font-size: 14px; line-height: 1.5;">
-          <strong style="color: #d97706;">→</strong> ${escapeHtml(a)}
+        <li style="margin-bottom: 10px; color: #1e293b; font-size: 14px; line-height: 1.6;">
+          <strong style="color: #d97706; margin-right: 4px;">•</strong> ${escapeHtml(a)}
         </li>`
         )
         .join('')
     : '<li style="color: #64748b; font-size: 14px; list-style: none;">No action items recorded.</li>'
-
 
   return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${escapeHtml(meetingTitle)} — Executive MoM</title>
+  <title>${escapeHtml(effectiveTitle)} — Minutes of Meeting</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #faf9f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; color: #0f172a; -webkit-font-smoothing: antialiased;">
   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #faf9f6; padding: 32px 16px;">
@@ -127,18 +116,18 @@ export function generateEmailHtml({
           
           <!-- Header Banner -->
           <tr>
-            <td style="padding: 28px 32px; background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%); color: #ffffff;">
+            <td style="padding: 28px 32px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #ffffff;">
               <table width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
                   <td>
-                    <div style="display: inline-block; background-color: rgba(255, 255, 255, 0.2); padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 10px;">
-                      Executive Meeting Intelligence
+                    <div style="display: inline-block; background-color: rgba(255, 255, 255, 0.15); padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 10px;">
+                      Minutes of Meeting
                     </div>
                     <h1 style="margin: 0; font-size: 22px; font-weight: 800; line-height: 1.3; color: #ffffff;">
-                      ${escapeHtml(meetingTitle)}
+                      ${escapeHtml(effectiveTitle)}
                     </h1>
-                    <p style="margin: 6px 0 0 0; font-size: 13px; color: #e0e7ff;">
-                      Recorded & Transcribed • ${escapeHtml(dateStr)}
+                    <p style="margin: 6px 0 0 0; font-size: 13px; color: #cbd5e1;">
+                      Synthesized with MeetAgent • ${escapeHtml(dateStr)}
                     </p>
                   </td>
                 </tr>
@@ -151,34 +140,22 @@ export function generateEmailHtml({
             <td style="padding: 28px 32px;">
               ${noteBlock}
 
-              <!-- 1. Executive Summary -->
-              <div style="margin-bottom: 24px;">
-                <div style="display: inline-block; background-color: #eef2ff; border: 1px solid #c7d2fe; border-radius: 6px; padding: 3px 10px; font-size: 11px; font-weight: 700; color: #4338ca; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">
-                  Executive Summary
+              <!-- 1. Summary -->
+              <div style="margin-bottom: 26px;">
+                <div style="display: inline-block; background-color: #eef2ff; border: 1px solid #c7d2fe; border-radius: 6px; padding: 3px 10px; font-size: 11px; font-weight: 700; color: #4338ca; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px;">
+                  Summary
                 </div>
-                <div style="background-color: #ffffff; border-left: 3px solid #4338ca; padding: 12px 16px; font-size: 15px; line-height: 1.6; color: #1e293b;">
+                <div style="background-color: #f8fafc; border-left: 3px solid #4338ca; padding: 14px 18px; font-size: 15px; line-height: 1.6; color: #1e293b; border-radius: 0 6px 6px 0;">
                   ${escapeHtml(summary || 'No summary text available.').replace(/\n/g, '<br>')}
                 </div>
               </div>
 
-              <!-- 2. Decisions Made -->
+              <!-- 2. Action Items (Point-to-Point Details) -->
               <div style="margin-bottom: 24px;">
-                <div style="display: inline-block; background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 3px 10px; font-size: 11px; font-weight: 700; color: #065f46; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">
-                  Decisions Made
+                <div style="display: inline-block; background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 3px 10px; font-size: 11px; font-weight: 700; color: #92400e; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px;">
+                  Action Items (Point-to-Point Details)
                 </div>
-                <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px 18px;">
-                  <ul style="margin: 0; padding-left: 8px; list-style-type: none;">
-                    ${decisionsHtml}
-                  </ul>
-                </div>
-              </div>
-
-              <!-- 3. Action Items -->
-              <div style="margin-bottom: 24px;">
-                <div style="display: inline-block; background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 3px 10px; font-size: 11px; font-weight: 700; color: #92400e; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">
-                  Action Items & Deliverables
-                </div>
-                <div style="background-color: #fffdf5; border: 1px solid #fef08a; border-radius: 8px; padding: 14px 18px;">
+                <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 20px;">
                   <ul style="margin: 0; padding-left: 8px; list-style-type: none;">
                     ${actionsHtml}
                   </ul>
@@ -191,10 +168,10 @@ export function generateEmailHtml({
           <tr>
             <td style="background-color: #f8fafc; padding: 20px 32px; border-top: 1px solid #e2e8f0; text-align: center;">
               <p style="margin: 0 0 6px 0; font-size: 12px; color: #64748b;">
-                Sent via <strong>MeetAgent</strong> — Real-time Speech Intelligence & Supabase Cloud Vault
+                Sent via <strong>MeetAgent</strong> — Autonomous Speech Intelligence & Cloud Vault
               </p>
               <p style="margin: 0; font-size: 11px; color: #94a3b8;">
-                © 2026 MeetAgent Inc. All meeting data is secured with enterprise encryption.
+                © 2026 MeetAgent Inc. Meeting transcript omitted for confidentiality.
               </p>
             </td>
           </tr>
@@ -214,15 +191,20 @@ export function generateEmailText({
   meetingTitle,
   dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
   note = '',
+  mom = '',
   momText = '',
   transcriptText = '',
   senderName = 'A Team Member',
 }) {
-  const { summary, decisions, actions } = parseMoMSections(momText)
+  const rawMoM = momText || mom || ''
+  const { title: parsedTitle, summary, actions } = parseMoMSections(rawMoM)
+  const effectiveTitle = (meetingTitle && meetingTitle !== 'Executive Meeting Sync' && meetingTitle !== 'Strategy & Architecture Sync')
+    ? meetingTitle
+    : (parsedTitle || meetingTitle || 'Executive Meeting Sync')
 
   let text = `MEETAGENT — MINUTES OF MEETING (MoM)\n`
   text += `==================================================\n`
-  text += `Meeting: ${meetingTitle}\n`
+  text += `Meeting: ${effectiveTitle}\n`
   text += `Date:    ${dateStr}\n`
   text += `Sent by: ${senderName}\n`
   text += `==================================================\n\n`
@@ -233,23 +215,13 @@ export function generateEmailText({
     text += `--------------------------------------------------\n\n`
   }
 
-  text += `EXECUTIVE SUMMARY:\n`
+  text += `SUMMARY:\n`
   text += `${summary || 'No summary text available.'}\n\n`
 
-  text += `KEY DECISIONS MADE:\n`
-  if (decisions.length) {
-    decisions.forEach((d) => {
-      text += `  [✓] ${d}\n`
-    })
-  } else {
-    text += `  (No explicit decisions recorded)\n`
-  }
-  text += `\n`
-
-  text += `ACTION ITEMS & DELIVERABLES:\n`
+  text += `ACTION ITEMS (POINT-TO-POINT DETAILS):\n`
   if (actions.length) {
     actions.forEach((a) => {
-      text += `  [→] ${a}\n`
+      text += `  • ${a}\n`
     })
   } else {
     text += `  (No action items recorded)\n`
@@ -257,7 +229,7 @@ export function generateEmailText({
   text += `\n`
 
   text += `==================================================\n`
-  text += `Generated with MeetAgent — Executive Voice Intelligence\n`
+  text += `Generated with MeetAgent — Speech Intelligence & Cloud Vault\n`
 
   return text
 }

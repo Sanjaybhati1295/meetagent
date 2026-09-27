@@ -214,17 +214,14 @@
 
         <div id="modalMoMPane" class="tab-pane active">
           <div class="card-section">
-            <div class="section-tag tag-indigo">Executive Summary</div>
+            <div class="section-tag tag-indigo">Summary</div>
             <div id="modalSummaryContent" class="section-prose"></div>
           </div>
           <div class="card-section">
-            <div class="section-tag tag-emerald">Decisions Made</div>
-            <ul id="modalDecisionsList" class="clean-bullet-list"></ul>
-          </div>
-          <div class="card-section">
-            <div class="section-tag tag-amber">Action Items & Deliverables</div>
+            <div class="section-tag tag-amber">Action Items (Point-to-Point Details)</div>
             <div id="modalActionsList" class="action-tasks-container"></div>
           </div>
+          <ul id="modalDecisionsList" class="hidden"></ul>
         </div>
 
         <div id="modalTranscriptPane" class="tab-pane hidden">
@@ -935,50 +932,43 @@
               <!-- Tab Pane 1: Minutes of Meeting Output -->
               <div id="momPane" class="results-tab-pane active">
                 
-                <!-- 1. Executive Summary Box -->
+                <!-- Auto-Detected Meeting Title Header -->
+                <div class="mom-title-banner">
+                  <span class="mom-title-eyebrow">Auto-Detected Meeting Title</span>
+                  <h2 id="resultsDetectedTitle" class="mom-detected-title">Meeting Minutes</h2>
+                </div>
+
+                <!-- 1. Summary Box -->
                 <div class="mom-card-block block-indigo">
                   <div class="block-tag tag-indigo">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                       <polyline points="14 2 14 8 20 8"/>
                     </svg>
-                    <span>Executive Summary</span>
+                    <span>Summary</span>
                   </div>
                   <div id="summaryContent" class="block-prose">
-                    Executive minutes will appear here automatically after the meeting ends.
+                    Meeting summary will appear here automatically after the meeting ends.
                   </div>
                 </div>
 
-                <!-- 2-Column Grid for Decisions & Action Items -->
-                <div class="mom-details-grid">
-                  <!-- 2. Decisions Made Box -->
-                  <div class="mom-card-block block-emerald">
-                    <div class="block-tag tag-emerald">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <polyline points="20 6 9 17 4 12"/>
-                      </svg>
-                      <span>Decisions Made</span>
-                    </div>
-                    <ul id="decisionsList" class="clean-bullet-list">
-                      <li>No decisions recorded.</li>
-                    </ul>
+                <!-- 2. Action Items (Point-to-Point Details) Box -->
+                <div class="mom-card-block block-amber">
+                  <div class="block-tag tag-amber">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <rect x="3" y="5" width="6" height="6" rx="1"/>
+                      <path d="m3 17 2 2 4-4"/>
+                      <path d="M13 6h8M13 12h8M13 18h8"/>
+                    </svg>
+                    <span>Action Items (Point-to-Point Details)</span>
                   </div>
-
-                  <!-- 3. Action Items Box -->
-                  <div class="mom-card-block block-amber">
-                    <div class="block-tag tag-amber">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <rect x="3" y="5" width="6" height="6" rx="1"/>
-                        <path d="m3 17 2 2 4-4"/>
-                        <path d="M13 6h8M13 12h8M13 18h8"/>
-                      </svg>
-                      <span>Action Items & Deliverables</span>
-                    </div>
-                    <div id="actionsList" class="action-tasks-container">
-                      <div class="empty-task">No action items recorded.</div>
-                    </div>
+                  <div id="actionsList" class="action-tasks-container">
+                    <div class="empty-task">No action items recorded.</div>
                   </div>
                 </div>
+
+                <!-- Legacy element kept hidden for backwards-safe reference -->
+                <ul id="decisionsList" class="hidden"></ul>
 
               </div>
 
@@ -1091,19 +1081,7 @@
         
         <!-- CARD 1: Identity & Avatar Representation -->
         <section class="card profile-section-card">
-          <div class="section-card-header">
-            <div class="section-card-icon icon-indigo">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
-              </svg>
-            </div>
-            <div>
-              <h3 class="section-card-title">Personal Profile & Avatar</h3>
-              <p class="section-card-desc">Your display name and avatar picture appear across meeting minutes and exported documents.</p>
-            </div>
-          </div>
-
+          
           <!-- Avatar Management Strip -->
           <div class="profile-avatar-management-strip">
             <div class="avatar-preview-box">
@@ -1265,6 +1243,6 @@
     </button>
   </nav>
 
-  <script src="/app.js?v=5.4"></script>
+  <script src="/app.js?v=5.5"></script>
 </body>
 </html>

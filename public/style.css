@@ -1794,6 +1794,33 @@ button {
   gap: 14px;
 }
 
+/* Auto-Detected Meeting Title Header inside MoM Pane */
+.mom-title-banner {
+  padding: 14px 18px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  margin-bottom: 2px;
+}
+
+.mom-title-eyebrow {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
+.mom-detected-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-heading);
+  letter-spacing: -0.01em;
+}
+
 /* MoM Output Blocks */
 .mom-card-block {
   background: #ffffff;

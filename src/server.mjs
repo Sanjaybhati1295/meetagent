@@ -288,7 +288,22 @@ const server = createServer(async (req, res) => {
         }
       }
 
+      // Extract auto-detected title from result text
+      let autoTitle = ''
+      const titleMatch = (result.text || '').match(/===\s*TITLE\s*===([\s\S]*?)(?====\s*SUMMARY|===\s*ACTION|$)/i)
+      if (titleMatch && titleMatch[1].trim()) {
+        autoTitle = titleMatch[1].trim().replace(/^["']|["']$/g, '').replace(/^[#*=\-\s]+/, '').split('\n')[0].trim()
+      }
+      if (!autoTitle && result.title) {
+        autoTitle = result.title
+      }
+      if (!autoTitle) {
+        const cleanWords = transcriptText.trim().replace(/[^a-zA-Z0-9\s]/g, '').split(/\s+/).slice(0, 6).join(' ')
+        autoTitle = cleanWords ? `Meeting: ${cleanWords}` : 'Executive Meeting Sync'
+      }
+
       return sendJson(res, 200, {
+        title: autoTitle,
         mom: result.text,
         latencyMs: result.latencyMs || 0,
         provider: result.model || requestedProvider,
@@ -297,6 +312,7 @@ const server = createServer(async (req, res) => {
       console.error('MoM generation error:', err)
       const fallback = generateMoMLocalFallback(transcriptText || 'General Discussion')
       return sendJson(res, 200, {
+        title: fallback.title || 'Executive Meeting Sync',
         mom: fallback.text,
         latencyMs: fallback.latencyMs,
         provider: fallback.model,
