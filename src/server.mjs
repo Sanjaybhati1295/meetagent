@@ -8,7 +8,8 @@ import {
   transcribeWithGroq,
   generateMoMWithGroq,
   generateMoMWithGemini,
-  generateMoMLocalFallback
+  generateMoMLocalFallback,
+  detectLanguageFromTranscriptAndMetadata
 } from './services.mjs'
 import {
   registerUser,
@@ -290,7 +291,7 @@ const server = createServer(async (req, res) => {
 
       // Extract auto-detected title from result text
       let autoTitle = ''
-      const titleMatch = (result.text || '').match(/===\s*TITLE\s*===([\s\S]*?)(?====\s*SUMMARY|===\s*ACTION|$)/i)
+      const titleMatch = (result.text || '').match(/===\s*TITLE\s*===([\s\S]*?)(?====\s*LANGUAGE|===\s*SUMMARY|===\s*ACTION|$)/i)
       if (titleMatch && titleMatch[1].trim()) {
         autoTitle = titleMatch[1].trim().replace(/^["']|["']$/g, '').replace(/^[#*=\-\s]+/, '').split('\n')[0].trim()
       }
@@ -302,8 +303,22 @@ const server = createServer(async (req, res) => {
         autoTitle = cleanWords ? `Meeting: ${cleanWords}` : 'Executive Meeting Sync'
       }
 
+      // Extract auto-detected language from result text or transcript
+      let autoLang = ''
+      const langMatch = (result.text || '').match(/===\s*LANGUAGE\s*===([\s\S]*?)(?====\s*SUMMARY|===\s*ACTION|$)/i)
+      if (langMatch && langMatch[1].trim()) {
+        autoLang = langMatch[1].trim().replace(/^["']|["']$/g, '').split('\n')[0].trim()
+      }
+      if (!autoLang && result.language) {
+        autoLang = result.language
+      }
+      if (!autoLang) {
+        autoLang = detectLanguageFromTranscriptAndMetadata(transcriptText)
+      }
+
       return sendJson(res, 200, {
         title: autoTitle,
+        language: autoLang,
         mom: result.text,
         latencyMs: result.latencyMs || 0,
         provider: result.model || requestedProvider,
@@ -313,6 +328,7 @@ const server = createServer(async (req, res) => {
       const fallback = generateMoMLocalFallback(transcriptText || 'General Discussion')
       return sendJson(res, 200, {
         title: fallback.title || 'Executive Meeting Sync',
+        language: fallback.language || detectLanguageFromTranscriptAndMetadata(transcriptText),
         mom: fallback.text,
         latencyMs: fallback.latencyMs,
         provider: fallback.model,

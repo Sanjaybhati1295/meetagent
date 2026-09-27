@@ -435,38 +435,7 @@
         </div>
 
         <div class="demo-simulator-card">
-          <!-- Minimal Notebook Scenario Selector with Category Tags -->
-          <div class="demo-preset-nav">
-            <button class="demo-preset-btn active" data-preset="sprint">
-              <span class="preset-pill-tag tag-indigo">Engineering</span> Sprint Architecture
-            </button>
-            <button class="demo-preset-btn" data-preset="board">
-              <span class="preset-pill-tag tag-emerald">C-Suite</span> Executive Board Review
-            </button>
-            <button class="demo-preset-btn" data-preset="client">
-              <span class="preset-pill-tag tag-amber">B2B Sales</span> Client Discovery
-            </button>
-          </div>
-
-          <!-- Scenario Briefing Banner (Updates dynamically per scenario) -->
-          <div id="demoScenarioBrief" class="demo-scenario-brief">
-            <div class="scenario-brief-main">
-              <div class="scenario-brief-meta">
-                <span id="demoScenarioTag" class="badge-tag-indigo">ENGINEERING & TECH</span>
-                <span id="demoScenarioDuration" class="scenario-duration-tag">⏱ 20 min sync</span>
-                <span id="demoScenarioObjective" class="scenario-objective-pill">🎯 Target: Cloud DB Migration & Security Signoff</span>
-              </div>
-              <h3 id="demoScenarioTitle" class="scenario-brief-title">🚀 Sprint Architecture Sync</h3>
-              <p id="demoScenarioDesc" class="scenario-brief-desc">Engineering leadership aligns on Supabase cloud migration, PostgreSQL Row-Level Security (RLS) policies, and Friday morning custom-domain production deployment.</p>
-            </div>
-            <div class="scenario-brief-roster">
-              <span class="roster-label">Key Participants</span>
-              <div id="demoScenarioRoster" class="roster-list">
-                <!-- Populated dynamically via app.js -->
-              </div>
-            </div>
-          </div>
-
+         
           <!-- Controls Toolbar -->
           <div class="demo-controls-bar">
             <div class="demo-controls-left">
@@ -934,7 +903,17 @@
                 
                 <!-- Auto-Detected Meeting Title Header -->
                 <div class="mom-title-banner">
-                  <span class="mom-title-eyebrow">Auto-Detected Meeting Title</span>
+                  <div class="mom-title-meta-row">
+                    <span class="mom-title-eyebrow">Auto-Detected Meeting Title</span>
+                    <span id="momDetectedLangBadge" class="mom-lang-badge">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/>
+                        <path d="M2 12h20"/>
+                      </svg>
+                      <span id="momDetectedLangText">Language: English (Auto-Detected)</span>
+                    </span>
+                  </div>
                   <h2 id="resultsDetectedTitle" class="mom-detected-title">Meeting Minutes</h2>
                 </div>
 
@@ -1243,6 +1222,6 @@
     </button>
   </nav>
 
-  <script src="/app.js?v=5.5"></script>
+  <script src="/app.js?v=5.6"></script>
 </body>
 </html>

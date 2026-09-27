@@ -1,56 +1,63 @@
 import 'dotenv/config'
 import { extname } from 'node:path'
 
-export const PROMPT_TEMPLATE = (transcript) => `You are an elite, C-suite executive meeting intelligence agent and corporate secretary.
-Your task is to analyze the meeting transcript below and synthesize an authoritative, professional Minutes of Meeting (MoM).
+export const PROMPT_TEMPLATE = (transcript) => `You are an elite Chief of Staff and certified executive meeting intelligence analyst with native fluency across Indian languages (Hindi, Hinglish, Tamil, Telugu, Bengali, Marathi, Gujarati, Kannada, Malayalam, Punjabi, Odia, Urdu) and international languages.
 
-CRITICAL DIRECTIVES:
-1. AUTO-DETECT MEETING TITLE:
-   - Carefully inspect the discussion topic, agenda, and participants' intent from the transcript.
-   - Synthesize a concise, highly specific, and professional meeting title (4-8 words max).
-   - Examples of great titles: "Supabase Cloud Migration & Security Review", "Q4 Enterprise Budget & Sales Capacity Sync", "Salesforce CRM Webhook Integration & Data Sync", "Client Infosec Discovery & Pilot Agreement".
-   - Do NOT output generic placeholders like "Team Meeting" or "Discussion".
+Analyze the meeting transcript below. The participants may have spoken in English, mixed Hinglish (Hindi + English), regional Indian languages, or switched languages mid-sentence.
 
-2. MULTILINGUAL & REGIONAL FLUENCY:
-   - Participants may speak in English, Hindi, Hinglish (mixed Hindi + English), Tamil, Telugu, Bengali, Marathi, Gujarati, Kannada, Malayalam, or code-switch naturally.
-   - Accurately comprehend all statements, intent, technical discussions, and colloquial nuances with 100% fidelity.
-   - Output the synthesized MoM in polished, boardroom-ready, executive English.
+CRITICAL INSTRUCTIONS:
+1. Detect a concise, descriptive meeting title (3 to 7 words) capturing the core discussion topic.
+2. Auto-detect the primary language spoken in the meeting (e.g. English, Hinglish, Hindi, Tamil, Telugu, etc.).
+3. Write a comprehensive, professional Executive Summary narrative in boardroom English (3-5 well-structured sentences).
+   - Synthesize the business purpose, context, key topics deliberated, decisions reached, and overarching direction.
+   - Weave all mentioned names, dates, deadlines, and milestones accurately into the narrative.
+   - CRITICAL: Do NOT copy or repeat raw transcript sentences verbatim. Synthesize and summarize professionally.
+4. Extract every actionable commitment, assignment, or deliverable into Action Items with point-to-point details formatted strictly as:
+   - [Assignee/Owner]: Detailed actionable task description with deliverables | Deadline: Date/timeframe or "TBD" | Priority: High/Medium/Low
+5. Do NOT output a transcript section. Do NOT output a decisions section. Output ONLY the exact sections below.
 
-3. PRESERVE EVERY PERSON'S NAME, DATE & DEADLINE:
-   - You MUST identify and include EVERY person's name mentioned (e.g. Sanjay, Priya, Rahul, Amit, Vikram, Alex, etc.). Never substitute a named individual with generic terms if their name was stated in the conversation.
-   - You MUST identify and include EVERY date, day, timeline, or milestone mentioned (e.g. "by Friday 6 PM", "next Tuesday", "October 15th", "end of Q3", "by EOD tomorrow").
-   - If a specific metric, KPI, target, or technical specification was stated, retain it with exact fidelity.
-
-4. OUTPUT FORMAT REQUIREMENTS (SUMMARY & ACTION ITEMS ONLY):
-You MUST follow this exact section structure with the precise section markers:
-
+Format your response strictly using these exact headers:
 ===TITLE===
-[Auto-detected specific meeting title, 4-8 words max, no quotes]
+[Auto-detected concise descriptive title]
+
+===LANGUAGE===
+[Detected language: e.g. English, Hinglish, Hindi, Tamil, Telugu]
 
 ===SUMMARY===
-A clear, comprehensive executive summary (3-5 sentences) summarizing the core business purpose of the meeting, the key issues discussed, consensus reached, and overarching direction.
+[Professional narrative summary in English with dates, names, and key outcomes]
 
 ===ACTION ITEMS===
-A comprehensive, point-to-point detailed list of all action items, deliverables, commitments, and next steps discussed.
-For EVERY action item, provide point-to-point details in this exact format:
-- [Assignee/Owner]: [Specific Action Description with point-to-point details, deliverables, and context] | Deadline: [Exact Date/Day/Timeline mentioned or "TBD"] | Priority: [High/Medium/Normal]
+- [Assignee]: Point-to-point detailed task description | Deadline: Date/Timeframe | Priority: High/Medium/Low
 
-Examples:
-- [Priya]: Complete Salesforce webhook API validation and deploy schema updates to production | Deadline: Friday 6 PM IST | Priority: High
-- [Sanjay]: Run end-to-end CRM lead synchronization test suite and verify error handling | Deadline: Next Monday | Priority: High
-- [Alex]: Configure PostgreSQL Row-Level Security policies and test tenant isolation | Deadline: Thursday 4 PM | Priority: High
-
-(If no action items were discussed, output: "- [Team]: Review meeting notes and follow up on discussed points | Deadline: TBD | Priority: Normal")
-
-===TRANSCRIPT===
-
+TRANSCRIPT TO ANALYZE:
 ${transcript}`
+
+const LANG_MAP = {
+  en: 'English',
+  hi: 'Hindi',
+  ta: 'Tamil',
+  te: 'Telugu',
+  bn: 'Bengali',
+  gu: 'Gujarati',
+  kn: 'Kannada',
+  ml: 'Malayalam',
+  mr: 'Marathi',
+  pa: 'Punjabi',
+  ur: 'Urdu',
+  es: 'Spanish',
+  fr: 'French',
+  de: 'German',
+  ja: 'Japanese',
+  zh: 'Chinese',
+  ar: 'Arabic',
+  ru: 'Russian',
+  pt: 'Portuguese',
+  it: 'Italian',
+  ko: 'Korean'
+}
 
 export function detectLanguageFromTranscriptAndMetadata(text, whisperLang) {
   const clean = (text || '').trim()
-  if (!clean) {
-    return whisperLang ? (whisperLang.charAt(0).toUpperCase() + whisperLang.slice(1)) : 'English'
-  }
 
   // 1. Unicode Script checks for native Indian scripts
   if (/[\u0900-\u097F]/.test(clean)) return 'Hindi'
@@ -68,20 +75,24 @@ export function detectLanguageFromTranscriptAndMetadata(text, whisperLang) {
   const hinglishKeywords = [
     'aaj', 'kal', 'karenge', 'karna', 'hoga', 'hai', 'hain', 'mein', 'hum', 'aap', 'kya',
     'theek', 'shuru', 'karo', 'chalo', 'baat', 'faisla', 'sahmati', 'bhi', 'nahi', 'kuch',
-    'karte', 'kar rahe', 'dekh', 'rahe', 'hoga', 'pe', 'se', 'ko', 'aur', 'par'
+    'karte', 'kar rahe', 'dekh', 'rahe', 'hoga', 'pe', 'se', 'ko', 'aur', 'par',
+    'yeh', 'woh', 'bhai', 'yaar', 'sun', 'dekho', 'samajh', 'kaise', 'kyun', 'ab',
+    'tak', 'toh', 'hota', 'hoti', 'hote', 'chahiye', 'bol', 'bola', 'boli'
   ]
   const words = lower.split(/[\s,.;:!?]+/)
-  const hinglishMatches = words.filter(w => hinglishKeywords.includes(w)).length
-  if (hinglishMatches >= 2) {
+  const hinglishMatches = words.filter((w) => hinglishKeywords.includes(w)).length
+  if (hinglishMatches >= 2 || (words.length <= 12 && hinglishMatches >= 1)) {
     return 'Hinglish'
   }
 
-  // 3. Fallback to Whisper acoustic language identification
-  if (whisperLang && whisperLang.toLowerCase() !== 'english') {
+  // 3. Normalized Whisper acoustic language code
+  if (whisperLang) {
+    const code = whisperLang.toLowerCase().trim()
+    if (LANG_MAP[code]) return LANG_MAP[code]
     return whisperLang.charAt(0).toUpperCase() + whisperLang.slice(1)
   }
 
-  return whisperLang ? (whisperLang.charAt(0).toUpperCase() + whisperLang.slice(1)) : 'English'
+  return 'English'
 }
 
 export async function transcribeWithGroq(buffer, filename = 'recording.webm', language = 'auto') {
@@ -98,70 +109,49 @@ export async function transcribeWithGroq(buffer, filename = 'recording.webm', la
   const ext = extname(filename).toLowerCase() || '.webm'
   const mime = mimeByExt[ext] ?? 'audio/webm'
 
-  // Model cascade: whisper-large-v3 first for highest phonetic accuracy, fallback to whisper-large-v3-turbo
-  const whisperModels = ['whisper-large-v3', 'whisper-large-v3-turbo']
-  let lastError = null
+  const form = new FormData()
+  form.append('file', new Blob([buffer], { type: mime }), filename)
+  form.append('model', 'whisper-large-v3-turbo')
+  form.append('response_format', 'verbose_json')
 
-  for (const model of whisperModels) {
-    try {
-      const form = new FormData()
-      form.append('file', new Blob([buffer], { type: mime }), filename)
-      form.append('model', model)
-      form.append('response_format', 'verbose_json')
-      form.append('temperature', '0') // 0 for deterministic, clean transcription without hallucinations
-      form.append(
-        'prompt',
-        'Accurately transcribe meeting speech in English, Hindi, Hinglish, Tamil, Telugu, Kannada, Bengali, and other Indian languages. Precisely capture participant names (e.g., Sanjay, Priya, Rahul, Amit, Sneha, Vikram), exact dates, days, deadlines, numbers, metrics, and technical terms.'
-      )
-
-      // Explicit language only if specifically requested and not auto-detect
-      if (language && language !== 'auto' && language !== 'all') {
-        const langCode = language.includes('-') ? language.split('-')[0] : language
-        form.append('language', langCode)
-      }
-
-      const started = Date.now()
-      const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${apiKey}` },
-        body: form,
-      })
-      const latencyMs = Date.now() - started
-
-      if (!res.ok) {
-        throw new Error(`Groq Whisper error ${res.status}: ${await res.text()}`)
-      }
-
-      const data = await res.json()
-      const detectedLang = detectLanguageFromTranscriptAndMetadata(data.text, data.language)
-
-      return {
-        text: data.text ?? '',
-        language: detectedLang,
-        durationSec: data.duration,
-        latencyMs,
-        model
-      }
-    } catch (err) {
-      lastError = err
-      console.warn(`Groq Whisper model ${model} failed, trying next:`, err.message)
-    }
+  // Explicit language only if specifically requested and not auto-detect
+  if (language && language !== 'auto' && language !== 'all') {
+    const langCode = language.includes('-') ? language.split('-')[0] : language
+    form.append('language', langCode)
   }
 
-  throw lastError || new Error('All Groq Whisper STT models failed')
+  const started = Date.now()
+  const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${apiKey}` },
+    body: form,
+  })
+  const latencyMs = Date.now() - started
+
+  if (!res.ok) {
+    throw new Error(`Groq API error ${res.status}: ${await res.text()}`)
+  }
+
+  const data = await res.json()
+  const detectedLang = detectLanguageFromTranscriptAndMetadata(data.text, data.language)
+
+  return {
+    text: data.text ?? '',
+    language: detectedLang,
+    durationSec: data.duration,
+    latencyMs
+  }
 }
 
 export async function generateMoMWithGroq(transcript) {
   const apiKey = process.env.GROQ_API_KEY
   if (!apiKey) throw new Error('Set GROQ_API_KEY in .env — get one free at console.groq.com')
 
-  // Flagship high-performance multilingual LLM models on Groq
+  // Available, high-performance multilingual models on Groq
   const models = [
-    'llama-3.3-70b-versatile',
-    'openai/gpt-oss-120b',
     'qwen/qwen3.8-27b',
-    'openai/gpt-oss-20b',
-    'llama-3.1-8b-instant'
+    'allam-2-7b',
+    'openai/gpt-oss-120b'
   ]
   let lastError = null
 
@@ -174,7 +164,7 @@ export async function generateMoMWithGroq(transcript) {
         body: JSON.stringify({
           model,
           messages: [{ role: 'user', content: PROMPT_TEMPLATE(transcript) }],
-          temperature: 0.1,
+          temperature: 0.2,
         }),
       })
       const latencyMs = Date.now() - started
@@ -183,7 +173,7 @@ export async function generateMoMWithGroq(transcript) {
       }
       const data = await res.json()
       const text = data.choices?.[0]?.message?.content ?? ''
-      if (text) {
+      if (text && text.trim()) {
         return { text, latencyMs, model }
       }
     } catch (err) {
@@ -203,10 +193,7 @@ export async function generateMoMWithGemini(transcript) {
   const models = [
     'gemini-flash-latest',
     'gemini-3.8-flash',
-    'gemini-3.5-flash',
-    'gemini-pro-latest',
-    'gemini-2.5-flash',
-    'gemini-1.5-flash'
+    'gemini-3.5-flash-lite'
   ]
   let lastError = null
 
@@ -229,8 +216,8 @@ export async function generateMoMWithGemini(transcript) {
         throw new Error(`Gemini API error ${res.status}: ${await res.text()}`)
       }
       const data = await res.json()
-      const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') ?? ''
-      if (text) {
+      const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text).filter(Boolean).join('') ?? ''
+      if (text && text.trim()) {
         return { text, latencyMs, model }
       }
     } catch (err) {
@@ -244,47 +231,99 @@ export async function generateMoMWithGemini(transcript) {
 
 export function generateMoMLocalFallback(transcript) {
   const clean = (transcript || '').trim()
-  const sentences = clean.split(/(?<=[.?!])\s+/).filter(Boolean)
+  const detectedLang = detectLanguageFromTranscriptAndMetadata(clean)
+  const sentences = clean
+    .split(/(?<=[.?!])\s+|\n+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 5)
 
-  // Auto-detect title from transcript keywords or content
-  let detectedTitle = 'Executive Sync & Planning'
+  // Smart title detection
+  let detectedTitle = 'Executive Strategy & Execution Review'
   const lower = clean.toLowerCase()
-  if (lower.includes('supabase') || lower.includes('database') || lower.includes('migration') || lower.includes('architecture')) {
-    detectedTitle = 'Architecture Sync & Cloud Migration'
-  } else if (lower.includes('revenue') || lower.includes('arr') || lower.includes('board') || lower.includes('margin') || lower.includes('growth')) {
+  if (lower.includes('supabase') || lower.includes('database') || lower.includes('migration') || lower.includes('rls')) {
+    detectedTitle = 'Database Migration & Security Architecture Sync'
+  } else if (lower.includes('revenue') || lower.includes('arr') || lower.includes('growth') || lower.includes('margin') || lower.includes('financial')) {
     detectedTitle = 'Executive Financial Review & Growth Strategy'
-  } else if (lower.includes('client') || lower.includes('infosec') || lower.includes('pilot') || lower.includes('security') || lower.includes('bot')) {
+  } else if (lower.includes('crm') || lower.includes('salesforce') || lower.includes('webhook') || lower.includes('integration')) {
+    detectedTitle = 'CRM Integration & API Synchronization'
+  } else if (lower.includes('client') || lower.includes('pilot') || lower.includes('contract') || lower.includes('security')) {
     detectedTitle = 'Enterprise Client Discovery & Security Clearance'
-  } else if (lower.includes('crm') || lower.includes('salesforce') || lower.includes('integration') || lower.includes('webhook')) {
-    detectedTitle = 'CRM Integration & API Sync'
   } else if (sentences.length > 0) {
-    const firstWords = sentences[0].replace(/[^a-zA-Z0-9\s]/g, '').split(/\s+/).slice(0, 6).join(' ')
-    if (firstWords.length > 8) detectedTitle = firstWords
+    const candidate = sentences[0].replace(/^(hey|hi|hello|team|guys|sanjay|everyone|this is|welcome to)\b[,\s]*/i, '')
+    const words = candidate.split(/\s+/).slice(0, 6).join(' ')
+    if (words.length > 10) detectedTitle = words.charAt(0).toUpperCase() + words.slice(1)
   }
 
-  const summarySentences = sentences.slice(0, 3).join(' ') || clean.slice(0, 250) + '...'
+  // Synthesize Summary narrative (clean conversational noise)
+  const substantiveSentences = sentences
+    .map((s) => s.replace(/^(hey|hi|hello|guys|team|listen|look|okay|yeah|well|actually|so|right)\b[,\s]*/i, '').trim())
+    .filter((s) => s.length > 15 && !/^(can you hear me|is my screen visible|let's start|thanks everyone)/i.test(s))
 
-  const actionKeywords = ['will', 'need to', 'must', 'action', 'task', 'should', 'assign', 'follow up', 'send', 'review', 'prepare', 'deploy', 'finalize', 'merge']
-  const actionList = sentences.filter(s => actionKeywords.some(k => s.toLowerCase().includes(k)))
-  const actions = actionList.length > 0
-    ? actionList.slice(0, 5).map((a) => `- [Team]: ${a.trim()} | Deadline: Upcoming Sprint | Priority: High`).join('\n')
-    : '- [Team]: Follow up on core action items identified during the sync | Deadline: End of Week | Priority: Normal\n- [Lead]: Review implementation timeline and allocate technical resources | Deadline: Friday 5 PM | Priority: High'
+  let summaryNarrative = ''
+  if (substantiveSentences.length > 0) {
+    const corePoints = substantiveSentences.slice(0, 3).join('. ').replace(/\.\s*\./g, '.')
+    summaryNarrative = `The team convened to review critical operational milestones and strategic deliverables. Key discussions addressed ${corePoints.endsWith('.') ? corePoints : corePoints + '.'} Stakeholders aligned on prerequisite timelines to ensure operational excellence and seamless execution.`
+  } else {
+    summaryNarrative = 'The team aligned on core operational priorities, reviewing project milestones, dependencies, and immediate execution timelines to drive forward key initiatives.'
+  }
+
+  // Extract actionable commitments with owner & deadlines
+  const actionTriggers = ['verify', 'merge', 'deploy', 'review', 'test', 'update', 'finalize', 'send', 'prepare', 'ensure', 'check', 'configure', 'submit']
+  const matchedActions = []
+
+  sentences.forEach((sentence) => {
+    const sLower = sentence.toLowerCase()
+    const hasTrigger = actionTriggers.some((t) => sLower.includes(t)) || sLower.includes('will') || sLower.includes('need to') || sLower.includes('should')
+    if (!hasTrigger) return
+
+    // Extract owner if mentioned
+    let owner = 'Team'
+    const nameMatch = sentence.match(/\b(Sanjay|Rahul|Amit|Priya|Vikram|Neha|Alex|Maya|Sarah|David|Rachel|Liam|John|Mike)\b/i)
+    if (nameMatch) {
+      owner = nameMatch[1].charAt(0).toUpperCase() + nameMatch[1].slice(1).toLowerCase()
+    }
+
+    // Extract deadline if mentioned
+    let deadline = 'Upcoming Sprint'
+    const deadlineMatch = sentence.match(/\b(by\s+[^,.]+|(?:today|tomorrow|friday|monday|thursday|wednesday|tuesday)\s*(?:at\s*)?\d+(?::\d+)?\s*(?:am|pm)?|end of week|eod)\b/i)
+    if (deadlineMatch) {
+      deadline = deadlineMatch[1].trim()
+    }
+
+    // Clean task description
+    let cleanTask = sentence
+      .replace(new RegExp(`^(${owner}|hey|hi|hello|please|can you|you should|we will)\\b[,\\s]*`, 'i'), '')
+      .replace(/\b(by\s+[^,.]+|today\s+[^,.]+|tomorrow\s+[^,.]+)/i, '')
+      .trim()
+    if (cleanTask.length > 10) {
+      cleanTask = cleanTask.charAt(0).toUpperCase() + cleanTask.slice(1)
+      matchedActions.push(`- [${owner}]: ${cleanTask} | Deadline: ${deadline} | Priority: High`)
+    }
+  })
+
+  let actionItemsBlock = ''
+  if (matchedActions.length > 0) {
+    actionItemsBlock = matchedActions.slice(0, 5).join('\n')
+  } else {
+    actionItemsBlock = `- [Team]: Review synthesized meeting summary and follow up on execution points | Deadline: End of Week | Priority: Normal\n- [Project Lead]: Coordinate team milestone deliverables and track progress | Deadline: Friday 5 PM | Priority: High`
+  }
 
   const momText = `===TITLE===
 ${detectedTitle}
 
+===LANGUAGE===
+${detectedLang}
+
 ===SUMMARY===
-${summarySentences}
+${summaryNarrative}
 
 ===ACTION ITEMS===
-${actions}
-
-===TRANSCRIPT===
-${clean}`
+${actionItemsBlock}`
 
   return {
     text: momText,
     title: detectedTitle,
+    language: detectedLang,
     latencyMs: 15,
     model: 'Autonomous MoM Synthesis'
   }

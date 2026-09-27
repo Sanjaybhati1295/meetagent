@@ -165,6 +165,8 @@
     // Studio Results
     resultsSection: document.getElementById('resultsSection'),
     resultsDetectedTitle: document.getElementById('resultsDetectedTitle'),
+    momDetectedLangBadge: document.getElementById('momDetectedLangBadge'),
+    momDetectedLangText: document.getElementById('momDetectedLangText'),
     newMeetingStudioBtn: document.getElementById('newMeetingStudioBtn'),
     tabMoMBtn: document.getElementById('tabMoMBtn'),
     tabTranscriptBtn: document.getElementById('tabTranscriptBtn'),
@@ -2148,6 +2150,12 @@
     if (el.resultsDetectedTitle) {
       el.resultsDetectedTitle.textContent = 'Auto-Detecting from Transcript...'
     }
+    if (el.momDetectedLangBadge) {
+      el.momDetectedLangBadge.classList.add('hidden')
+    }
+    if (el.momDetectedLangText) {
+      el.momDetectedLangText.textContent = 'Auto-Detecting...'
+    }
     if (el.summaryContent) {
       el.summaryContent.textContent = 'Executive minutes will appear here automatically after the meeting ends.'
     }
@@ -2318,13 +2326,37 @@
     const hinglishKeywords = [
       'aaj', 'kal', 'karenge', 'karna', 'hoga', 'hai', 'hain', 'mein', 'hum', 'aap', 'kya',
       'theek', 'shuru', 'karo', 'chalo', 'baat', 'faisla', 'sahmati', 'bhi', 'nahi', 'kuch',
-      'karte', 'kar rahe', 'dekh', 'rahe', 'hoga', 'pe', 'se', 'ko', 'aur', 'par'
+      'karte', 'kar rahe', 'dekh', 'rahe', 'hoga', 'pe', 'se', 'ko', 'aur', 'par',
+      'yeh', 'woh', 'bhai', 'yaar', 'sun', 'dekho', 'samajh', 'kaise', 'kyun', 'ab',
+      'tak', 'toh', 'hota', 'hoti', 'hote', 'chahiye', 'bol', 'bola', 'boli'
     ]
     const words = lower.split(/[\s,.;:!?]+/)
-    const matches = words.filter(w => hinglishKeywords.includes(w)).length
-    if (matches >= 2) return 'Hinglish'
+    const matches = words.filter((w) => hinglishKeywords.includes(w)).length
+    if (matches >= 2 || (words.length <= 12 && matches >= 1)) return 'Hinglish'
 
     return 'English'
+  }
+
+  function updateLanguageDisplay(lang) {
+    const safeLang = (lang && lang.trim()) ? lang.trim() : 'English'
+    state.detectedLanguage = safeLang
+
+    if (el.momDetectedLangText) {
+      el.momDetectedLangText.textContent = `Language: ${safeLang} (Auto-Detected)`
+    }
+    if (el.momDetectedLangBadge) {
+      el.momDetectedLangBadge.classList.remove('hidden')
+    }
+
+    const globeSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 4px;"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>`
+    if (el.statLanguage) {
+      el.statLanguage.innerHTML = `${globeSvg}<span>Auto-Detected: ${escapeHtml(safeLang)}</span>`
+      el.statLanguage.classList.remove('hidden')
+    }
+    if (el.detectedLangPill) {
+      el.detectedLangPill.innerHTML = `${globeSvg}<span>Auto-Detected: ${escapeHtml(safeLang)}</span>`
+      el.detectedLangPill.classList.remove('hidden')
+    }
   }
 
   function stopMeeting() {
@@ -2432,15 +2464,7 @@
       el.statWords.textContent = `${wordCount} words`
       el.statDuration.textContent = `${durationSec.toFixed(1)}s duration`
       el.statSpeed.textContent = `Processing speed: ${sttSpeed}s`
-      const globeSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 4px;"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>`
-      if (el.statLanguage) {
-        el.statLanguage.innerHTML = `${globeSvg}<span>Auto-Detected: ${escapeHtml(state.detectedLanguage || 'English')}</span>`
-        el.statLanguage.classList.remove('hidden')
-      }
-      if (el.detectedLangPill) {
-        el.detectedLangPill.innerHTML = `${globeSvg}<span>Auto-Detected: ${escapeHtml(state.detectedLanguage || 'English')}</span>`
-        el.detectedLangPill.classList.remove('hidden')
-      }
+      updateLanguageDisplay(state.detectedLanguage)
 
       // Step 2: MoM Generation
       el.loadingText.textContent = 'Synthesizing Minutes of Meeting with AI...'
@@ -2510,15 +2534,7 @@
       el.statWords.textContent = `${wordCount} words`
       el.statDuration.textContent = 'Uploaded Audio'
       el.statSpeed.textContent = `Processing: ${sttSpeed}s`
-      const globeSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 4px;"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>`
-      if (el.statLanguage) {
-        el.statLanguage.innerHTML = `${globeSvg}<span>Auto-Detected: ${escapeHtml(state.detectedLanguage || 'English')}</span>`
-        el.statLanguage.classList.remove('hidden')
-      }
-      if (el.detectedLangPill) {
-        el.detectedLangPill.innerHTML = `${globeSvg}<span>Auto-Detected: ${escapeHtml(state.detectedLanguage || 'English')}</span>`
-        el.detectedLangPill.classList.remove('hidden')
-      }
+      updateLanguageDisplay(state.detectedLanguage)
 
       el.loadingText.textContent = 'Generating Minutes of Meeting...'
       showGlobalSpinner('Synthesizing Minutes of Meeting with AI...')
@@ -2558,10 +2574,16 @@
       const data = await res.json()
       state.currentMoMRaw = data.mom
 
-      // Auto-detect meeting title from LLM or transcript
+      // Auto-detect meeting title and language
       const detectedTitle = (data.title && data.title.trim())
         ? data.title.trim()
         : (extractMeetingTitle(data.mom) || title || (el.meetingTitleInput ? el.meetingTitleInput.value.trim() : '') || 'Executive Meeting Session')
+
+      const detectedLang = (data.language && data.language.trim())
+        ? data.language.trim()
+        : (extractLanguage(data.mom) || state.detectedLanguage || detectClientSideLanguage(transcript) || 'English')
+
+      updateLanguageDisplay(detectedLang)
 
       if (el.meetingTitleInput) {
         el.meetingTitleInput.value = detectedTitle
@@ -2597,7 +2619,7 @@
         aiModel: model,
         durationSec: durationSec || 0,
         wordCount: wordCount || transcript.split(/\s+/).length,
-        detectedLanguage: state.detectedLanguage || 'English',
+        detectedLanguage: detectedLang,
       }
 
       await autoSaveMeetingToDb(meetingPayload)
@@ -2748,10 +2770,25 @@
       .filter((l) => l.length > 2 && !/^none(\s*recorded|\s*explicitly)?\.?$/i.test(l))
   }
 
+  function extractLanguage(md) {
+    if (!md) return ''
+    // 1. Tag format: ===LANGUAGE=== ...
+    const tagMatch = md.match(/===\s*LANGUAGE\s*===([\s\S]*?)(?====\s*SUMMARY|===\s*ACTION|$)/i)
+    if (tagMatch && tagMatch[1].trim()) {
+      return tagMatch[1].trim().replace(/^["']|["']$/g, '').split('\n')[0].trim()
+    }
+    // 2. Markdown Header format: Language: English
+    const headerMatch = md.match(/(?:Language|Detected Language):\s*([^\n*#]+)/i)
+    if (headerMatch && headerMatch[1].trim()) {
+      return headerMatch[1].trim().replace(/^["']|["']$/g, '').trim()
+    }
+    return ''
+  }
+
   function extractMeetingTitle(md) {
     if (!md) return ''
-    // 1. Tag format: ===TITLE=== ... ===SUMMARY===
-    const tagMatch = md.match(/===\s*TITLE\s*===([\s\S]*?)(?====\s*SUMMARY|===\s*ACTION|$)/i)
+    // 1. Tag format: ===TITLE=== ... ===LANGUAGE=== or ===SUMMARY===
+    const tagMatch = md.match(/===\s*TITLE\s*===([\s\S]*?)(?====\s*LANGUAGE|===\s*SUMMARY|===\s*ACTION|$)/i)
     if (tagMatch && tagMatch[1].trim()) {
       return tagMatch[1].trim().replace(/^["']|["']$/g, '').split('\n')[0].trim()
     }
@@ -2766,9 +2803,13 @@
   function formatCleanMoM(title, rawMarkdown) {
     if (!rawMarkdown) return ''
     const detectedTitle = title || extractMeetingTitle(rawMarkdown) || 'Executive Meeting'
+    const detectedLang = extractLanguage(rawMarkdown) || state.detectedLanguage || ''
     const summary = extractExecutiveSummary(rawMarkdown)
     const actions = extractActions(rawMarkdown)
     let out = `# ${detectedTitle}\n\n`
+    if (detectedLang) {
+      out += `*Language: ${detectedLang} (Auto-Detected)*\n\n`
+    }
     out += `## Summary\n${summary || 'No summary available.'}\n\n`
     out += `## Action Items (Point-to-Point Details)\n`
     if (actions.length > 0) {
@@ -2802,12 +2843,19 @@
     // 3. Fallback: Take everything before the first action items heading (or legacy decisions)
     const beforeSectionMatch = md.match(/^([\s\S]*?)(?=(?:###?|\*\*|===)\s*Action\s+Items|(?:###?|\*\*|===)\s*(?:Key\s+)?Decisions)/i)
     if (beforeSectionMatch && beforeSectionMatch[1].trim()) {
-      const cleaned = beforeSectionMatch[1].replace(/===\s*TITLE\s*===[\s\S]*?(?====\s*SUMMARY|$)/i, '').trim()
+      const cleaned = beforeSectionMatch[1]
+        .replace(/===\s*TITLE\s*===[\s\S]*?(?====\s*LANGUAGE|===\s*SUMMARY|$)/i, '')
+        .replace(/===\s*LANGUAGE\s*===[\s\S]*?(?====\s*SUMMARY|$)/i, '')
+        .trim()
       if (cleaned) return cleanParagraph(cleaned)
     }
 
     const firstPara = md.split(/\n\s*\n/)[0] || md.slice(0, 300)
-    return cleanParagraph(firstPara.replace(/===\s*TITLE\s*===[\s\S]*?(?====\s*SUMMARY|$)/i, ''))
+    return cleanParagraph(
+      firstPara
+        .replace(/===\s*TITLE\s*===[\s\S]*?(?====\s*LANGUAGE|===\s*SUMMARY|$)/i, '')
+        .replace(/===\s*LANGUAGE\s*===[\s\S]*?(?====\s*SUMMARY|$)/i, '')
+    )
   }
 
   function extractDecisions(md) {
