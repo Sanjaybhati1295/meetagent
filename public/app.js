@@ -46,6 +46,8 @@
     openLoginBtn: document.getElementById('openLoginBtn'),
     openRegisterBtn: document.getElementById('openRegisterBtn'),
     userNav: document.getElementById('userNav'),
+    navUserStudioBtn: document.getElementById('navUserStudioBtn'),
+    navUserHistoryBtn: document.getElementById('navUserHistoryBtn'),
     topUserPill: document.getElementById('topUserPill'),
     userName: document.getElementById('userName'),
     userAvatar: document.getElementById('userAvatar'),
@@ -56,11 +58,14 @@
     mobileTabStudio: document.getElementById('mobileTabStudio'),
     mobileTabDemo: document.getElementById('mobileTabDemo'),
     mobileTabVault: document.getElementById('mobileTabVault'),
+    mobileTabVaultLabel: document.getElementById('mobileTabVaultLabel'),
     mobileTabAccount: document.getElementById('mobileTabAccount'),
+    mobileTabAccountLabel: document.getElementById('mobileTabAccountLabel'),
 
     // Sidebar Navigation Elements
     sidebarNavStudio: document.getElementById('sidebarNavStudio'),
     sidebarNavVault: document.getElementById('sidebarNavVault'),
+    sidebarNavVaultTitle: document.getElementById('sidebarNavVaultTitle'),
     sidebarNavProfile: document.getElementById('sidebarNavProfile'),
     sidebarVaultCountBadge: document.getElementById('sidebarVaultCountBadge'),
     sidebarUserCard: document.getElementById('sidebarUserCard'),
@@ -465,6 +470,8 @@
     if (el.navOpenStudioBtn) el.navOpenStudioBtn.addEventListener('click', () => openStudioWorkstation())
     if (el.navOpenDemoBtn) el.navOpenDemoBtn.addEventListener('click', () => openDemoSimulator())
     if (el.navOpenVaultBtn) el.navOpenVaultBtn.addEventListener('click', () => openVaultWorkstation())
+    if (el.navUserStudioBtn) el.navUserStudioBtn.addEventListener('click', () => switchWorkspaceTab('studio'))
+    if (el.navUserHistoryBtn) el.navUserHistoryBtn.addEventListener('click', () => switchWorkspaceTab('vault'))
 
     // Mobile Bottom Application Bar
     if (el.mobileTabStudio) el.mobileTabStudio.addEventListener('click', () => openStudioWorkstation())
@@ -665,6 +672,11 @@
 
     if (el.saveVaultBtn) {
       el.saveVaultBtn.addEventListener('click', () => {
+        if (!state.user) {
+          showToast('Sign in or create an account to save this session to your Meeting History.')
+          openAuthModal('login')
+          return
+        }
         switchWorkspaceTab('vault')
       })
     }
@@ -777,6 +789,23 @@
       if (breadcrumb) breadcrumb.classList.remove('hidden')
       if (engineBadge) engineBadge.classList.remove('hidden')
 
+      // Show Meeting History on mobile bottom bar and sidebar
+      if (el.mobileTabVault) {
+        el.mobileTabVault.classList.remove('hidden')
+      }
+      if (el.mobileTabVaultLabel) {
+        el.mobileTabVaultLabel.textContent = 'Meeting History'
+      }
+      if (el.sidebarNavVault) {
+        el.sidebarNavVault.classList.remove('hidden')
+      }
+      if (el.sidebarNavVaultTitle) {
+        el.sidebarNavVaultTitle.textContent = 'Meeting History'
+      }
+      if (el.mobileTabAccountLabel) {
+        el.mobileTabAccountLabel.textContent = 'Account'
+      }
+
       // Check if local avatar backup exists
       if (state.user && state.user.id) {
         const localAvatar = localStorage.getItem('meetagent_avatar_' + state.user.id)
@@ -815,6 +844,27 @@
       if (el.mobileMenuBtn) el.mobileMenuBtn.classList.remove('hidden')
       if (breadcrumb) breadcrumb.classList.add('hidden')
       if (engineBadge) engineBadge.classList.add('hidden')
+
+      // Strictly hide Meeting History when not logged in
+      if (el.mobileTabVault) {
+        el.mobileTabVault.classList.add('hidden')
+      }
+      if (el.sidebarNavVault) {
+        el.sidebarNavVault.classList.add('hidden')
+      }
+      if (el.navOpenVaultBtn) {
+        el.navOpenVaultBtn.classList.add('hidden')
+      }
+      if (el.mobileTabAccountLabel) {
+        el.mobileTabAccountLabel.textContent = 'Sign In'
+      }
+
+      // If active tab was vault, reset to studio
+      if (state.activeWorkspaceTab === 'vault') {
+        state.activeWorkspaceTab = 'studio'
+        localStorage.setItem('meetagent_active_tab', 'studio')
+        document.documentElement.setAttribute('data-active-tab', 'studio')
+      }
     }
   }
 
@@ -1110,6 +1160,11 @@
   }
 
   function openVaultWorkstation() {
+    if (!state.user) {
+      showToast('Sign in to view your Meeting History.')
+      openAuthModal('login')
+      return
+    }
     closeMobileMenu()
     if (el.landingView) el.landingView.classList.add('hidden')
     if (el.appWorkspace) el.appWorkspace.classList.remove('hidden')
@@ -1144,6 +1199,8 @@
     if (el.navOpenStudioBtn) el.navOpenStudioBtn.classList.toggle('active', activeTab === 'studio')
     if (el.navOpenDemoBtn) el.navOpenDemoBtn.classList.toggle('active', activeTab === 'demo')
     if (el.navOpenVaultBtn) el.navOpenVaultBtn.classList.toggle('active', activeTab === 'vault')
+    if (el.navUserStudioBtn) el.navUserStudioBtn.classList.toggle('active', activeTab === 'studio')
+    if (el.navUserHistoryBtn) el.navUserHistoryBtn.classList.toggle('active', activeTab === 'vault')
   }
 
   function switchWorkspaceTab(tab) {
@@ -1155,6 +1212,8 @@
     if (el.navStudioBtn) el.navStudioBtn.classList.remove('active')
     if (el.navVaultBtn) el.navVaultBtn.classList.remove('active')
     if (el.navProfileBtn) el.navProfileBtn.classList.remove('active')
+    if (el.navUserStudioBtn) el.navUserStudioBtn.classList.remove('active')
+    if (el.navUserHistoryBtn) el.navUserHistoryBtn.classList.remove('active')
 
     // Reset left sidebar navigation items
     if (el.sidebarNavStudio) el.sidebarNavStudio.classList.remove('active')
@@ -1171,27 +1230,24 @@
 
     if (tab === 'studio') {
       if (el.navStudioBtn) el.navStudioBtn.classList.add('active')
+      if (el.navUserStudioBtn) el.navUserStudioBtn.classList.add('active')
       if (el.sidebarNavStudio) el.sidebarNavStudio.classList.add('active')
       if (el.studioView) el.studioView.classList.remove('hidden')
       if (el.callConsoleCard && el.callConsoleCard.classList.contains('hidden') && (!state.mediaRecorder || state.mediaRecorder.state === 'inactive')) {
         resetStudioForNewMeeting()
       }
     } else if (tab === 'vault') {
+      if (!state.user) {
+        showToast('Sign in to view your Meeting History.')
+        openAuthModal('login')
+        switchWorkspaceTab('studio')
+        return
+      }
       if (el.navVaultBtn) el.navVaultBtn.classList.add('active')
+      if (el.navUserHistoryBtn) el.navUserHistoryBtn.classList.add('active')
       if (el.sidebarNavVault) el.sidebarNavVault.classList.add('active')
       if (el.vaultView) el.vaultView.classList.remove('hidden')
-
-      if (!state.user) {
-        el.vaultMeetingsGrid.innerHTML = `
-          <div class="vault-empty">
-            <div class="empty-icon">🔒</div>
-            <h3>Cloud Vault Access</h3>
-            <p>Sign in or create a free account to access your saved meetings, transcripts, and action items in your Cloud Vault.</p>
-            <button class="btn btn-primary" onclick="window.meetagentOpenAuth()">Sign In to Cloud Vault</button>
-          </div>`
-      } else {
-        renderVaultGrid(state.meetings)
-      }
+      renderVaultGrid(state.meetings)
     } else if (tab === 'profile') {
       if (el.navProfileBtn) el.navProfileBtn.classList.add('active')
       if (el.sidebarNavProfile) el.sidebarNavProfile.classList.add('active')
@@ -1206,7 +1262,7 @@
   }
 
   // ==========================================================================
-  // Meeting Vault Database Operations
+  // Meeting History Database Operations
   // ==========================================================================
   async function loadUserMeetings() {
     if (!state.token) return
@@ -1215,7 +1271,7 @@
       el.vaultMeetingsGrid.innerHTML = `
         <div class="vault-loading-wrap">
           <div class="modern-spinner"></div>
-          <p class="vault-loading-text">Loading your saved meetings...</p>
+          <p class="vault-loading-text">Loading meeting history...</p>
         </div>`
     }
 
@@ -1484,8 +1540,8 @@
               <path d="M6 6h10M6 10h10"/>
             </svg>
           </div>
-          <h3>No recorded sessions yet</h3>
-          <p>Start a new session in Studio or import audio to generate structured minutes and executive action items.</p>
+          <h3>No meeting history yet</h3>
+          <p>Record a session in Studio or import audio to generate structured minutes and executive action items.</p>
           <button id="emptyStartMeetingBtn" class="btn btn-primary">Start New Session</button>
         </div>`
 
@@ -1637,14 +1693,14 @@
         const id = btn.dataset.deleteId
         const confirmed = await showConfirmDialog({
           title: 'Delete Meeting Record',
-          message: 'Are you sure you want to permanently delete this meeting from your cloud vault? This action cannot be undone.',
+          message: 'Are you sure you want to permanently delete this meeting from your history? This action cannot be undone.',
           type: 'danger',
           confirmText: 'Delete Meeting',
           cancelText: 'Cancel',
         })
         if (confirmed) {
           setButtonLoading(btn, true, '')
-          showGlobalSpinner('Deleting meeting from vault...')
+          showGlobalSpinner('Deleting meeting from history...')
           try {
             await deletePastMeeting(id)
           } finally {
@@ -1657,7 +1713,7 @@
   }
 
   async function openPastMeetingDetail(id) {
-    showGlobalSpinner('Retrieving meeting from vault...')
+    showGlobalSpinner('Retrieving meeting from history...')
     try {
       const res = await fetch(`/api/meetings/${id}`, {
         headers: { Authorization: `Bearer ${state.token}` },
@@ -1686,7 +1742,7 @@
         el.modalActionsList
       )
 
-      el.modalTranscriptMeta.textContent = `${m.word_count || 0} words${m.detected_language ? ` • ${m.detected_language}` : ''} • Cloud Vault`
+      el.modalTranscriptMeta.textContent = `${m.word_count || 0} words${m.detected_language ? ` • ${m.detected_language}` : ''} • Meeting History`
       el.modalTranscriptText.value = m.transcript
 
       switchModalTab('mom')
@@ -1694,7 +1750,7 @@
     } catch (err) {
       await showAlertDialog({
         title: 'Unable to Open Meeting',
-        message: err.message || 'Could not load meeting details from the cloud vault.',
+        message: err.message || 'Could not load meeting details from history.',
         type: 'danger',
       })
     } finally {
@@ -1750,7 +1806,7 @@
         headers: { Authorization: `Bearer ${state.token}` },
       })
       if (res.ok) {
-        showToast('Meeting deleted from cloud vault.')
+        showToast('Meeting deleted from history.')
         await loadUserMeetings()
       } else {
         const errData = await res.json().catch(() => ({}))
@@ -1759,7 +1815,7 @@
     } catch (err) {
       await showAlertDialog({
         title: 'Delete Failed',
-        message: err.message || 'Failed to delete meeting from cloud vault. Please check your connection and try again.',
+        message: err.message || 'Failed to delete meeting from history. Please check your connection and try again.',
         type: 'danger',
       })
     }
@@ -2037,7 +2093,7 @@
 
   async function autoSaveMeetingToDb(meetingData) {
     if (!state.token) {
-      showToast('Meeting minutes generated! Sign in to save to your Cloud Vault.', 4000)
+      showToast('Meeting minutes generated! Sign in to save to your Meeting History.', 4000)
       return
     }
     showGlobalSpinner()
@@ -2051,7 +2107,7 @@
         body: JSON.stringify(meetingData),
       })
       if (res.ok) {
-        showToast('Saved to Cloud Vault!')
+        showToast('Saved to Meeting History!')
         await loadUserMeetings()
       }
     } catch (err) {

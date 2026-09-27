@@ -336,13 +336,7 @@
           </div>
           <div class="brand-text">
             <span class="brand-name">Agentmeet</span>
-            <span class="brand-pill">AI</span>
           </div>
-        </div>
-
-        <div id="workspaceBreadcrumb" class="workspace-breadcrumb hidden">
-          <span class="breadcrumb-sep">/</span>
-          <span class="breadcrumb-label">Meeting Intelligence</span>
         </div>
       </div>
 
@@ -353,7 +347,6 @@
           <nav id="marketingNav" class="header-marketing-nav">
             <button id="navOpenStudioBtn" class="nav-link-btn" type="button">Studio</button>
             <button id="navOpenDemoBtn" class="nav-link-btn" type="button">Simulator</button>
-            <button id="navOpenVaultBtn" class="nav-link-btn" type="button">Vault</button>
           </nav>
           <button id="openLoginBtn" class="nav-link-btn">Sign In</button>
           <button id="openRegisterBtn" class="btn btn-sm btn-primary">Start Free</button>
@@ -361,6 +354,10 @@
 
         <!-- Authenticated User Controls -->
         <div id="userNav" class="user-profile-row hidden">
+          <nav id="userTopNav" class="header-user-nav">
+            <button id="navUserStudioBtn" class="nav-link-btn" type="button">Studio</button>
+            <button id="navUserHistoryBtn" class="nav-link-btn" type="button">Meeting History</button>
+          </nav>
           <div class="user-pill-card" id="topUserPill" role="button" tabindex="0" title="Manage Profile & Settings">
             <span id="userAvatar" class="avatar-circle">U</span>
             <span id="userName" class="user-display-name">User</span>
@@ -556,7 +553,7 @@
                 <path d="M6 6h10M6 10h10"/>
               </svg>
             </div>
-            <h3 class="capability-title">Encrypted Vault & Dispatch</h3>
+            <h3 class="capability-title">Meeting History & Dispatch</h3>
             <p class="capability-desc">Sub-second keyword search across past meetings and 1-click email briefing dispatch.</p>
           </div>
         </div>
@@ -613,8 +610,8 @@
             <kbd class="sidebar-kbd">⌥1</kbd>
           </button>
 
-          <!-- 2. History Menu Item -->
-          <button id="sidebarNavVault" class="sidebar-nav-item" title="Meeting Vault (⌥2)">
+          <!-- 2. History Menu Item (Authenticated Only) -->
+          <button id="sidebarNavVault" class="sidebar-nav-item hidden" title="Meeting History (⌥2)">
             <div class="sidebar-nav-icon">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/>
@@ -622,7 +619,7 @@
               </svg>
             </div>
             <div class="sidebar-nav-info">
-              <span class="sidebar-nav-title">Vault</span>
+              <span id="sidebarNavVaultTitle" class="sidebar-nav-title">Meeting History</span>
             </div>
             <span id="sidebarVaultCountBadge" class="sidebar-badge">0</span>
             <kbd class="sidebar-kbd">⌥2</kbd>
@@ -890,13 +887,13 @@
                     </svg>
                     <span>Export</span>
                   </button>
-                  <button id="saveVaultBtn" class="btn btn-sm btn-primary-subtle" title="Saved to Cloud Vault">
+                  <button id="saveVaultBtn" class="btn btn-sm btn-primary-subtle" title="Save to Meeting History">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
                       <polyline points="17 21 17 13 7 13 7 21"/>
                       <polyline points="7 3 7 8 15 8"/>
                     </svg>
-                    <span>Vault</span>
+                    <span>History</span>
                   </button>
                   <button id="newMeetingStudioBtn" class="btn btn-sm btn-primary" title="Record another meeting">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -1000,14 +997,14 @@
         </div><!-- /#studioView -->
 
     <!-- ===================================================================== -->
-    <!-- SUB-VIEW 2: MEETING VAULT (History & Search)                          -->
+    <!-- SUB-VIEW 2: MEETING HISTORY                                           -->
     <!-- ===================================================================== -->
     <div id="vaultView" class="workspace-view hidden">
       
       <!-- History Software Header -->
       <div class="software-view-header">
         <div class="software-header-left">
-          <h2 class="software-view-title">Meeting Vault</h2>
+          <h2 class="software-view-title">Meeting History</h2>
           <span class="software-count-badge"><span id="vaultTotalMeetingsCount">0</span> sessions</span>
         </div>
         <div class="software-header-right">
@@ -1028,7 +1025,7 @@
             <circle cx="11" cy="11" r="8"/>
             <line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
-          <input type="text" id="vaultSearchInput" placeholder="Filter meetings by title, keyword, or decision...">
+          <input type="text" id="vaultSearchInput" placeholder="Filter meeting history by title, keyword, or decision...">
         </div>
       </section>
 
@@ -1041,7 +1038,7 @@
               <path d="M6 6h10M6 10h10"/>
             </svg>
           </div>
-          <h3>No meetings in your vault yet</h3>
+          <h3>No meeting history yet</h3>
           <p>Record your first meeting in the Studio or upload an audio file to view your transcription, summary, and action items here.</p>
           <button id="emptyStartBtn" class="btn btn-primary">Launch Meeting Studio</button>
         </div>
@@ -1225,22 +1222,22 @@
       </svg>
       <span>Simulator</span>
     </button>
-    <button class="mobile-bottom-tab" data-tab="vault" id="mobileTabVault" type="button">
+    <button class="mobile-bottom-tab hidden" data-tab="vault" id="mobileTabVault" type="button">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/>
         <path d="M6 6h10M6 10h10"/>
       </svg>
-      <span>Vault</span>
+      <span id="mobileTabVaultLabel">Meeting History</span>
     </button>
     <button class="mobile-bottom-tab" data-tab="account" id="mobileTabAccount" type="button">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
         <circle cx="12" cy="7" r="4"/>
       </svg>
-      <span>Account</span>
+      <span id="mobileTabAccountLabel">Account</span>
     </button>
   </nav>
 
-  <script src="/app.js?v=5.1"></script>
+  <script src="/app.js?v=5.2"></script>
 </body>
 </html>

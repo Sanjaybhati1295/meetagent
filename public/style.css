@@ -238,10 +238,11 @@ button {
   gap: 18px;
 }
 
-.header-marketing-nav {
+.header-marketing-nav,
+.header-user-nav {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
 }
 
 .header-marketing-nav .nav-link {
@@ -4480,7 +4481,8 @@ button {
    Responsive Breakpoints
    ========================================================================== */
 @media (max-width: 900px) {
-  .header-marketing-nav {
+  .header-marketing-nav,
+  .header-user-nav {
     display: none;
   }
 
