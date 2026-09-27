@@ -351,13 +351,12 @@
         <!-- Guest Marketing & Auth Navigation -->
         <div id="guestNav" class="guest-nav-cluster">
           <nav id="marketingNav" class="header-marketing-nav">
-            <a href="#features" class="nav-link">Features</a>
-            <a href="#how-it-works" class="nav-link">How it Works</a>
-            <a href="#demo" class="nav-link">Live Demo</a>
-            <a href="#faq" class="nav-link">FAQ</a>
+            <button id="navOpenStudioBtn" class="nav-link-btn" type="button">Studio</button>
+            <button id="navOpenDemoBtn" class="nav-link-btn" type="button">Simulator</button>
+            <button id="navOpenVaultBtn" class="nav-link-btn" type="button">Vault</button>
           </nav>
-          <button id="openLoginBtn" class="nav-link-btn">Login</button>
-          <button id="openRegisterBtn" class="btn btn-sm btn-primary">Get Started</button>
+          <button id="openLoginBtn" class="nav-link-btn">Sign In</button>
+          <button id="openRegisterBtn" class="btn btn-sm btn-primary">Start Free</button>
         </div>
 
         <!-- Authenticated User Controls -->
@@ -404,469 +403,42 @@
               <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"/>
             </svg>
           </span>
-          <span>Warm Minimalist Meeting Intelligence</span>
+          <span>Autonomous Meeting Intelligence</span>
         </div>
 
-        <h1 class="hero-headline">AI Agents for Smarter Meetings</h1>
+        <h1 class="hero-headline">Meetings converted into executive momentum.</h1>
 
         <p class="hero-subheadline">
-          Transform unstructured conversations into structured executive summaries, consensus decisions, and prioritized action items in seconds — without uninvited bots joining your call.
+          Silent browser audio capture, real-time multi-lingual speech recognition, and autonomous executive minutes with prioritized deliverables.
         </p>
 
         <div class="hero-cta-group">
           <button id="heroGetStartedBtn" class="btn btn-primary btn-lg">
-            <span>Start for Free</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M5 12h14M12 5l7 7-7 7"/>
+              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" x2="12" y1="19" y2="22"/>
             </svg>
+            <span>Launch Studio</span>
           </button>
           <button id="heroDemoScrollBtn" class="btn btn-secondary btn-lg">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polygon points="5 3 19 12 5 21 5 3"/>
             </svg>
-            <span>Watch Live Simulation</span>
+            <span>Try Live Simulator</span>
           </button>
         </div>
 
-        <div class="hero-trust-bullets">
-          <span class="trust-item">✓ Zero bot installs required</span>
-          <span class="trust-sep">•</span>
-          <span class="trust-item">✓ Understands all Indian languages & Hinglish</span>
-          <span class="trust-sep">•</span>
-          <span class="trust-item">✓ Works natively in any browser</span>
-          <span class="trust-sep">•</span>
-          <span class="trust-item">✓ Private encrypted cloud vault</span>
-        </div>
-
-        <!-- Interactive 3D Perspective Hero Dashboard Mockup -->
-        <div class="hero-mockup-wrapper">
-          <!-- Floating Glass Badges -->
-          <div class="mockup-float-badge badge-float-left">
-            <div class="float-badge-icon icon-ai">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-              </svg>
-            </div>
-            <div class="float-badge-content">
-              <span class="float-badge-title">Autonomous Voice HUD</span>
-              <span class="float-badge-sub">Live 24kHz multi-lingual stream</span>
-            </div>
-          </div>
-
-          <div class="mockup-float-badge badge-float-right">
-            <div class="float-badge-icon icon-speed">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-              </svg>
-            </div>
-            <div class="float-badge-content">
-              <span class="float-badge-title">Instant Synthesis (1.4s)</span>
-              <span class="float-badge-sub">Executive MoM & Action Items</span>
-            </div>
-          </div>
-
-          <div class="mockup-float-badge badge-float-crm">
-            <div class="float-badge-icon icon-sync">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                <path d="M3 3v5h5"/>
-                <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
-                <path d="M16 21h5v-5"/>
-              </svg>
-            </div>
-            <div class="float-badge-content">
-              <span class="float-badge-title">CRM Auto-Sync</span>
-              <span class="float-badge-sub">Salesforce & HubSpot ready</span>
-            </div>
-          </div>
-
-          <div class="hero-mockup-perspective">
-            <div class="hero-mockup-window">
-              <!-- Window Chrome Header -->
-              <div class="mockup-window-header">
-                <div class="window-controls">
-                  <span class="win-dot dot-red"></span>
-                  <span class="win-dot dot-yellow"></span>
-                  <span class="win-dot dot-green"></span>
-                </div>
-                <div class="mockup-window-title">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect width="18" height="18" x="3" y="3" rx="2"/>
-                    <path d="m9 8 6 4-6 4Z"/>
-                  </svg>
-                  <span>Q3 Enterprise Product Strategy & Sales Pipeline Sync</span>
-                </div>
-                <div class="mockup-window-badge">
-                  <span class="mockup-pulse-dot"></span>
-                  <span>AI Engine Connected (Llama 3.3 70B)</span>
-                </div>
-              </div>
-
-              <!-- Two Column Mockup Body -->
-              <div class="mockup-window-body">
-                <!-- Left: Live Audio & Streaming Dialogue -->
-                <div class="mockup-col-left">
-                  <div class="mockup-card-header">
-                    <span class="mockup-badge-live">● LIVE SPEECH</span>
-                    <span class="mockup-card-title">Browser Audio Capture</span>
-                    <span class="badge-subtle-emerald">Zero Bot</span>
-                  </div>
-
-                  <div class="mockup-audio-wave">
-                    <span class="wave-bar h-1"></span>
-                    <span class="wave-bar h-4"></span>
-                    <span class="wave-bar h-7"></span>
-                    <span class="wave-bar h-10"></span>
-                    <span class="wave-bar h-6"></span>
-                    <span class="wave-bar h-3"></span>
-                    <span class="wave-bar h-8"></span>
-                    <span class="wave-bar h-5"></span>
-                    <span class="wave-bar h-9"></span>
-                    <span class="wave-bar h-4"></span>
-                    <span class="wave-bar h-2"></span>
-                    <span class="wave-bar h-6"></span>
-                    <span class="wave-bar h-8"></span>
-                    <span class="wave-bar h-3"></span>
-                  </div>
-
-                  <div class="mockup-dialogue-stream">
-                    <div class="mockup-bubble">
-                      <div class="mockup-avatar avatar-indigo">SB</div>
-                      <div class="mockup-bubble-content">
-                        <div class="mockup-speaker-meta">Sanjay Bhati • VP Engineering</div>
-                        <p>We're finalizing the Salesforce bi-directional webhook sync. Let's make sure Priya deploys the schema updates to production by Friday.</p>
-                      </div>
-                    </div>
-
-                    <div class="mockup-bubble">
-                      <div class="mockup-avatar avatar-emerald">PS</div>
-                      <div class="mockup-bubble-content">
-                        <div class="mockup-speaker-meta">Priya Sharma • Tech Lead</div>
-                        <p>बिलकुल संजय, मैंने validation complete कर लिया है। We will ensure sub-second latency and zero data loss on lead creation.</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Right: Autonomous Executive MoM -->
-                <div class="mockup-col-right">
-                  <div class="mockup-card-header">
-                    <span class="mockup-badge-ai">✦ AUTONOMOUS MoM</span>
-                    <span class="mockup-card-title">Executive Synthesis</span>
-                    <span class="badge-subtle-indigo">Auto-Generated</span>
-                  </div>
-
-                  <div class="mockup-mom-preview">
-                    <div class="mockup-mom-block">
-                      <span class="mockup-tag tag-indigo">Executive Summary</span>
-                      <p>Team aligned on the Q3 enterprise integration roadmap. Salesforce webhook sync will launch by Friday under Priya's lead with sub-second lead syncing and bank-grade data security.</p>
-                    </div>
-
-                    <div class="mockup-mom-block">
-                      <span class="mockup-tag tag-emerald">Decisions Made</span>
-                      <ul class="mockup-list">
-                        <li>✓ Adopted Common Connectivity Architecture for Salesforce & HubSpot.</li>
-                        <li>✓ Scheduled production deployment for Friday 6 PM IST.</li>
-                      </ul>
-                    </div>
-
-                    <div class="mockup-mom-block">
-                      <span class="mockup-tag tag-amber">Action Deliverables</span>
-                      <div class="mockup-tasks">
-                        <div class="mockup-task-item">
-                          <span class="mockup-check">☑</span>
-                          <span class="mockup-task-title">Deploy Salesforce webhook pipeline</span>
-                          <span class="task-owner-pill">PRIYA</span>
-                        </div>
-                        <div class="mockup-task-item">
-                          <span class="mockup-check">☐</span>
-                          <span class="mockup-task-title">Verify CRM field mapping test suite</span>
-                          <span class="task-owner-pill">SANJAY</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="mockup-card-footer">
-                    <span class="mockup-sync-indicator">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <polyline points="20 6 9 17 4 12"/>
-                      </svg>
-                      Synced to Salesforce CRM & Team Inbox
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div class="hero-feature-pills">
+          <span class="feature-pill"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Zero Bot Joins</span>
+          <span class="feature-pill"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Auto Language Detect</span>
+          <span class="feature-pill"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> 1.4s Instant MoM</span>
         </div>
 
       </div>
     </section>
 
-    <!-- 2. SOCIAL PROOF / ENTERPRISE TRUST BANNER -->
-    <section class="social-proof-section">
-      <div class="landing-container">
-        <p class="social-proof-heading">TRUSTED BY FORWARD-THINKING TEAMS AT MODERN HIGH-GROWTH ENTERPRISES</p>
-        <div class="logo-cloud-grid">
-          <div class="logo-item"><span class="logo-text">STRIPE</span></div>
-          <div class="logo-item"><span class="logo-text">VERCEL</span></div>
-          <div class="logo-item"><span class="logo-text">LINEAR</span></div>
-          <div class="logo-item"><span class="logo-text">SUPABASE</span></div>
-          <div class="logo-item"><span class="logo-text">NOTION</span></div>
-          <div class="logo-item"><span class="logo-text">FIGMA</span></div>
-        </div>
-      </div>
-    </section>
-
-
-    <!-- 3. HOW IT WORKS (Simplicity - 3 Simple Steps) -->
-    <section id="how-it-works" class="how-it-works-section">
-      <div class="landing-container">
-        <div class="section-header-centered">
-          <span class="section-eyebrow">SIMPLE 3-STEP PROCESS</span>
-          <h2 class="section-title">Automate Your Meeting Workflows in Minutes</h2>
-          <p class="section-subtitle">No bot invites, no complex calendar permissions, and zero software downloads required.</p>
-        </div>
-
-        <div class="steps-grid">
-          <!-- Step 1 -->
-          <div class="step-card">
-            <div class="step-header">
-              <span class="step-number">01</span>
-              <div class="step-icon-wrap icon-indigo">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
-                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                  <line x1="12" x2="12" y1="19" y2="22"/>
-                </svg>
-              </div>
-            </div>
-            <h3 class="step-title">Connect Audio in 1 Click</h3>
-            <p class="step-description">
-              Start listening to your microphone or share your Google Meet, Zoom, or Teams tab audio directly from your browser. No awkward bot joins the call.
-            </p>
-          </div>
-
-          <!-- Step 2 -->
-          <div class="step-card">
-            <div class="step-header">
-              <span class="step-number">02</span>
-              <div class="step-icon-wrap icon-emerald">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-                </svg>
-              </div>
-            </div>
-            <h3 class="step-title">Deploy Speech Agent</h3>
-            <p class="step-description">
-              Our autonomous intelligence agent transcribes speech in real time, isolating speakers, reducing background noise, and mapping conversational flow.
-            </p>
-          </div>
-
-          <!-- Step 3 -->
-          <div class="step-card">
-            <div class="step-header">
-              <span class="step-number">03</span>
-              <div class="step-icon-wrap icon-amber">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                  <polyline points="14 2 14 8 20 8"/>
-                  <polyline points="9 15 12 18 17 13"/>
-                </svg>
-              </div>
-            </div>
-            <h3 class="step-title">Get Executive Insights</h3>
-            <p class="step-description">
-              Receive structured executive minutes, strategic decisions, and actionable deliverables with assigned owners ready to copy, export, or email to your team.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 4. FEATURES (The Value - Z-Pattern Layout) -->
-    <section id="features" class="features-section">
-      <div class="landing-container">
-        <div class="section-header-centered">
-          <span class="section-eyebrow">INTELLIGENT CAPABILITIES</span>
-          <h2 class="section-title">Engineered for High-Velocity Teams & Leaders</h2>
-          <p class="section-subtitle">Eliminate meeting fatigue, ensure total alignment, and turn discussions into completed deliverables.</p>
-        </div>
-
-        <div class="z-pattern-container">
-          
-          <!-- Z-Row 1: Text Left / Visual Right -->
-          <div class="z-row">
-            <div class="z-content">
-              <div class="z-tag tag-indigo">Speech Intelligence</div>
-              <h3 class="z-headline">Real-Time Transcription Without Uninvited Bots</h3>
-              <p class="z-description">
-                Traditional meeting tools force you to invite robotic meeting bots that distract attendees, alert clients, and trigger enterprise IT security blocks. Agentmeet operates silently and natively inside your browser.
-              </p>
-              <ul class="z-feature-list">
-                <li>
-                  <span class="check-circle">✓</span>
-                  <span><strong>Zero Bot Participants:</strong> 100% private to your browser session with zero intrusive avatars.</span>
-                </li>
-                <li>
-                  <span class="check-circle">✓</span>
-                  <span><strong>Universal Conference Compatibility:</strong> Captures audio from Google Meet, Zoom, Teams, or local microphones.</span>
-                </li>
-                <li>
-                  <span class="check-circle">✓</span>
-                  <span><strong>Live Captions Stream:</strong> Watch transcription materialize live as each speaker talks.</span>
-                </li>
-              </ul>
-            </div>
-            <div class="z-visual">
-              <div class="z-visual-card">
-                <div class="z-card-topbar">
-                  <div class="card-dots">
-                    <span></span><span></span><span></span>
-                  </div>
-                  <span class="z-card-label">Live Speech Stream Monitor</span>
-                </div>
-                <div class="z-stream-demo">
-                  <div class="z-bubble">
-                    <span class="z-avatar bg-indigo">S</span>
-                    <div class="z-bubble-body">
-                      <div class="z-speaker-name">Sarah Jenkins <span class="z-time">00:04</span></div>
-                      <p>"We need to make sure the executive summary is distributed to all department heads right after the call."</p>
-                    </div>
-                  </div>
-                  <div class="z-bubble">
-                    <span class="z-avatar bg-emerald">A</span>
-                    <div class="z-bubble-body">
-                      <div class="z-speaker-name">Alex Rivera <span class="z-time">00:11</span></div>
-                      <p>"Understood. The 1-click email briefing will automatically format the minutes into executive HTML."</p>
-                    </div>
-                  </div>
-                  <div class="z-live-indicator">
-                    <span class="pulse-dot"></span>
-                    <span>Live speech recognition streaming...</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Z-Row 2: Visual Left / Text Right -->
-          <div class="z-row z-row-reverse">
-            <div class="z-content">
-              <div class="z-tag tag-emerald">Decision Extraction</div>
-              <h3 class="z-headline">Structured Executive Minutes & Priority Deliverables</h3>
-              <p class="z-description">
-                Don't waste 45 minutes after every call typing up messy notes. Our AI agent synthesizes complex multi-speaker discussions into clean executive summaries, recorded decisions, and clear action items with owners.
-              </p>
-              <ul class="z-feature-list">
-                <li>
-                  <span class="check-circle">✓</span>
-                  <span><strong>Executive Summaries:</strong> High-level strategic overview highlighting core outcomes in seconds.</span>
-                </li>
-                <li>
-                  <span class="check-circle">✓</span>
-                  <span><strong>Decisions Catalog:</strong> Distinct log of agreements reached so nobody forgets what was decided.</span>
-                </li>
-                <li>
-                  <span class="check-circle">✓</span>
-                  <span><strong>Actionable Tasks:</strong> Delegated deliverables automatically attributed to specific owners.</span>
-                </li>
-              </ul>
-            </div>
-            <div class="z-visual">
-              <div class="z-visual-card">
-                <div class="z-card-topbar">
-                  <div class="card-dots">
-                    <span></span><span></span><span></span>
-                  </div>
-                  <span class="z-card-label">Synthesized Minutes of Meeting</span>
-                </div>
-                <div class="z-mom-demo">
-                  <div class="z-mom-box">
-                    <span class="mockup-tag tag-indigo">Executive Summary</span>
-                    <p>Engineering and product leadership aligned on Q4 timeline milestones, approving the zero-bot architecture for general availability.</p>
-                  </div>
-                  <div class="z-mom-box">
-                    <span class="mockup-tag tag-emerald">Decisions Made</span>
-                    <ul class="clean-bullet-list">
-                      <li>✓ Deploy production release to custom domain on Friday morning.</li>
-                      <li>✓ Standardize enterprise-wide on automated meeting intelligence.</li>
-                    </ul>
-                  </div>
-                  <div class="z-mom-box">
-                    <span class="mockup-tag tag-amber">Action Items</span>
-                    <div class="z-task-badge-row">
-                      <span>✓ Finalize cloud storage security policies</span>
-                      <span class="task-owner-pill">Alex</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Z-Row 3: Text Left / Visual Right -->
-          <div class="z-row">
-            <div class="z-content">
-              <div class="z-tag tag-amber">Enterprise Cloud Vault</div>
-              <h3 class="z-headline">Searchable Cloud History & 1-Click Team Dispatch</h3>
-              <p class="z-description">
-                Never lose organizational memory again. Every meeting recording, transcript, and minutes is automatically archived in your private encrypted vault. Search across months of meetings in milliseconds or email minutes in one click.
-              </p>
-              <ul class="z-feature-list">
-                <li>
-                  <span class="check-circle">✓</span>
-                  <span><strong>Instant Search:</strong> Query past meetings by keyword, title, speaker, or decision.</span>
-                </li>
-                <li>
-                  <span class="check-circle">✓</span>
-                  <span><strong>1-Click Email Dispatch:</strong> Send beautifully formatted HTML summaries to all stakeholders.</span>
-                </li>
-                <li>
-                  <span class="check-circle">✓</span>
-                  <span><strong>Markdown Export:</strong> Download complete meeting documentation for Notion, Obsidian, or GitHub.</span>
-                </li>
-              </ul>
-            </div>
-            <div class="z-visual">
-              <div class="z-visual-card">
-                <div class="z-card-topbar">
-                  <div class="card-dots">
-                    <span></span><span></span><span></span>
-                  </div>
-                  <span class="z-card-label">Cloud Vault & Email Sharing</span>
-                </div>
-                <div class="z-vault-demo">
-                  <div class="z-search-bar">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <circle cx="11" cy="11" r="8"/>
-                      <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                    </svg>
-                    <span>Search: "architecture roadmap"</span>
-                  </div>
-                  <div class="z-meeting-item">
-                    <div class="z-meeting-info">
-                      <h4>Strategy & Architecture Sync</h4>
-                      <span class="z-meeting-meta">Today • 1,240 words • Cloud Vault</span>
-                    </div>
-                    <span class="btn-demo-badge">1-Click Email</span>
-                  </div>
-                  <div class="z-email-preview">
-                    <span class="email-chip">To: team@company.com</span>
-                    <span class="email-subject">Subject: [Executive Minutes] Strategy & Architecture Sync</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </section>
-
-    <!-- 5. INTERACTIVE DEMO (Hands-On Simulator) -->
+    <!-- 2. INTERACTIVE DEMO (Hands-On Simulator) -->
     <section id="demo" class="demo-section">
       <div class="landing-container">
         <div class="section-header-centered">
@@ -949,88 +521,60 @@
     </section>
 
 
-    <!-- 7. FAQ ACCORDION -->
-    <section id="faq" class="faq-section">
-      <div class="landing-container-narrow">
-        <div class="section-header-centered">
-          <span class="section-eyebrow">COMMON QUESTIONS</span>
-          <h2 class="section-title">Frequently Asked Questions</h2>
-          <p class="section-subtitle">Everything you need to know about Agentmeet's architecture and privacy.</p>
-        </div>
-
-        <div class="faq-accordion">
-          <div class="faq-item active">
-            <button class="faq-question">
-              <span>Does an uninvited bot have to join my meeting?</span>
-              <span class="faq-toggle-icon">−</span>
-            </button>
-            <div class="faq-answer">
-              <p>No! Unlike legacy meeting apps that send robotic bot avatars into your calls, Agentmeet runs directly in your browser. You can capture audio from your microphone or stream the meeting tab audio with one click — keeping the conversation 100% natural and private.</p>
-            </div>
-          </div>
-
-          <div class="faq-item">
-            <button class="faq-question">
-              <span>How is my meeting audio and data protected?</span>
-              <span class="faq-toggle-icon">+</span>
-            </button>
-            <div class="faq-answer">
-              <p>Security and confidentiality are core to Agentmeet. All audio and text data are encrypted in transit via TLS 1.3 and at rest with AES-256 encryption. Your transcripts and minutes are isolated to your private account and are never used to train public AI models.</p>
-            </div>
-          </div>
-
-          <div class="faq-item">
-            <button class="faq-question">
-              <span>Can I record Google Meet, Zoom, and Microsoft Teams?</span>
-              <span class="faq-toggle-icon">+</span>
-            </button>
-            <div class="faq-answer">
-              <p>Yes. Select "Meeting Audio" in the studio and choose the browser tab where your conference is running (ensuring you check "Also share tab audio"). Agentmeet captures all remote voices crystal clear.</p>
-            </div>
-          </div>
-
-          <div class="faq-item">
-            <button class="faq-question">
-              <span>Can I share the generated minutes with people who don't have Agentmeet?</span>
-              <span class="faq-toggle-icon">+</span>
-            </button>
-            <div class="faq-answer">
-              <p>Yes! You can copy the structured minutes to your clipboard, download formatted Markdown for Notion or Obsidian, or use the 1-Click Email Dispatch feature to send a polished executive HTML briefing directly to their inbox.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 8. BOTTOM CTA BANNER -->
-    <section class="bottom-cta-section">
+    <!-- 3. PRECISION CAPABILITIES (Concise, 3-Card Software Features) -->
+    <section class="app-features-strip">
       <div class="landing-container">
-        <div class="bottom-cta-card">
-          <h2 class="bottom-cta-headline">Automate Your Meeting Workflows Today</h2>
-          <p class="bottom-cta-subheadline">
-            Join thousands of executives, product leaders, and high-velocity teams saving 5+ hours every week with Agentmeet.
-          </p>
-          <div class="bottom-cta-actions">
-            <button id="bottomCtaBtn" class="btn btn-primary btn-lg">
-              <span>Start for Free Now</span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
+        <div class="capabilities-grid">
+          <div class="capability-card">
+            <div class="capability-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" x2="12" y1="19" y2="22"/>
               </svg>
-            </button>
+            </div>
+            <h3 class="capability-title">Silent Browser Audio</h3>
+            <p class="capability-desc">Captures Google Meet, Zoom, Teams, or your mic natively without awkward bot avatars.</p>
           </div>
-          <span class="bottom-cta-footnote">Free tier available • No credit card required • Instant setup</span>
+
+          <div class="capability-card">
+            <div class="capability-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <polyline points="9 15 12 18 17 13"/>
+              </svg>
+            </div>
+            <h3 class="capability-title">Autonomous Synthesis</h3>
+            <p class="capability-desc">Extracts high-level consensus, key decisions, and assigned action items in under 2 seconds.</p>
+          </div>
+
+          <div class="capability-card">
+            <div class="capability-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/>
+                <path d="M6 6h10M6 10h10"/>
+              </svg>
+            </div>
+            <h3 class="capability-title">Encrypted Vault & Dispatch</h3>
+            <p class="capability-desc">Sub-second keyword search across past meetings and 1-click email briefing dispatch.</p>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- 9. FOOTER -->
-    <footer class="landing-footer">
+    <!-- 4. MINIMAL APP FOOTER -->
+    <footer class="app-footer-clean">
       <div class="landing-container">
-
-        <div class="footer-bottom-bar">
-          <p>© 2026 Agentmeet Inc. All rights reserved.</p>
-          <div class="footer-bottom-right">
-            <span>Built for modern high-performance teams</span>
+        <div class="app-footer-inner">
+          <div class="app-footer-brand">
+            <span class="brand-dot"></span>
+            <span>AgentMeet • Enterprise Meeting Intelligence</span>
+          </div>
+          <div class="app-footer-meta">
+            <span>All systems operational</span>
+            <span>•</span>
+            <span>© 2026 AgentMeet</span>
           </div>
         </div>
       </div>
@@ -1663,6 +1207,40 @@
 
   </main>
 
-  <script src="/app.js?v=4.2"></script>
+  <!-- ========================================================================= -->
+  <!-- MOBILE BOTTOM APPLICATION BAR (Native App Feel on Mobile)                 -->
+  <!-- ========================================================================= -->
+  <nav id="mobileBottomBar" class="mobile-bottom-bar" aria-label="Mobile Navigation">
+    <button class="mobile-bottom-tab active" data-tab="studio" id="mobileTabStudio" type="button">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+        <line x1="12" x2="12" y1="19" y2="22"/>
+      </svg>
+      <span>Studio</span>
+    </button>
+    <button class="mobile-bottom-tab" data-tab="demo" id="mobileTabDemo" type="button">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="5 3 19 12 5 21 5 3"/>
+      </svg>
+      <span>Simulator</span>
+    </button>
+    <button class="mobile-bottom-tab" data-tab="vault" id="mobileTabVault" type="button">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/>
+        <path d="M6 6h10M6 10h10"/>
+      </svg>
+      <span>Vault</span>
+    </button>
+    <button class="mobile-bottom-tab" data-tab="account" id="mobileTabAccount" type="button">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+      <span>Account</span>
+    </button>
+  </nav>
+
+  <script src="/app.js?v=5.1"></script>
 </body>
 </html>

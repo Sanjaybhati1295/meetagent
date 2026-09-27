@@ -40,6 +40,9 @@
     vaultCountBadge: document.getElementById('vaultCountBadge'),
 
     guestNav: document.getElementById('guestNav'),
+    navOpenStudioBtn: document.getElementById('navOpenStudioBtn'),
+    navOpenDemoBtn: document.getElementById('navOpenDemoBtn'),
+    navOpenVaultBtn: document.getElementById('navOpenVaultBtn'),
     openLoginBtn: document.getElementById('openLoginBtn'),
     openRegisterBtn: document.getElementById('openRegisterBtn'),
     userNav: document.getElementById('userNav'),
@@ -47,6 +50,13 @@
     userName: document.getElementById('userName'),
     userAvatar: document.getElementById('userAvatar'),
     logoutBtn: document.getElementById('logoutBtn'),
+
+    // Mobile Bottom Application Bar
+    mobileBottomBar: document.getElementById('mobileBottomBar'),
+    mobileTabStudio: document.getElementById('mobileTabStudio'),
+    mobileTabDemo: document.getElementById('mobileTabDemo'),
+    mobileTabVault: document.getElementById('mobileTabVault'),
+    mobileTabAccount: document.getElementById('mobileTabAccount'),
 
     // Sidebar Navigation Elements
     sidebarNavStudio: document.getElementById('sidebarNavStudio'),
@@ -435,8 +445,12 @@
     // Brand Logo Click
     el.brandLogo.addEventListener('click', () => {
       if (state.user) {
-        switchWorkspaceTab('studio')
+        openStudioWorkstation()
       } else {
+        if (el.landingView) el.landingView.classList.remove('hidden')
+        if (el.appWorkspace) el.appWorkspace.classList.add('hidden')
+        updateMobileBottomBar('demo')
+        updateTopNavActive('demo')
         window.scrollTo({ top: 0, behavior: 'smooth' })
       }
     })
@@ -445,10 +459,24 @@
     el.openLoginBtn.addEventListener('click', () => openAuthModal('login'))
     el.openRegisterBtn.addEventListener('click', () => openAuthModal('register'))
     if (el.guestNoticeLoginBtn) el.guestNoticeLoginBtn.addEventListener('click', () => openAuthModal('login'))
-    if (el.heroGetStartedBtn) el.heroGetStartedBtn.addEventListener('click', () => openAuthModal('register'))
-    if (el.mockupLaunchBtn) el.mockupLaunchBtn.addEventListener('click', () => openAuthModal('register'))
-    if (el.pricingRegisterBtn) el.pricingRegisterBtn.addEventListener('click', () => openAuthModal('register'))
-    if (el.bottomCtaBtn) el.bottomCtaBtn.addEventListener('click', () => openAuthModal('register'))
+
+    // Direct App Navigation
+    if (el.heroGetStartedBtn) el.heroGetStartedBtn.addEventListener('click', () => openStudioWorkstation())
+    if (el.navOpenStudioBtn) el.navOpenStudioBtn.addEventListener('click', () => openStudioWorkstation())
+    if (el.navOpenDemoBtn) el.navOpenDemoBtn.addEventListener('click', () => openDemoSimulator())
+    if (el.navOpenVaultBtn) el.navOpenVaultBtn.addEventListener('click', () => openVaultWorkstation())
+
+    // Mobile Bottom Application Bar
+    if (el.mobileTabStudio) el.mobileTabStudio.addEventListener('click', () => openStudioWorkstation())
+    if (el.mobileTabDemo) el.mobileTabDemo.addEventListener('click', () => openDemoSimulator())
+    if (el.mobileTabVault) el.mobileTabVault.addEventListener('click', () => openVaultWorkstation())
+    if (el.mobileTabAccount) el.mobileTabAccount.addEventListener('click', () => {
+      if (state.user) {
+        openProfileWorkstation()
+      } else {
+        openAuthModal('login')
+      }
+    })
 
     // Mobile Navigation Controls
     if (el.mobileMenuBtn) {
@@ -1059,6 +1087,65 @@
   // ==========================================================================
   // Workspace Navigation (Studio vs Vault vs Profile)
   // ==========================================================================
+  function openStudioWorkstation() {
+    closeMobileMenu()
+    if (el.landingView) el.landingView.classList.add('hidden')
+    if (el.appWorkspace) el.appWorkspace.classList.remove('hidden')
+    switchWorkspaceTab('studio')
+    updateMobileBottomBar('studio')
+    updateTopNavActive('studio')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function openDemoSimulator() {
+    closeMobileMenu()
+    if (el.landingView) el.landingView.classList.remove('hidden')
+    if (el.appWorkspace) el.appWorkspace.classList.add('hidden')
+    updateMobileBottomBar('demo')
+    updateTopNavActive('demo')
+    const demoSec = document.getElementById('demo')
+    if (demoSec) {
+      demoSec.scrollIntoView({ behavior: 'smooth' })
+    }
+  }
+
+  function openVaultWorkstation() {
+    closeMobileMenu()
+    if (el.landingView) el.landingView.classList.add('hidden')
+    if (el.appWorkspace) el.appWorkspace.classList.remove('hidden')
+    switchWorkspaceTab('vault')
+    updateMobileBottomBar('vault')
+    updateTopNavActive('vault')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function openProfileWorkstation() {
+    closeMobileMenu()
+    if (el.landingView) el.landingView.classList.add('hidden')
+    if (el.appWorkspace) el.appWorkspace.classList.remove('hidden')
+    switchWorkspaceTab('profile')
+    updateMobileBottomBar('account')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function updateMobileBottomBar(activeTab) {
+    if (!el.mobileBottomBar) return
+    const tabs = el.mobileBottomBar.querySelectorAll('.mobile-bottom-tab')
+    tabs.forEach((t) => {
+      if (t.dataset.tab === activeTab) {
+        t.classList.add('active')
+      } else {
+        t.classList.remove('active')
+      }
+    })
+  }
+
+  function updateTopNavActive(activeTab) {
+    if (el.navOpenStudioBtn) el.navOpenStudioBtn.classList.toggle('active', activeTab === 'studio')
+    if (el.navOpenDemoBtn) el.navOpenDemoBtn.classList.toggle('active', activeTab === 'demo')
+    if (el.navOpenVaultBtn) el.navOpenVaultBtn.classList.toggle('active', activeTab === 'vault')
+  }
+
   function switchWorkspaceTab(tab) {
     state.activeWorkspaceTab = tab
     localStorage.setItem('meetagent_active_tab', tab)
@@ -1078,6 +1165,9 @@
     if (el.studioView) el.studioView.classList.add('hidden')
     if (el.vaultView) el.vaultView.classList.add('hidden')
     if (el.profileView) el.profileView.classList.add('hidden')
+
+    updateMobileBottomBar(tab === 'profile' ? 'account' : tab)
+    updateTopNavActive(tab)
 
     if (tab === 'studio') {
       if (el.navStudioBtn) el.navStudioBtn.classList.add('active')
