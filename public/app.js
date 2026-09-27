@@ -225,9 +225,20 @@
 
     // Landing Demo & FAQ
     heroDemoScrollBtn: document.getElementById('heroDemoScrollBtn'),
+    demoPresetNav: document.querySelector('.demo-preset-nav'),
+    demoScenarioBrief: document.getElementById('demoScenarioBrief'),
+    demoScenarioTag: document.getElementById('demoScenarioTag'),
+    demoScenarioDuration: document.getElementById('demoScenarioDuration'),
+    demoScenarioObjective: document.getElementById('demoScenarioObjective'),
+    demoScenarioTitle: document.getElementById('demoScenarioTitle'),
+    demoScenarioDesc: document.getElementById('demoScenarioDesc'),
+    demoScenarioRoster: document.getElementById('demoScenarioRoster'),
     demoPlayBtn: document.getElementById('demoPlayBtn'),
     demoPlayIcon: document.getElementById('demoPlayIcon'),
     demoPlayLabel: document.getElementById('demoPlayLabel'),
+    demoInstantBtn: document.getElementById('demoInstantBtn'),
+    demoSpeedBtn: document.getElementById('demoSpeedBtn'),
+    demoSpeedLabel: document.getElementById('demoSpeedLabel'),
     demoResetBtn: document.getElementById('demoResetBtn'),
     demoTimer: document.getElementById('demoTimer'),
     demoProgressBar: document.getElementById('demoProgressBar'),
@@ -2979,152 +2990,307 @@
   // ==========================================================================
   const DEMO_PRESETS = {
     sprint: {
+      key: 'sprint',
       title: '🚀 Sprint Architecture Sync',
-      durationSec: 24,
+      category: 'ENGINEERING & TECH',
+      tagClass: 'badge-tag-indigo',
+      duration: '⏱ 20 min technical sync',
+      objective: '🎯 Target: Cloud DB Migration & Security Signoff',
+      desc: 'Engineering leadership aligns on Supabase cloud migration, PostgreSQL Row-Level Security (RLS) policies, and Friday morning custom-domain production deployment.',
+      roster: [
+        { name: 'Sarah Jenkins', role: 'VP Engineering', avatar: 'S', color: '#4338ca' },
+        { name: 'Alex Rivera', role: 'Lead Architect', avatar: 'A', color: '#059669' },
+        { name: 'Maya Lin', role: 'Staff UI Engineer', avatar: 'M', color: '#d97706' },
+      ],
+      agenda: [
+        'Review PostgreSQL Row-Level Security (RLS) policies for user data isolation',
+        'Verify client-side 1-click email briefing modal with SMTP/Resend delivery fallbacks',
+        'Freeze staging PR reviews and approve Friday 9:00 AM production deployment',
+      ],
+      durationSec: 20,
       messages: [
         {
-          atSec: 2,
+          atSec: 1.5,
           name: 'Sarah Jenkins',
+          role: 'VP Engineering',
           avatar: 'S',
           avatarBg: '#4338ca',
-          time: '00:04',
-          text: 'Team, we need to finalize the migration of our customer data vault to the secure cloud infrastructure before Friday.',
+          time: '00:03',
+          text: 'Team, we need to finalize the migration of our customer data vault to Supabase cloud infrastructure before Friday morning.',
         },
         {
-          atSec: 7,
+          atSec: 5.5,
           name: 'Alex Rivera',
+          role: 'Lead Architect',
           avatar: 'A',
           avatarBg: '#059669',
-          time: '00:09',
-          text: 'Agreed. I have already implemented strict role-based access control policies so teams can securely manage their recordings.',
+          time: '00:08',
+          text: 'Agreed. I have locked down PostgreSQL Row-Level Security (RLS) policies with AES-256 encryption at rest so each customer tenant is strictly isolated.',
         },
         {
-          atSec: 13,
+          atSec: 10.0,
           name: 'Maya Lin',
+          role: 'Staff UI Engineer',
           avatar: 'M',
           avatarBg: '#d97706',
-          time: '00:15',
-          text: 'On the client side, I will wire up the 1-click email briefing modal with enterprise delivery fallbacks today.',
+          time: '00:14',
+          text: 'On the client side, PR #142 wires up the 1-click email briefing modal with enterprise SMTP and Resend fallbacks. Latency is sub-second across Safari and Chrome.',
         },
         {
-          atSec: 18,
+          atSec: 14.5,
+          name: 'Alex Rivera',
+          role: 'Lead Architect',
+          avatar: 'A',
+          avatarBg: '#059669',
+          time: '00:18',
+          text: 'We also stress-tested the WebSocket audio ingestion pipeline up to 100 concurrent recording streams with zero dropped frames.',
+        },
+        {
+          atSec: 18.0,
           name: 'Sarah Jenkins',
+          role: 'VP Engineering',
           avatar: 'S',
           avatarBg: '#4338ca',
-          time: '00:21',
-          text: 'Perfect. Let us merge the PRs tomorrow morning and push the production release to our custom domain.',
+          time: '00:22',
+          text: 'Outstanding work. PR freeze is at 5 PM today, and we push the production release to our custom domain at 9 AM Friday.',
         },
       ],
+      momType: 'technical',
       mom: {
-        summary: 'The engineering team confirmed the migration to encrypted cloud storage with role-based access control. Email summary sharing integrations are ready for final merge, targeting production domain rollout by Friday.',
-        decisions: [
-          'Migrate meeting storage exclusively to secure enterprise cloud storage.',
-          'Deploy production release to custom domain on Friday morning.',
+        badge: 'ENGINEERING SPECIFICATION',
+        summary: 'The engineering team confirmed the successful migration of user data vaults to encrypted Supabase cloud infrastructure with PostgreSQL Row-Level Security (RLS). Real-time WebSocket audio processing passed load testing with zero frame drops, and client-side email dispatch is verified for Friday 9:00 AM production deployment.',
+        specs: [
+          { label: 'Cloud Architecture', value: 'Supabase Cloud (PostgreSQL)' },
+          { label: 'Security Model', value: 'AES-256 + Tenant RLS' },
+          { label: 'Audio Ingestion', value: 'WebSocket Stream (<1.2s)' },
+          { label: 'Release Window', value: 'Friday 9:00 AM EST' },
         ],
-        actions: [
-          { text: 'Finalize cloud storage security policies and verify tenant isolation', owner: 'Alex' },
-          { text: 'Wire 1-click email sharing modal with enterprise mail fallbacks', owner: 'Maya' },
-          { text: 'Review and approve pull requests before Friday morning release', owner: 'Sarah' },
+        decisions: [
+          'Standardize all customer meeting vaults on encrypted cloud database with Row-Level Security (RLS).',
+          'Deploy PR #142 with dual-redundant Resend & SMTP email dispatch channels.',
+          'Schedule production domain cutover for Friday 9:00 AM with 24-hour code freeze starting today.',
+        ],
+        tasks: [
+          {
+            key: 'INFRA-89',
+            title: 'Verify PostgreSQL RLS tenant isolation & backup schedule',
+            owner: 'Alex Rivera',
+            due: 'Thu 4:00 PM',
+          },
+          {
+            key: 'FE-142',
+            title: 'Merge 1-click email briefing modal with SMTP fallbacks',
+            owner: 'Maya Lin',
+            due: 'Today 5:00 PM',
+          },
+          {
+            key: 'REL-04',
+            title: 'Conduct staging smoke tests & trigger production release',
+            owner: 'Sarah Jenkins',
+            due: 'Fri 9:00 AM',
+          },
         ],
       },
     },
+
     board: {
+      key: 'board',
       title: '📊 Executive Board Review',
-      durationSec: 24,
+      category: 'EXECUTIVE & C-SUITE',
+      tagClass: 'badge-tag-emerald',
+      duration: '⏱ 45 min quarterly board',
+      objective: '🎯 Target: Q3 Financial Review & Headcount Approval',
+      desc: 'Chief Executive Officer, Chief Financial Officer, and Revenue leadership review quarterly financials showing 180% ARR growth, 84% gross margins, and authorize expanding enterprise sales engineering capacity.',
+      roster: [
+        { name: 'David Sterling', role: 'Chief Executive Officer', avatar: 'D', color: '#1e293b' },
+        { name: 'Rachel Vance', role: 'Chief Financial Officer', avatar: 'R', color: '#059669' },
+        { name: 'Liam O’Connor', role: 'Chief Revenue Officer', avatar: 'L', color: '#0284c7' },
+      ],
+      agenda: [
+        'Examine Q3 Financial Performance: ARR, Gross Margins, and Unit Economics',
+        'Review Fortune 500 Enterprise Pilot Demand and Dedicated Tenant Requests',
+        'Vote on Resolution to Authorize 3 Additional Enterprise Sales Engineering Roles',
+      ],
+      durationSec: 20,
       messages: [
         {
-          atSec: 2,
+          atSec: 1.5,
           name: 'David Sterling',
+          role: 'CEO',
           avatar: 'D',
-          avatarBg: '#4338ca',
-          time: '00:05',
-          text: 'Let us review Q3 performance. MeetAgent enterprise adoption grew 180% quarter-over-quarter.',
+          avatarBg: '#1e293b',
+          time: '00:03',
+          text: 'Welcome to our Q3 Executive Board review. Rachel, please walk us through the quarter-end ARR figures and gross margin realization.',
         },
         {
-          atSec: 7,
+          atSec: 5.5,
           name: 'Rachel Vance',
+          role: 'CFO',
           avatar: 'R',
           avatarBg: '#059669',
-          time: '00:11',
-          text: 'Our gross margins reached 84% thanks to automated meeting intelligence reducing operational overhead.',
+          time: '00:08',
+          text: 'We closed Q3 at $14.2M ARR, representing 180% YoY growth. Meeting intelligence automation cut internal operational overhead by 34%, expanding gross margins to 84.2%.',
         },
         {
-          atSec: 13,
+          atSec: 10.0,
           name: 'Liam O’Connor',
+          role: 'CRO',
           avatar: 'L',
           avatarBg: '#0284c7',
-          time: '00:17',
-          text: 'Three Fortune 500 pilots requested private tenant database deployment this week.',
+          time: '00:14',
+          text: 'Enterprise demand is accelerating rapidly. We currently have three Fortune 500 pilots requesting private-tenant deployments that require dedicated sales engineering support.',
         },
         {
-          atSec: 18,
+          atSec: 14.5,
+          name: 'Rachel Vance',
+          role: 'CFO',
+          avatar: 'R',
+          avatarBg: '#059669',
+          time: '00:18',
+          text: 'Our cash runway stands at 28 months with a highly capital-efficient trajectory. We have full fiscal capacity to hire ahead of revenue.',
+        },
+        {
+          atSec: 18.0,
           name: 'David Sterling',
+          role: 'CEO',
           avatar: 'D',
-          avatarBg: '#4338ca',
+          avatarBg: '#1e293b',
           time: '00:22',
-          text: 'Approved. Expand enterprise sales engineering capacity by three heads immediately.',
+          text: 'The chair moves to approve three additional Enterprise Sales Engineering positions for Q4. All in favor? The motion carries unanimously.',
         },
       ],
+      momType: 'executive',
       mom: {
-        summary: 'Executive leadership reviewed Q3 operational results showing 180% growth and 84% gross margins driven by operational efficiency. The board authorized immediate expansion of the enterprise sales engineering team to service enterprise pilots.',
-        decisions: [
-          'Authorize 3 additional enterprise sales engineering roles for Q4.',
-          'Standardize enterprise-wide on automated meeting intelligence.',
+        badge: 'EXECUTIVE BOARD RESOLUTION',
+        summary: 'Executive leadership presented Q3 operational results marked by $14.2M in Annual Recurring Revenue (+180% YoY) and 84.2% gross margins. In response to heavy Fortune 500 enterprise demand, the board unanimously ratified a corporate resolution authorizing three additional Enterprise Sales Engineering positions.',
+        kpis: [
+          { label: 'Annual Recurring Revenue', val: '$14.2M', sub: '+180% YoY' },
+          { label: 'Gross Profit Margin', val: '84.2%', sub: '+620 bps' },
+          { label: 'Cash Runway', val: '28 Mo', sub: 'Capital Efficient' },
+          { label: 'Authorized Expansion', val: '+3 Roles', sub: 'Enterprise SE' },
+        ],
+        resolutions: [
+          'Resolution 2026-Q3-A: Unanimously authorized allocation of budget for 3 Enterprise Sales Engineering hires in Q4.',
+          'Resolution 2026-Q3-B: Approved commercial offering of private-tenant database deployments for Tier-1 enterprise accounts.',
+          'Resolution 2026-Q3-C: Directed management to commence preliminary syndicate planning for Series B growth financing.',
         ],
         actions: [
-          { text: 'Fast-track 3 Fortune 500 private tenant POC contracts', owner: 'Liam' },
-          { text: 'Allocate Q4 budget for 3 sales engineering headcounts', owner: 'Rachel' },
-          { text: 'Circulate signed board minutes to institutional investors', owner: 'David' },
+          {
+            title: 'Deliver audited Q3 financials and capitalization table to audit committee',
+            owner: 'Rachel Vance (CFO)',
+            due: 'Oct 15',
+          },
+          {
+            title: 'Execute private-tenant contracts for 3 Fortune 500 enterprise pilots',
+            owner: 'Liam O’Connor (CRO)',
+            due: 'Oct 10',
+          },
+          {
+            title: 'Circulate certified board minutes to institutional lead investors',
+            owner: 'David Sterling (CEO)',
+            due: 'Oct 3',
+          },
         ],
       },
     },
+
     client: {
-      title: '🤝 Client Discovery & Closing',
-      durationSec: 24,
+      key: 'client',
+      title: '🤝 Enterprise Client Discovery',
+      category: 'B2B ENTERPRISE SALES',
+      tagClass: 'badge-tag-amber',
+      duration: '⏱ 30 min discovery call',
+      objective: '🎯 Target: Infosec Clearance & Pilot SOW Approval',
+      desc: 'Fortune 500 Banking VP of Security evaluates MeetAgent\'s zero-bot browser architecture against strict infosec standards, approves data sovereignty, and agrees to pilot SOW.',
+      roster: [
+        { name: 'Johnathan Vance', role: 'VP InfoSec, FinTech Bank', avatar: 'J', color: '#b45309' },
+        { name: 'Marcus Vance', role: 'Enterprise Director, MeetAgent', avatar: 'M', color: '#059669' },
+        { name: 'Elena Rostova', role: 'Procurement Specialist', avatar: 'E', color: '#7c3aed' },
+      ],
+      agenda: [
+        'Assess banking infosec policy regarding external bot attendance on confidential calls',
+        'Demonstrate client-side 0-bot audio capture, local tab streaming, and encryption',
+        'Align on 50-seat pilot rollout scope, Master Service Agreement, and SOW execution',
+      ],
+      durationSec: 20,
       messages: [
         {
-          atSec: 2,
+          atSec: 1.5,
           name: 'Johnathan Vance',
+          role: 'VP InfoSec, FinTech Bank',
           avatar: 'J',
-          avatarBg: '#4338ca',
-          time: '00:05',
-          text: 'Our compliance team cannot have external bots joining sensitive customer calls.',
+          avatarBg: '#b45309',
+          time: '00:03',
+          text: 'Our banking compliance charter strictly forbids third-party bot attendees on sensitive client strategy and trading calls.',
         },
         {
-          atSec: 7,
+          atSec: 5.5,
           name: 'Marcus Vance',
+          role: 'Enterprise Director',
           avatar: 'M',
           avatarBg: '#059669',
-          time: '00:11',
-          text: 'Understood. MeetAgent records directly from your browser tab or mic—no third-party bot ever enters the room.',
+          time: '00:08',
+          text: 'Understood, Johnathan. MeetAgent uses a zero-bot architecture. Audio is captured client-side directly in the browser tab or hardware microphone—no external bot ever joins your meeting.',
         },
         {
-          atSec: 13,
+          atSec: 10.0,
           name: 'Johnathan Vance',
+          role: 'VP InfoSec, FinTech Bank',
           avatar: 'J',
-          avatarBg: '#4338ca',
-          time: '00:17',
-          text: 'That solves our infosec barrier. Can we automatically email meeting minutes right after hanging up?',
+          avatarBg: '#b45309',
+          time: '00:14',
+          text: 'That immediately satisfies our primary compliance roadblock. What about meeting summaries? Can executive minutes be emailed instantly without leaking raw audio?',
         },
         {
-          atSec: 18,
+          atSec: 14.5,
           name: 'Marcus Vance',
+          role: 'Enterprise Director',
           avatar: 'M',
           avatarBg: '#059669',
+          time: '00:18',
+          text: 'Yes. Structured HTML minutes with action items are dispatched automatically via your verified domain email. Raw transcript is excluded from the email by default for privacy.',
+        },
+        {
+          atSec: 18.0,
+          name: 'Elena Rostova',
+          role: 'Procurement Specialist',
+          avatar: 'E',
+          avatarBg: '#7c3aed',
           time: '00:22',
-          text: 'Yes, you can 1-click dispatch HTML summaries via Resend, SMTP, or native desktop email clients.',
+          text: 'This meets all our security guidelines. Marcus, please send over the SOW and DPA for our 50-seat pilot starting next Monday.',
         },
       ],
+      momType: 'sales',
       mom: {
-        summary: 'Client discovery confirmed zero-bot architecture satisfies enterprise infosec and compliance requirements. Client verified need for instant automated post-meeting email distribution and agreed to proceed with pilot SOW.',
-        decisions: [
-          'Confirmed MeetAgent satisfies internal infosec policy with 0-bot browser capture.',
-          'Proceed with 50-seat enterprise pilot starting next Monday.',
+        badge: 'ENTERPRISE DEAL & SOW SUMMARY',
+        summary: 'Client discovery confirmed MeetAgent\'s zero-bot browser capture architecture fulfills enterprise banking cybersecurity and infosec requirements. The procurement and security teams approved launching a 50-seat enterprise pilot starting next Monday, with automated post-meeting HTML summaries.',
+        dealTerms: [
+          { label: 'Contract Value', val: '$85,000 ARR', sub: '50 Enterprise Seats' },
+          { label: 'Security Clearance', val: 'PASSED', sub: 'Zero-Bot Architecture' },
+          { label: 'Data Sovereignty', val: 'Private Tenant', sub: 'SOC2 & GDPR Ready' },
+          { label: 'Deployment Date', val: 'Next Monday', sub: 'Onboarding Scheduled' },
         ],
-        actions: [
-          { text: 'Send customized Master Service Agreement and SOW by 5 PM today', owner: 'Marcus' },
-          { text: 'Route SOW to legal counsel for expedited signature', owner: 'Johnathan' },
-          { text: 'Schedule onboarding session for enterprise pilot users', owner: 'Marcus' },
+        complianceChecks: [
+          'Confirmed: 0 third-party bots enter meeting calls; audio captured strictly within user browser tab.',
+          'Confirmed: Audio and transcripts secured in client-controlled database with AES-256 encryption.',
+          'Confirmed: Automated email briefings transmit structured minutes without exposing full raw transcript.',
+        ],
+        nextSteps: [
+          {
+            title: 'Transmit customized Master Services Agreement (MSA) and 50-seat pilot SOW',
+            owner: 'Marcus Vance (MeetAgent)',
+            due: 'Today 5:00 PM',
+          },
+          {
+            title: 'Execute infosec signoff ticket in internal enterprise procurement portal',
+            owner: 'Johnathan Vance (Client)',
+            due: '48 Hours',
+          },
+          {
+            title: 'Schedule technical user onboarding session for 50 enterprise pilot users',
+            owner: 'Marcus Vance (MeetAgent)',
+            due: 'Next Monday',
+          },
         ],
       },
     },
@@ -3133,6 +3299,7 @@
   let demoState = {
     currentPreset: 'sprint',
     isPlaying: false,
+    speedMultiplier: 1,
     simTime: 0,
     timerId: null,
     renderedIndex: -1,
@@ -3157,6 +3324,23 @@
     // Play / Pause simulation button
     el.demoPlayBtn.addEventListener('click', toggleDemoPlay)
 
+    // Instant MoM button (Instant synthesis without waiting)
+    if (el.demoInstantBtn) {
+      el.demoInstantBtn.addEventListener('click', () => {
+        completeInstantSynthesis()
+      })
+    }
+
+    // Speed toggle button (1x / 2x)
+    if (el.demoSpeedBtn) {
+      el.demoSpeedBtn.addEventListener('click', () => {
+        demoState.speedMultiplier = demoState.speedMultiplier === 1 ? 2 : 1
+        if (el.demoSpeedLabel) {
+          el.demoSpeedLabel.textContent = `${demoState.speedMultiplier}x Speed`
+        }
+      })
+    }
+
     // Reset button
     if (el.demoResetBtn) {
       el.demoResetBtn.addEventListener('click', resetDemo)
@@ -3178,21 +3362,53 @@
     }
 
     // Initialize initial display for sprint preset
-    resetDemo()
+    switchDemoPreset('sprint')
+  }
+
+  function updateScenarioBriefBanner(presetKey) {
+    const preset = DEMO_PRESETS[presetKey] || DEMO_PRESETS.sprint
+    if (el.demoScenarioTag) {
+      el.demoScenarioTag.className = preset.tagClass
+      el.demoScenarioTag.textContent = preset.category
+    }
+    if (el.demoScenarioDuration) {
+      el.demoScenarioDuration.textContent = preset.duration
+    }
+    if (el.demoScenarioObjective) {
+      el.demoScenarioObjective.textContent = preset.objective
+    }
+    if (el.demoScenarioTitle) {
+      el.demoScenarioTitle.textContent = preset.title
+    }
+    if (el.demoScenarioDesc) {
+      el.demoScenarioDesc.textContent = preset.desc
+    }
+    if (el.demoTimer) {
+      el.demoTimer.textContent = `00:00 / 00:${String(preset.durationSec).padStart(2, '0')}`
+    }
+    if (el.demoScenarioRoster) {
+      el.demoScenarioRoster.innerHTML = preset.roster.map((p) => `
+        <div class="roster-chip">
+          <span class="roster-chip-avatar" style="background:${p.color};">${escapeHtml(p.avatar)}</span>
+          <span class="roster-chip-name">${escapeHtml(p.name)}</span>
+          <span class="roster-chip-role">· ${escapeHtml(p.role)}</span>
+        </div>`).join('')
+    }
   }
 
   function switchDemoPreset(presetKey) {
     stopDemoTimer()
     demoState.currentPreset = presetKey
+    updateScenarioBriefBanner(presetKey)
     resetDemo()
-    startDemoPlay()
   }
 
   function toggleDemoPlay() {
     if (demoState.isPlaying) {
       pauseDemoPlay()
     } else {
-      if (demoState.simTime >= 24) {
+      const currentPreset = DEMO_PRESETS[demoState.currentPreset] || DEMO_PRESETS.sprint
+      if (demoState.simTime >= currentPreset.durationSec) {
         resetDemo()
       }
       startDemoPlay()
@@ -3217,17 +3433,17 @@
       el.demoStreamBadge.textContent = 'Voice Stream Active'
     }
 
-    // Remove placeholder message if starting from 0
+    // Remove scenario placeholder message if starting from 0
     if (demoState.simTime === 0 && el.demoChatStream) {
       el.demoChatStream.innerHTML = ''
     }
 
     demoState.timerId = setInterval(() => {
-      demoState.simTime += 0.25
+      const stepIncrement = 0.25 * (demoState.speedMultiplier || 1)
+      demoState.simTime += stepIncrement
       updateDemoProgress()
 
-      const currentPreset = DEMO_PRESETS[demoState.currentPreset]
-      if (!currentPreset) return
+      const currentPreset = DEMO_PRESETS[demoState.currentPreset] || DEMO_PRESETS.sprint
 
       // Render chat messages sequentially
       for (let i = 0; i < currentPreset.messages.length; i++) {
@@ -3239,11 +3455,11 @@
       }
 
       // Pre-MoM badge update
-      if (demoState.simTime >= 21 && !demoState.momRendered) {
+      if (demoState.simTime >= currentPreset.durationSec - 3 && !demoState.momRendered) {
         if (el.demoMomBadge) {
           el.demoMomBadge.textContent = 'Synthesizing Minutes...'
-          el.demoMomBadge.style.color = 'var(--brand-amber)'
-          el.demoMomBadge.style.background = 'var(--brand-amber-light)'
+          el.demoMomBadge.style.color = 'var(--brand-amber, #B45309)'
+          el.demoMomBadge.style.background = '#FFFBEB'
         }
       }
 
@@ -3285,6 +3501,8 @@
     demoState.renderedIndex = -1
     demoState.momRendered = false
 
+    const currentPreset = DEMO_PRESETS[demoState.currentPreset] || DEMO_PRESETS.sprint
+
     if (el.demoPlayIcon) {
       el.demoPlayIcon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>'
     }
@@ -3292,7 +3510,7 @@
       el.demoPlayLabel.textContent = 'Play Simulation'
     }
     if (el.demoTimer) {
-      el.demoTimer.textContent = '00:00 / 00:24'
+      el.demoTimer.textContent = `00:00 / 00:${String(currentPreset.durationSec).padStart(2, '0')}`
     }
     if (el.demoProgressBar) {
       el.demoProgressBar.style.width = '0%'
@@ -3301,7 +3519,7 @@
       el.demoEqualizer.classList.remove('animating')
     }
     if (el.demoStatusText) {
-      el.demoStatusText.textContent = 'INTERACTIVE DEMO'
+      el.demoStatusText.textContent = 'READY TO SIMULATE'
     }
     if (el.demoStreamBadge) {
       el.demoStreamBadge.textContent = 'Voice Stream Idle'
@@ -3309,50 +3527,195 @@
     if (el.demoMomBadge) {
       el.demoMomBadge.textContent = 'Awaiting Audio'
       el.demoMomBadge.style.color = 'var(--text-muted)'
-      el.demoMomBadge.style.background = '#f1f5f9'
+      el.demoMomBadge.style.background = 'var(--bg-subtle)'
     }
 
-    // Render initial preview state
+    // Render initial preview state tailored to currentPreset
     if (el.demoChatStream) {
+      const agendaItemsHtml = currentPreset.agenda.map((item) => `
+        <li class="scenario-agenda-item">
+          <span class="scenario-agenda-bullet">›</span>
+          <span>${escapeHtml(item)}</span>
+        </li>`).join('')
+
+      const speakersHtml = currentPreset.roster.map((p) => `
+        <div class="roster-chip" style="margin:2px 0;">
+          <span class="roster-chip-avatar" style="background:${p.color};">${escapeHtml(p.avatar)}</span>
+          <span class="roster-chip-name">${escapeHtml(p.name)}</span>
+          <span class="roster-chip-role">(${escapeHtml(p.role)})</span>
+        </div>`).join('')
+
       el.demoChatStream.innerHTML = `
-        <div class="mock-speech-bubble" style="opacity:0.85; text-align:center; padding:1.75rem 1rem; border-style:dashed;">
-          <p style="color:var(--text-secondary); font-size:0.84rem; margin:0 0 0.5rem 0; font-weight:600;">
-            Spoken Stream Notes Awaiting Audio
-          </p>
-          <p style="color:var(--text-muted); font-size:0.75rem; margin:0;">
-            Click <strong>Play Simulation</strong> above to watch real-time conversational notes and instant executive MoM synthesis.
-          </p>
+        <div class="scenario-intro-card">
+          <div class="scenario-intro-header">
+            <span class="scenario-intro-title">Meeting Agenda & Scope</span>
+            <span class="${currentPreset.tagClass}">${escapeHtml(currentPreset.category)}</span>
+          </div>
+          <ul class="scenario-agenda-list">
+            ${agendaItemsHtml}
+          </ul>
+          <div style="font-size:0.72rem; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; margin-top:4px;">
+            Active Speakers Lineup
+          </div>
+          <div class="scenario-speaker-preview">
+            ${speakersHtml}
+          </div>
+          <div style="background:var(--bg-subtle); padding:8px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-light); font-size:0.75rem; color:var(--text-secondary); margin-top:4px;">
+            Press <strong>Play Simulation</strong> above to stream speech, or click <strong>Instant MoM</strong>.
+          </div>
         </div>`
     }
 
     if (el.demoMomCards) {
+      let previewBlueprint = ''
+      if (currentPreset.momType === 'technical') {
+        previewBlueprint = `
+          <div style="display:flex; flex-direction:column; gap:6px; font-size:0.78rem; color:var(--text-body); margin:8px 0;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span class="badge-tag-indigo">Output 1</span>
+              <span><strong>Cloud Architecture Spec:</strong> PostgreSQL RLS isolation & AES-256 specs</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span class="badge-tag-indigo">Output 2</span>
+              <span><strong>Engineering Decisions:</strong> Dual SMTP fallbacks & deployment freeze</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span class="badge-tag-indigo">Output 3</span>
+              <span><strong>Sprint PRs:</strong> JIRA keys (INFRA-89, FE-142), assignees & deadlines</span>
+            </div>
+          </div>`
+      } else if (currentPreset.momType === 'executive') {
+        previewBlueprint = `
+          <div style="display:flex; flex-direction:column; gap:6px; font-size:0.78rem; color:var(--text-body); margin:8px 0;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span class="badge-tag-emerald">Output 1</span>
+              <span><strong>C-Suite Scorecard:</strong> $14.2M ARR, 84.2% Gross Margin, 28 Mo Runway</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span class="badge-tag-emerald">Output 2</span>
+              <span><strong>Board Resolutions:</strong> Unanimous approval of +3 SE roles for Q4</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span class="badge-tag-emerald">Output 3</span>
+              <span><strong>Governance Actions:</strong> Audited filings (CFO) & investor updates (CEO)</span>
+            </div>
+          </div>`
+      } else if (currentPreset.momType === 'sales') {
+        previewBlueprint = `
+          <div style="display:flex; flex-direction:column; gap:6px; font-size:0.78rem; color:var(--text-body); margin:8px 0;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span class="badge-tag-amber">Output 1</span>
+              <span><strong>Commercial Terms:</strong> $85,000 ARR pilot, 50 Enterprise seats</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span class="badge-tag-amber">Output 2</span>
+              <span><strong>Infosec Verification:</strong> Zero-bot local capture & private tenant</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span class="badge-tag-amber">Output 3</span>
+              <span><strong>Closing Next Steps:</strong> Formal SOW/MSA dispatch & onboarding timeline</span>
+            </div>
+          </div>`
+      }
+
       el.demoMomCards.innerHTML = `
-        <div class="mock-card" style="opacity:0.85; text-align:center; padding:2rem 1rem; border-style:dashed;">
-          <p style="color:var(--text-secondary); font-size:0.84rem; margin:0 0 0.5rem 0; font-weight:600;">
-            Executive Memorandum Notes
+        <div class="scenario-intro-card">
+          <div class="scenario-intro-header">
+            <span class="scenario-intro-title">Synthesized Output Blueprint</span>
+            <span class="demo-badge-pill">Autonomous AI</span>
+          </div>
+          <p style="font-size:0.8rem; line-height:1.5; color:var(--text-secondary); margin:0;">
+            MeetAgent customizes the synthesized minutes structure specifically for <strong>${escapeHtml(currentPreset.title)}</strong>:
           </p>
-          <p style="color:var(--text-muted); font-size:0.75rem; margin:0;">
-            Executive overview, decisions, and deliverables will structure here like a clean Notion document upon speech completion.
-          </p>
+          ${previewBlueprint}
+          <div style="margin-top:6px; padding-top:10px; border-top:1px solid var(--border-light); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+            <button id="scenarioQuickMoMBtn" class="btn btn-primary btn-sm" type="button" style="font-size:0.78rem;">
+              ⚡ View Completed MoM Immediately
+            </button>
+            <span style="font-size:0.7rem; color:var(--text-muted); font-family:var(--font-mono);">Synthesis: &lt;1.0s</span>
+          </div>
         </div>`
+
+      const quickBtn = document.getElementById('scenarioQuickMoMBtn')
+      if (quickBtn) {
+        quickBtn.addEventListener('click', () => {
+          completeInstantSynthesis()
+        })
+      }
     }
   }
 
+  function completeInstantSynthesis() {
+    stopDemoTimer()
+    demoState.isPlaying = false
+    const currentPreset = DEMO_PRESETS[demoState.currentPreset] || DEMO_PRESETS.sprint
+    demoState.simTime = currentPreset.durationSec
+    updateDemoProgress()
+
+    if (el.demoPlayIcon) {
+      el.demoPlayIcon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>'
+    }
+    if (el.demoPlayLabel) {
+      el.demoPlayLabel.textContent = 'Replay'
+    }
+    if (el.demoEqualizer) {
+      el.demoEqualizer.classList.remove('animating')
+    }
+    if (el.demoStatusText) {
+      el.demoStatusText.textContent = 'COMPLETED (0.8s)'
+    }
+    if (el.demoStreamBadge) {
+      el.demoStreamBadge.textContent = 'All Speech Transcribed'
+    }
+    if (el.demoMomBadge) {
+      el.demoMomBadge.textContent = 'Generated in 0.8s'
+      el.demoMomBadge.style.color = '#047857'
+      el.demoMomBadge.style.background = '#ECFDF5'
+    }
+
+    // Render all chat speech bubbles into left stream
+    if (el.demoChatStream) {
+      el.demoChatStream.innerHTML = ''
+      currentPreset.messages.forEach((msg) => {
+        const bubble = document.createElement('div')
+        bubble.className = 'mock-speech-bubble'
+        bubble.innerHTML = `
+          <div class="speaker-tag">
+            <span class="speaker-avatar" style="background:${msg.avatarBg};">${escapeHtml(msg.avatar)}</span>
+            <div style="display:flex; flex-direction:column; line-height:1.2;">
+              <span class="speaker-name">${escapeHtml(msg.name)}</span>
+              <span class="speaker-role" style="font-size:0.68rem; color:var(--text-muted);">${escapeHtml(msg.role || '')}</span>
+            </div>
+            <span class="speech-time" style="margin-left:auto;">${escapeHtml(msg.time)}</span>
+          </div>
+          <div class="speech-text">
+            ${escapeHtml(msg.text)}
+          </div>`
+        el.demoChatStream.appendChild(bubble)
+      })
+      el.demoChatStream.scrollTop = el.demoChatStream.scrollHeight
+    }
+
+    // Render custom MoM cards
+    renderDemoMoMCards(currentPreset)
+  }
+
   function updateDemoProgress() {
-    const curSec = Math.min(Math.floor(demoState.simTime), 24)
-    const formatted = `00:${String(curSec).padStart(2, '0')} / 00:24`
+    const currentPreset = DEMO_PRESETS[demoState.currentPreset] || DEMO_PRESETS.sprint
+    const curSec = Math.min(Math.floor(demoState.simTime), currentPreset.durationSec)
+    const formatted = `00:${String(curSec).padStart(2, '0')} / 00:${String(currentPreset.durationSec).padStart(2, '0')}`
     if (el.demoTimer) {
       el.demoTimer.textContent = formatted
     }
     if (el.demoProgressBar) {
-      const pct = Math.min((demoState.simTime / 24) * 100, 100)
+      const pct = Math.min((demoState.simTime / currentPreset.durationSec) * 100, 100)
       el.demoProgressBar.style.width = `${pct}%`
     }
   }
 
   function renderDemoSpeechBubble(msg) {
     if (!el.demoChatStream) return
-    // Remove active yellow highlight from previous bubbles
+    // Remove active highlight from previous bubbles
     el.demoChatStream.querySelectorAll('.live-active-bubble').forEach((b) => b.classList.remove('live-active-bubble'))
 
     const bubble = document.createElement('div')
@@ -3360,8 +3723,11 @@
     bubble.innerHTML = `
       <div class="speaker-tag">
         <span class="speaker-avatar" style="background:${msg.avatarBg};">${escapeHtml(msg.avatar)}</span>
-        <span class="speaker-name">${escapeHtml(msg.name)}</span>
-        <span class="speech-time">${escapeHtml(msg.time)}</span>
+        <div style="display:flex; flex-direction:column; line-height:1.2;">
+          <span class="speaker-name">${escapeHtml(msg.name)}</span>
+          <span class="speaker-role" style="font-size:0.68rem; color:var(--text-muted);">${escapeHtml(msg.role || '')}</span>
+        </div>
+        <span class="speech-time" style="margin-left:auto;">${escapeHtml(msg.time)}</span>
       </div>
       <div class="speech-text">
         ${escapeHtml(msg.text)}
@@ -3387,57 +3753,179 @@
       el.demoEqualizer.classList.remove('animating')
     }
     if (el.demoStatusText) {
-      el.demoStatusText.textContent = 'COMPLETED (1.1s)'
+      el.demoStatusText.textContent = 'COMPLETED (0.8s)'
     }
     if (el.demoStreamBadge) {
       el.demoStreamBadge.textContent = 'Speech Transcribed'
     }
     if (el.demoMomBadge) {
-      el.demoMomBadge.textContent = 'Generated in 1.1s'
-      el.demoMomBadge.style.color = 'var(--brand-emerald)'
-      el.demoMomBadge.style.background = 'var(--brand-emerald-light)'
+      el.demoMomBadge.textContent = 'Generated in 0.8s'
+      el.demoMomBadge.style.color = '#047857'
+      el.demoMomBadge.style.background = '#ECFDF5'
     }
 
     // Render generated MoM Cards
-    renderDemoMoMCards(preset.mom)
+    renderDemoMoMCards(preset)
   }
 
-  function renderDemoMoMCards(mom) {
+  function renderDemoMoMCards(preset) {
     if (!el.demoMomCards) return
     demoState.momRendered = true
 
-    const decisionsHtml = mom.decisions.map((d) => `
-      <li>
-        <span class="check-icon">✓</span>
-        <span>${escapeHtml(d)}</span>
-      </li>`).join('')
+    if (preset.momType === 'technical') {
+      const specsHtml = preset.mom.specs.map((s) => `
+        <div class="mock-spec-item">
+          <span>${escapeHtml(s.label)}:</span>
+          <strong>${escapeHtml(s.value)}</strong>
+        </div>`).join('')
 
-    const actionsHtml = mom.actions.map((a) => `
-      <div class="mock-task">
-        <span class="check-icon">✓</span>
-        <span>${escapeHtml(a.text)}</span>
-        <span class="task-badge">${escapeHtml(a.owner)}</span>
-      </div>`).join('')
+      const decisionsHtml = preset.mom.decisions.map((d) => `
+        <li>
+          <span class="check-icon">✓</span>
+          <span>${escapeHtml(d)}</span>
+        </li>`).join('')
 
-    el.demoMomCards.innerHTML = `
-      <div class="mock-card">
-        <span class="mock-card-tag tag-indigo">Executive Summary</span>
-        <p>${escapeHtml(mom.summary)}</p>
-      </div>
+      const tasksHtml = preset.mom.tasks.map((t) => `
+        <div class="mock-task">
+          <span class="mock-jira-key">${escapeHtml(t.key)}</span>
+          <span style="font-weight:500;">${escapeHtml(t.title)}</span>
+          <span class="task-badge">${escapeHtml(t.owner)}</span>
+          <span class="mock-due-tag">${escapeHtml(t.due)}</span>
+        </div>`).join('')
 
-      <div class="mock-card">
-        <span class="mock-card-tag tag-emerald">Decisions Made</span>
-        <ul class="mock-list">
-          ${decisionsHtml}
-        </ul>
-      </div>
-
-      <div class="mock-card">
-        <span class="mock-card-tag tag-amber">Action Items & Deliverables</span>
-        <div class="mock-tasks">
-          ${actionsHtml}
+      el.demoMomCards.innerHTML = `
+        <div class="mock-card">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+            <span class="mock-card-tag tag-indigo">Technical Architecture Summary</span>
+            <span class="badge-tag-indigo">PostgreSQL / RLS</span>
+          </div>
+          <p>${escapeHtml(preset.mom.summary)}</p>
+          <div class="mock-spec-box">
+            ${specsHtml}
+          </div>
         </div>
-      </div>`
+
+        <div class="mock-card">
+          <span class="mock-card-tag tag-emerald">Architecture Decisions & Security Safeguards</span>
+          <ul class="mock-list">
+            ${decisionsHtml}
+          </ul>
+        </div>
+
+        <div class="mock-card">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+            <span class="mock-card-tag tag-amber">Sprint Deliverables & PR Backlog</span>
+            <span style="font-size:0.7rem; font-weight:600; color:var(--text-muted);">Release: Friday 9 AM</span>
+          </div>
+          <div class="mock-tasks">
+            ${tasksHtml}
+          </div>
+        </div>`
+    } else if (preset.momType === 'executive') {
+      const kpisHtml = preset.mom.kpis.map((k) => `
+        <div class="demo-kpi-card">
+          <span class="demo-kpi-label">${escapeHtml(k.label)}</span>
+          <div class="demo-kpi-val-row">
+            <span class="demo-kpi-val">${escapeHtml(k.val)}</span>
+            <span class="demo-kpi-sub">${escapeHtml(k.sub)}</span>
+          </div>
+        </div>`).join('')
+
+      const resolutionsHtml = preset.mom.resolutions.map((r) => `
+        <li>
+          <span class="check-icon">✓</span>
+          <span><strong>${escapeHtml(r.split(':')[0])}:</strong> ${escapeHtml(r.split(':').slice(1).join(':'))}</span>
+        </li>`).join('')
+
+      const actionsHtml = preset.mom.actions.map((a) => `
+        <div class="mock-task">
+          <span class="check-icon">✓</span>
+          <span style="font-weight:500;">${escapeHtml(a.title)}</span>
+          <span class="task-badge" style="background:#ECFDF5; color:#047857; border-color:#A7F3D0;">${escapeHtml(a.owner)}</span>
+          <span class="mock-due-tag">${escapeHtml(a.due)}</span>
+        </div>`).join('')
+
+      el.demoMomCards.innerHTML = `
+        <div class="mock-card">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+            <span class="mock-card-tag tag-emerald">Executive Board Statement</span>
+            <span class="badge-tag-emerald">Q3 Audited</span>
+          </div>
+          <p>${escapeHtml(preset.mom.summary)}</p>
+          <div class="demo-kpi-grid">
+            ${kpisHtml}
+          </div>
+        </div>
+
+        <div class="mock-card">
+          <span class="mock-card-tag tag-emerald">Formal Board Resolutions Approved</span>
+          <ul class="mock-list">
+            ${resolutionsHtml}
+          </ul>
+        </div>
+
+        <div class="mock-card">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+            <span class="mock-card-tag tag-amber">Corporate Governance Deliverables</span>
+            <span style="font-size:0.7rem; font-weight:600; color:var(--text-muted);">Quarterly Filing</span>
+          </div>
+          <div class="mock-tasks">
+            ${actionsHtml}
+          </div>
+        </div>`
+    } else if (preset.momType === 'sales') {
+      const dealsHtml = preset.mom.dealTerms.map((d) => `
+        <div class="demo-kpi-card">
+          <span class="demo-kpi-label">${escapeHtml(d.label)}</span>
+          <div class="demo-kpi-val-row">
+            <span class="demo-kpi-val" style="color:var(--primary); font-size:1.05rem;">${escapeHtml(d.val)}</span>
+            <span class="demo-kpi-sub" style="color:var(--text-muted);">${escapeHtml(d.sub)}</span>
+          </div>
+        </div>`).join('')
+
+      const complianceHtml = preset.mom.complianceChecks.map((c) => `
+        <li>
+          <span class="check-icon" style="color:var(--primary);">✓</span>
+          <span>${escapeHtml(c)}</span>
+        </li>`).join('')
+
+      const nextStepsHtml = preset.mom.nextSteps.map((s) => `
+        <div class="mock-task">
+          <span class="mock-deal-badge">SOW</span>
+          <span style="font-weight:500;">${escapeHtml(s.title)}</span>
+          <span class="task-badge" style="background:#FFFBEB; color:#B45309; border-color:#FDE68A;">${escapeHtml(s.owner)}</span>
+          <span class="mock-due-tag">${escapeHtml(s.due)}</span>
+        </div>`).join('')
+
+      el.demoMomCards.innerHTML = `
+        <div class="mock-card">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+            <span class="mock-card-tag tag-amber">Enterprise Opportunity & Terms</span>
+            <span class="badge-tag-amber">Tier-1 Pilot</span>
+          </div>
+          <p>${escapeHtml(preset.mom.summary)}</p>
+          <div class="demo-kpi-grid">
+            ${dealsHtml}
+          </div>
+        </div>
+
+        <div class="mock-card">
+          <span class="mock-card-tag tag-emerald">Infosec & Compliance Verification</span>
+          <ul class="mock-list">
+            ${complianceHtml}
+          </ul>
+        </div>
+
+        <div class="mock-card">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+            <span class="mock-card-tag tag-amber">Procurement & Pilot Closing Milestones</span>
+            <span style="font-size:0.7rem; font-weight:600; color:var(--text-muted);">Target: Next Monday</span>
+          </div>
+          <div class="mock-tasks">
+            ${nextStepsHtml}
+          </div>
+        </div>`
+    }
   }
 
   function setupFAQAccordion() {

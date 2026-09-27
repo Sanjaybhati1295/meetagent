@@ -438,11 +438,36 @@
         </div>
 
         <div class="demo-simulator-card">
-          <!-- Minimal Notebook Scenario Selector -->
+          <!-- Minimal Notebook Scenario Selector with Category Tags -->
           <div class="demo-preset-nav">
-            <button class="demo-preset-btn active" data-preset="sprint">Sprint Architecture</button>
-            <button class="demo-preset-btn" data-preset="board">Executive Board Review</button>
-            <button class="demo-preset-btn" data-preset="client">Client Discovery</button>
+            <button class="demo-preset-btn active" data-preset="sprint">
+              <span class="preset-pill-tag tag-indigo">Engineering</span> Sprint Architecture
+            </button>
+            <button class="demo-preset-btn" data-preset="board">
+              <span class="preset-pill-tag tag-emerald">C-Suite</span> Executive Board Review
+            </button>
+            <button class="demo-preset-btn" data-preset="client">
+              <span class="preset-pill-tag tag-amber">B2B Sales</span> Client Discovery
+            </button>
+          </div>
+
+          <!-- Scenario Briefing Banner (Updates dynamically per scenario) -->
+          <div id="demoScenarioBrief" class="demo-scenario-brief">
+            <div class="scenario-brief-main">
+              <div class="scenario-brief-meta">
+                <span id="demoScenarioTag" class="badge-tag-indigo">ENGINEERING & TECH</span>
+                <span id="demoScenarioDuration" class="scenario-duration-tag">⏱ 20 min sync</span>
+                <span id="demoScenarioObjective" class="scenario-objective-pill">🎯 Target: Cloud DB Migration & Security Signoff</span>
+              </div>
+              <h3 id="demoScenarioTitle" class="scenario-brief-title">🚀 Sprint Architecture Sync</h3>
+              <p id="demoScenarioDesc" class="scenario-brief-desc">Engineering leadership aligns on Supabase cloud migration, PostgreSQL Row-Level Security (RLS) policies, and Friday morning custom-domain production deployment.</p>
+            </div>
+            <div class="scenario-brief-roster">
+              <span class="roster-label">Key Participants</span>
+              <div id="demoScenarioRoster" class="roster-list">
+                <!-- Populated dynamically via app.js -->
+              </div>
+            </div>
           </div>
 
           <!-- Controls Toolbar -->
@@ -456,15 +481,24 @@
                 </span>
                 <span id="demoPlayLabel">Play Simulation</span>
               </button>
-              <button id="demoResetBtn" class="btn btn-secondary btn-sm">Reset</button>
+              <button id="demoInstantBtn" class="btn btn-secondary btn-sm" title="View completed minutes immediately">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                </svg>
+                <span>Instant MoM</span>
+              </button>
+              <button id="demoSpeedBtn" class="btn btn-ghost btn-sm" title="Toggle simulation speed">
+                <span id="demoSpeedLabel">1x Speed</span>
+              </button>
+              <button id="demoResetBtn" class="btn btn-ghost btn-sm">Reset</button>
               <div id="demoEqualizer" class="demo-equalizer">
                 <span></span><span></span><span></span><span></span><span></span>
               </div>
             </div>
 
             <div class="demo-controls-right">
-              <span id="demoTimer" class="demo-timer">00:00 / 00:24</span>
-              <span id="demoStatusText" class="demo-status-pill">INTERACTIVE SIMULATION</span>
+              <span id="demoTimer" class="demo-timer">00:00 / 00:20</span>
+              <span id="demoStatusText" class="demo-status-pill">READY TO SIMULATE</span>
             </div>
           </div>
 
@@ -1231,6 +1265,6 @@
     </button>
   </nav>
 
-  <script src="/app.js?v=5.3"></script>
+  <script src="/app.js?v=5.4"></script>
 </body>
 </html>

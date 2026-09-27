@@ -3843,6 +3843,181 @@ button {
   box-shadow: var(--shadow-xs);
 }
 
+.preset-pill-tag {
+  display: inline-block;
+  font-size: 0.64rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
+  border-radius: var(--radius-xs);
+  margin-right: 6px;
+}
+
+.preset-pill-tag.tag-indigo {
+  background: #EEF2FF;
+  color: #4338CA;
+}
+
+.preset-pill-tag.tag-emerald {
+  background: #ECFDF5;
+  color: #047857;
+}
+
+.preset-pill-tag.tag-amber {
+  background: #FFFBEB;
+  color: #B45309;
+}
+
+/* Scenario Briefing Banner inside Simulator Card */
+.demo-scenario-brief {
+  padding: 14px 20px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  transition: all 0.2s ease;
+}
+
+.scenario-brief-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.scenario-brief-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.badge-tag-indigo {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 7px;
+  border-radius: var(--radius-xs);
+  background: #EEF2FF;
+  color: #4338CA;
+  border: 1px solid #C7D2FE;
+}
+
+.badge-tag-emerald {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 7px;
+  border-radius: var(--radius-xs);
+  background: #ECFDF5;
+  color: #047857;
+  border: 1px solid #A7F3D0;
+}
+
+.badge-tag-amber {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 7px;
+  border-radius: var(--radius-xs);
+  background: #FFFBEB;
+  color: #B45309;
+  border: 1px solid #FDE68A;
+}
+
+.scenario-duration-tag {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.scenario-objective-pill {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--bg-subtle);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-light);
+}
+
+.scenario-brief-title {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--text-heading);
+  margin: 0 0 4px 0;
+  letter-spacing: -0.01em;
+}
+
+.scenario-brief-desc {
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.scenario-brief-roster {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.roster-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.roster-list {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.roster-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px 2px 3px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+}
+
+.roster-chip-avatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.roster-chip-name {
+  font-weight: 600;
+  color: var(--text-heading);
+}
+
+.roster-chip-role {
+  color: var(--text-muted);
+  font-size: 0.66rem;
+}
+
 .demo-controls-bar {
   padding: 12px 20px;
   display: flex;
@@ -4107,6 +4282,178 @@ button {
   border: 1px solid var(--primary-border);
   padding: 1px 6px;
   border-radius: var(--radius-xs);
+}
+
+/* KPI Scorecard for Executive Board */
+.demo-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.demo-kpi-card {
+  padding: 10px 12px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.demo-kpi-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.demo-kpi-val-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.demo-kpi-val {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-heading);
+  letter-spacing: -0.02em;
+  font-family: var(--font-mono);
+}
+
+.demo-kpi-sub {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #047857;
+}
+
+/* JIRA and Architecture badges for Sprint Sync */
+.mock-jira-key {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: #EEF2FF;
+  color: #4338CA;
+  border: 1px solid #C7D2FE;
+  flex-shrink: 0;
+}
+
+.mock-due-tag {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  margin-left: 6px;
+  flex-shrink: 0;
+}
+
+.mock-spec-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bg-subtle);
+  border: 1px dashed var(--border-light);
+  border-radius: var(--radius-sm);
+  margin-top: 10px;
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mock-spec-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mock-spec-item strong {
+  color: var(--text-heading);
+}
+
+/* Deal Checklist for Client Discovery */
+.mock-deal-badge {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: #FFFBEB;
+  color: #B45309;
+  border: 1px solid #FDE68A;
+  flex-shrink: 0;
+}
+
+/* Scenario Initial Preview Cards */
+.scenario-intro-card {
+  padding: 16px 16px;
+  background: var(--bg-surface);
+  border: 1px dashed var(--border-light);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.scenario-intro-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.scenario-intro-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-heading);
+}
+
+.scenario-agenda-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+}
+
+.scenario-agenda-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.scenario-agenda-bullet {
+  color: var(--primary);
+  font-size: 0.8rem;
+  line-height: 1.2;
+}
+
+.scenario-speaker-preview {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding-top: 6px;
+  border-top: 1px solid var(--border-light);
+}
+
+.btn-instant-synthesize {
+  align-self: flex-start;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  padding: 5px 12px;
 }
 
 /* 6. Pricing Section */
@@ -4744,6 +5091,32 @@ button {
 
   .demo-preset-nav::-webkit-scrollbar {
     display: none;
+  }
+
+  .demo-scenario-brief {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px 14px;
+    gap: 12px;
+  }
+
+  .scenario-brief-roster {
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .roster-list {
+    justify-content: flex-start;
+  }
+
+  .demo-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mock-spec-box {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
   }
 
   .demo-workspace-grid {
